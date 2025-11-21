@@ -2,20 +2,20 @@
 
 we need at least two subsystems.
 
-the search system. for each matching document, it should return raw offsets that
+¶ the search system. for each matching document, it should return raw offsets that
 index the search representation, because we want to be able to rewrite it in a
 lower-level language later on. so, it should be able to return a list of matches
 as a series of intervals:
 
 	start offset
 	match length
-	maybe something indicating which (sub)query matched
+	maybe something indicating which (sub)queries match
 	maybe some other match attributes
 
 this info should be serializable. thus, results do not need to be returned
 lazily.
 
-the highlighting+snippet selection system should translate these raw offsets
+¶ the highlighting+snippet selection system should translate these raw offsets
 into Selection() objects that represent an interval into the XML tree. these
 selection objects should hold at least:
 
