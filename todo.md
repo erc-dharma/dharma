@@ -1,15 +1,14 @@
 # TODO
 
+
+fix display of file-related data
+
 arie: fichiers publics
 arie-corpus: fichiers privés
 tout mettre dans le même dépot et tout afficher
 
 pour bestow, pour chaque traduction, ajouter l'auteur de la traduction (support
 <div type="translation" source="bib:Hultzsch1895_01">).
-
-allow nested transactions; automatically create checkpoints when already within
-a transaction.
-and also allow context managers: with db:...
 
 support assignment of languages in DHARMA_CritEd* et DHARMA_DiplEd*.
 
