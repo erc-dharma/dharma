@@ -106,17 +106,23 @@
 </div>
 % endif
 
-% if commit_date:
+% if doc.path:
+<div class="metadata-item">
+<p>File path: <span class="text-id">{{doc.path.html() | safe}}</span>.</p>
+</div>
+% endif
+
+% if doc.commit:
 <p>
-Version: {{commit_date | format_date}}
-(<a href="{{github_commit_url}}">{{commit_hash | format_commit_hash}}</a>), last modified
-{{last_modified | format_date}} (<a href="{{github_last_modified_commit_url}}">{{last_modified_commit | format_commit_hash}}</a>).
+Version: {{doc.commit.date | format_date}}
+(<a href="{{github_commit_url}}">{{doc.commit.hash | format_commit_hash}}</a>), last modified
+{{doc.last_modified_commit.date | format_date}} (<a href="{{github_last_modified_commit_url}}">{{doc.last_modified_commit.hash | format_commit_hash}}</a>).
 </p>
 % endif
 
 {{doc.body.html() | safe}}
 
-</div>{# id="inscription-display" #}
+</div>## id="inscription-display"
 
 <div class="hidden" id="inscription-source">
 <fieldset>

@@ -8,12 +8,21 @@ from dharma import biblio, texts, editorial, prosody, internal2html, languages
 # put other stuff in the same directory, not just templates.
 app = flask.Flask(__name__, template_folder="views")
 app.jinja_options["line_statement_prefix"] = "%"
+app.jinja_options["line_comment_prefix"] = "##"
 app.jinja_options["lstrip_blocks"] = True
 app.jinja_options["trim_blocks"] = True
 
 @app.template_filter("format_date")
 def format_date(when):
-	assert isinstance(when, int)
+	match when:
+		case tree.Node():
+			when = int(when.text())
+		case str():
+			when = int(when)
+		case int():
+			pass
+		case _:
+			raise Exception("bad value")
 	when_obj = datetime.datetime.fromtimestamp(when).astimezone()
 	when_detailed = html.escape(when_obj.strftime("%FT%T%z"))
 	when_readable = html.escape(when_obj.strftime("%F %R"))
@@ -21,6 +30,13 @@ def format_date(when):
 
 @app.template_filter("format_commit_hash")
 def format_commit_hash(hash):
+	match hash:
+		case tree.Node():
+			hash = hash.text()
+		case str():
+			pass
+		case _:
+			raise Exception("bad value")
 	hash = html.escape(hash[:7])
 	return f'<span class="commit-hash">{hash}</span>'
 
@@ -395,11 +411,11 @@ def render_inscription(file: texts.File, data: dict):
 	try:
 		t = tree.parse_string(file.data, path=file.full_path)
 	except tree.Error:
-		# XXX still need improvements for the display of invalid
-		# inscriptions
+		# TODO still need improvements for the display of invalid
+		# inscriptions; in particular, should display file info.
 		data["highlighted_xml"] = tree.html_format(file.text)
 		return flask.render_template("invalid_inscription.tpl", **data)
-	data["doc"] = tei.process_tree(t).to_html()
+	data["doc"] = tei.process_tree(t).to_html(ident=data["text"])
 	data["highlighted_xml"] = tree.html_format(t)
 	return flask.render_template("inscription.tpl", **data)
 

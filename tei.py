@@ -15,15 +15,15 @@ class Document:
 		self.apparatus = tree.Tag("apparatus")
 		self.commentary = tree.Tag("commentary")
 		self.bibliography = tree.Tag("bibliography")
-		# A single document can have zero or more translations (see e.g.
-		# DHARMA_INSPallava00002), so this is a list.
 		self.translation: list[tree.Tag] = []
-		# List of footnotes (<note> element in TEI, except that we
-		# don't include here <note> elements from the apparatus because
-		# they do not actually represent footnotes; we should probably
-		# support notes within notes in the apparatus, because in this
-		# case the nesting is justified).
+		"""A single document can have zero or more translations (see
+		e.g. DHARMA_INSPallava00002), so the above is a list."""
 		self.notes: list[tree.Tree] = []
+		"""List of footnotes (`<note>` element in TEI, except that we
+		don't include here `<note>` elements from the apparatus because
+		they do not actually represent footnotes; we should probably
+		support notes within notes in the apparatus, because in this
+		case the nesting is justified)."""
 		# List of authors and of editors. List of tuples
 		# (dharma_id, name) where dharma_id is the xxxx stuff in
 		# "part:xxxx" and name is a string.  dharma_id can be None
@@ -91,10 +91,12 @@ class Document:
 		patch.process(ret)
 		return ret
 
-	def to_html(self, toc_depth=-1):
+	def to_html(self, toc_depth=-1, ident=None):
 		from dharma import internal2html
 		ret = self.serialize()
 		patch.process(ret)
+		if ident:
+			patch.add_file_info(ret, ident)
 		ret = internal2html.process(ret, toc_depth=toc_depth)
 		return ret
 

@@ -1,9 +1,22 @@
 # TODO
 
-réafficher repo + id
+tfb-karnataka-epigraphy supprimer complètement
+
+arie: fichiers publics
+arie-corpus: fichiers privés
+tout mettre dans le même dépot et tout afficher
+
+réafficher repo + id;
+where should we patch the XML tree to supplement useful info?
+after tei.process_tree() and before tei.Document.to_html()
+should
 
 pour bestow, pour chaque traduction, ajouter l'auteur de la traduction (support
 <div type="translation" source="bib:Hultzsch1895_01">).
+
+allow nested transactions
+
+support assignment of languages in DHARMA_CritEd* et DHARMA_DiplEd*.
 
 ---
 

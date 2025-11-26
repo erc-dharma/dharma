@@ -103,6 +103,39 @@ def extract_paired(self, node):
 		identifier = self.pop()
 	return paired(identifier, name)
 
+commit = collections.namedtuple("commit", "hash date")
+
+@handler("commit")
+@handler("last-modified-commit")
+def process_commit(self, node):
+	hash_ = node.first("hash")
+	if hash_:
+		self.push(tree.Tree())
+		self.dispatch_children(hash_)
+		hash_ = self.pop()
+	date = node.first("date")
+	if date:
+		self.push(tree.Tree())
+		self.dispatch_children(date)
+		date = self.pop()
+	data = commit(hash_, date)
+	if node.name == "commit":
+		self.document.commit = data
+	else:
+		assert node.name == "last-modified-commit"
+		self.document.last_modified_commit = data
+
+@handler("path")
+def process_path(self, node):
+	self.push(tree.Tree())
+	self.dispatch_children(node)
+	path = self.pop()
+	self.document.path = path
+
+@handler("repository")
+def process_repo(self, node):
+	self.document.repository = extract_paired(self, node)
+
 @handler("editor")
 def process_editor(self, node):
 	self.document.editors.append(extract_paired(self, node))
@@ -376,6 +409,11 @@ class HTMLDocument:
 		self.editors = []
 		self.edition_languages = []
 		self.body = None
+		self.repository = None # paired
+		self.identifier = None
+		self.commit = None
+		self.last_modified_commit = None
+		self.path = None
 
 class HTMLRenderer(tree.Serializer):
 

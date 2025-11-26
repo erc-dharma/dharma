@@ -90,7 +90,7 @@ update-texts:
 	rm -f texts/*
 	sqlite3 -noheader dbs/texts.sqlite "select \
 		printf('../repos/%s/%s', repo, path) from documents \
-		natural join files where name glob 'DHARMA_INS*'" | \
+		natural join files" | \
 	while read f; do \
 		ln -s "$$f" "texts/$$(basename """$$f""")"; \
 	done
