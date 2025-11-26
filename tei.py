@@ -95,7 +95,7 @@ class Document:
 		from dharma import internal2html
 		ret = self.serialize()
 		patch.process(ret)
-		if data:
+		if data is not None:
 			patch.add_file_info(ret, data)
 		ret = internal2html.process(ret, toc_depth=toc_depth)
 		return ret

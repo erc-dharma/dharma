@@ -1,6 +1,5 @@
 # TODO
 
-
 fix display of file-related data
 
 arie: fichiers publics
@@ -22,35 +21,6 @@ startup, we start with project-documentation and thus reindex the whole catalog 
 
 ---
 
-Retirer distinction entre assigned lang et inferred lang, avoir une seule catégorie lang.
-
-Pour les langues, il faut avoir une hiérarchie à au moins deux niveaux (source, study). Et il faut la représenter dans le csv (en ajoutant les noms source et study pour chaque colonne).
-
-Ajouter tests. 1: rendition sur la div
-
-Pour les facettes, on devrai être en mesure de calculer la longueur d'un texte en phonèmes, en caractères, en lignes, en pages, en divisions, en paragraphes, etc.
-
-
-Si tous les éléments enfants d'un élément donné ont la même langue et que cette langue a été expréssément indiquée par l'utilisateur, on peut sans doute considérer que la langue indiquée par l'utilisateur sur l'élément donné doit être ignorée. Mais il faut être en mesure de dire si la langue est ou non indiquée par l'utilisateur, donc mieux vaut faire ça sur le TEI. Et on doit ino
-
-
-
-need to annotate the internal tree with language infos, and do so for both assigned and inferred; or maybe do it just for assigned, and deduce inferred from the internal repr? yes, maybe better.
-
-Pour l'assignement des langues, vérifier que tout segment de texte  a un parent pourvu de l'attribut lang.
-
-Expliquer différences entre assignement des langues dans le tei et dans la représentation interne. Noter qu'on ne fait pas ce qu'il faut pour l'apparatus; on pourrait éventuellement simplement assigner 'source' aux lem et rdg.
-
-Au tableau des scripts by code, ajouter version avec l'autre r voyelle, éventuellement tout sans diacritiques. Oui en fait ajouter tout sans diacritiques et ajouter le vrai identifiant dans le tableau principal.
-
-Use the icu module from SQLite.
-
-For the schematron stuff, use a su module.
-
-For scripts, define short identifiées with three lettres, like for iso, for use in search.
-
-To the langs and scripts display, also display stats related to language usage. And also do that for the repos display.
-
 Il faut couvrir tous les sections principales avec des div, pour éviter qu'il y ait un mix de para et de div a un même niveau, et idem recursivement. On devrait avoir des div phantom pour toutes les div type édition, translation, etc., de telle sorte que toutes ces sections principales contiennent au moins une div (ainsi on pourra plus facilement calculer la taille d'une div, etc.)
 
 Dans la repr interne, Il faudrait éviter de hardcoder les noms des div (édition, translation, etc.), plus encore si on n'a pas besoin de savoir ce qu'elles contiennent. Parce que c'est chiant dans le code qui les parse, et parce qu'on doit prendre en charge d'autres types de div pour également bestow. il vaudrait. Mieux avoir seulement div comme élément.
@@ -67,23 +37,8 @@ On devrait avoir des lignes fantômes pour le physical aussi, dans la recherche.
 
 ---
 
-Dans INSTamilNadu00052, ZST bug:
-
-	{"data":{"ISBN":"","abstractNote":"","accessDate":"","archive":"","archiveLocation":"","callNumber":"","collections":["G2UUBH8S"],"creators":[{"creatorType":"editor","firstName":"Ā.","lastName":"Patmāvati"},{"creatorType":"seriesEditor","firstName":"Irā.","lastName":"Nākacāmi"}],"date":"1979","dateAdded":"2024-02-23T12:39:37Z","dateModified":"2024-02-23T12:45:47Z","edition":"","extra":"","itemType":"book","key":"XIVT87GE","language":"Tamil","libraryCatalog":"","numPages":"","numberOfVolumes":"","place":"Ceṉṉai","publisher":"Tamiḻnāṭu Aracu Tolporuḷ Āyvuttuṟai","relations":{},"rights":"","series":"Tamiḻnāṭṭu kalvetṭukaḷ","seriesNumber":"12","shortTitle":"Patmavati1979_01","tags":[{"tag":"Patmavati1979_01"}],"title":"Naṉṉilam kalveṭṭukkaḷ: mutal tokuti","url":"","version":241226,"volume":""},"key":"XIVT87GE","library":{"id":1633743,"links":{"alternate":{"href":"https://www.zotero.org/groups/erc-dharma","type":"text/html"}},"name":"ERC-DHARMA","type":"group"},"links":{"alternate":{"href":"https://www.zotero.org/groups/erc-dharma/items/XIVT87GE","type":"text/html"},"self":{"href":"https://api.zotero.org/groups/1633743/items/XIVT87GE","type":"application/json"}},"meta":{"createdByUser":{"id":1559253,"links":{"alternate":{"href":"https://www.zotero.org/manufrancis","type":"text/html"}},"name":"","username":"manufrancis"},"creatorSummary":"Patmāvati","numChildren":0,"parsedDate":"1979"},"version":241226}
-
 XXX do commit several times (or maybe savepoint+release) when rebuilding the
 catalog.
-
-## normal displ
-
-afficher identifiant, nom du dépôt
-
-langue + écriture assignation.
-* Avoir "Tamil language in Tamil Script, Sanskrit in Grantha".
-* penser à hi rend="grantha" où on doit générer le bon script ([@rendition]) et
-  aussi inversement quand le @rendition réfère à grantha, mettre le texte en gras.
-
-ajouter lien vers people
 
 abrévier le summary dans tableau résultat à un seul <p> (ajouter [...] à la place des restants)
 

@@ -382,38 +382,14 @@ def display_text(text):
 @common.transaction("texts")
 def display_inscription(text):
 	db = common.db("texts")
-	data = db.execute("""
-	select
-		printf('%s/%s/%s', ?, repos.repo, path) as path,
-		repos.repo,
-		data,
-		commit_hash,
-		commit_date,
-		last_modified,
-		last_modified_commit,
-		format_url('https://github.com/erc-dharma/%s/blob/%s/%s', repos.repo,
-			commit_hash, path) as github_commit_url,
-		format_url('https://github.com/erc-dharma/%s/blob/%s/%s', repos.repo,
-			last_modified_commit, path)
-			as github_last_modified_commit_url,
-		format_url('https://raw.githubusercontent.com/erc-dharma/%s/%s/%s',
-			repos.repo, commit_hash, path)
-			as github_download_url,
-		repos.title as repo_title
-	from documents
-		join files on documents.name = files.name
-		join repos on documents.repo = repos.repo
-	where documents.name = ?""", (common.path_of("repos"), text)).fetchone()
+	data = patch.fetch_file_data(text)
 	if not data:
 		return flask.abort(404)
 	file = db.load_file(text)
 	return render_inscription(file, dict(data))
 
 def render_inscription(file: texts.File, data: dict):
-	if data:
-		file_data = dict(patch.fetch_file_data(file.name))
-	else:
-		file_data = {}
+	assert not data.get("text")
 	data["text"] = file.name
 	try:
 		t = tree.parse_string(file.data, path=file.full_path)
@@ -422,7 +398,7 @@ def render_inscription(file: texts.File, data: dict):
 		# inscriptions; in particular, should display file info.
 		data["highlighted_xml"] = tree.html_format(file.text)
 		return flask.render_template("invalid_inscription.tpl", **data)
-	data["doc"] = tei.process_tree(t).to_html(data=file_data)
+	data["doc"] = tei.process_tree(t).to_html(data=data)
 	data["highlighted_xml"] = tree.html_format(t)
 	return flask.render_template("inscription.tpl", **data)
 
@@ -462,7 +438,7 @@ def convert_text():
 	setattr(file, "_last_modified", ("", 0))
 	setattr(file, "_data", data)
 	setattr(file, "_owners", [])
-	html = render_inscription(file, {})
+	html = render_inscription(file, {"ident": name, "path": path})
 	soup = BeautifulSoup(html, "html.parser")
 	make_links_absolute(soup, "href")
 	make_links_absolute(soup, "src")

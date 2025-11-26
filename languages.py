@@ -1,3 +1,36 @@
+"""
+XXX
+
+
+penser à hi rend="grantha" où on doit générer le bon script ([@rendition]) et
+  aussi inversement quand le @rendition réfère à grantha, mettre le texte en gras.
+
+Retirer distinction entre assigned lang et inferred lang, avoir une seule catégorie lang.
+
+Pour les langues, il faut avoir une hiérarchie à au moins deux niveaux (source, study). Et il faut la représenter dans le csv (en ajoutant les noms source et study pour chaque colonne).
+
+Ajouter tests. 1: rendition sur la div
+
+Pour les facettes, on devrai être en mesure de calculer la longueur d'un texte en phonèmes, en caractères, en lignes, en pages, en divisions, en paragraphes, etc.
+
+
+Si tous les éléments enfants d'un élément donné ont la même langue et que cette langue a été expréssément indiquée par l'utilisateur, on peut sans doute considérer que la langue indiquée par l'utilisateur sur l'élément donné doit être ignorée. Mais il faut être en mesure de dire si la langue est ou non indiquée par l'utilisateur, donc mieux vaut faire ça sur le TEI. Et on doit ino
+
+
+
+need to annotate the internal tree with language infos, and do so for both assigned and inferred; or maybe do it just for assigned, and deduce inferred from the internal repr? yes, maybe better.
+
+Pour l'assignement des langues, vérifier que tout segment de texte  a un parent pourvu de l'attribut lang.
+
+Expliquer différences entre assignement des langues dans le tei et dans la représentation interne. Noter qu'on ne fait pas ce qu'il faut pour l'apparatus; on pourrait éventuellement simplement assigner 'source' aux lem et rdg.
+
+Au tableau des scripts by code, ajouter version avec l'autre r voyelle, éventuellement tout sans diacritiques. Oui en fait ajouter tout sans diacritiques et ajouter le vrai identifiant dans le tableau principal.
+
+For scripts, define short identifiées with three lettres, like for iso, for use in search.
+
+To the langs and scripts display, also display stats related to language usage. And also do that for the repos display.
+"""
+
 """Stuff for dealing with languages and scripts.
 
 Goals for languages/scripts:

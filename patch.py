@@ -1420,7 +1420,15 @@ def fetch_file_data(ident):
 		commit_hash,
 		commit_date,
 		last_modified_commit as last_modified_commit_hash,
-		last_modified as last_modified_commit_date
+		last_modified as last_modified_commit_date,
+		format_url('https://github.com/erc-dharma/%s/blob/%s/%s', repos.repo,
+			commit_hash, path) as github_commit_url,
+		format_url('https://github.com/erc-dharma/%s/blob/%s/%s', repos.repo,
+			last_modified_commit, path)
+			as github_last_modified_commit_url,
+		format_url('https://raw.githubusercontent.com/erc-dharma/%s/%s/%s',
+			repos.repo, commit_hash, path)
+			as github_download_url
 	from documents
 		join files on documents.name = files.name
 		join repos on documents.repo = repos.repo
@@ -1478,7 +1486,7 @@ def add_file_info(t: tree.Tree, data: dict):
 		path.append(data["path"])
 		t.root.prepend(path)
 	# Repository
-	if data.get("repository"):
+	if data.get("repo_ident"):
 		repo = tree.Tag("repository")
 		identifier = tree.Tag("identifier")
 		identifier.append(data["repo_ident"])
@@ -1488,7 +1496,7 @@ def add_file_info(t: tree.Tree, data: dict):
 		repo.append(name)
 		t.root.prepend(repo)
 	# Identifier
-	if data.get("identifier"):
+	if data.get("ident"):
 		identifier = tree.Tag("identifier")
 		identifier.append(data["ident"])
 		t.root.prepend(identifier)
