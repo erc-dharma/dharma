@@ -85,12 +85,5 @@ This moves configuration files to the proper system directories and reloads both
 `nginx` and `systemd`'s configuration manager. Then the app's services can be
 started (or restarted) and stopped with:
 
-	make start-all
-	make stop-all
-
-After modifying the code, it is typically only necessary to start the
-`dharma.change` and `dharma.server` tasks, so there are also two `make` targets
-that do just that:
-
 	make start
 	make stop

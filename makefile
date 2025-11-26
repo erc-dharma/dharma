@@ -51,21 +51,13 @@ install: install-systemd install-nginx
 
 .PHONY: install-systemd install-nginx install
 
-start-all:
+start:
 	for service in $(services); do \
 		sudo systemctl reload-or-restart $$service ; \
 	done
 
-stop-all:
-	sudo systemctl stop 'dharma.*'
-
-start:
-	sudo systemctl reload-or-restart dharma.server
-	sudo systemctl reload-or-restart dharma.change
-
 stop:
-	sudo systemctl stop dharma.server
-	sudo systemctl stop dharma.change
+	sudo systemctl stop 'dharma.*'
 
 status:
 	sudo systemctl status 'dharma.*'
