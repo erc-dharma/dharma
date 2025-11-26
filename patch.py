@@ -1409,7 +1409,24 @@ def process(t: tree.Tree):
 		add_edition_languages(root)
 	languages.finish_internal(t)
 
-def add_file_info(t: tree.Tree, ident: str):
+def fetch_file_data(ident):
+	db = common.db("texts")
+	return db.execute("""
+	select
+		files.name as ident,
+		repos.repo as repo_ident,
+		repos.title as repo_title,
+		path,
+		commit_hash,
+		commit_date,
+		last_modified_commit as last_modified_commit_hash,
+		last_modified as last_modified_commit_date
+	from documents
+		join files on documents.name = files.name
+		join repos on documents.repo = repos.repo
+	where documents.name = ?""", (ident,)).fetchone()
+
+def add_file_info(t: tree.Tree, data: dict):
 	"""Adds extra fields by fetching the necessary data from the db. This
 	concerns fields that we don't infer from parsing the TEI but that we
 	want to display on the website, viz. file-related data (repo, commit,
@@ -1435,57 +1452,46 @@ def add_file_info(t: tree.Tree, ident: str):
 	</document>
 	```
 	"""
-	print(repr(ident))
-	db = common.db("texts")
-	data = db.execute("""
-	select
-		files.name as ident,
-		repos.repo as repo_ident,
-		repos.title as repo_title,
-		path,
-		commit_hash,
-		commit_date,
-		last_modified_commit as last_modified_commit_hash,
-		last_modified as last_modified_commit_date
-	from documents
-		join files on documents.name = files.name
-		join repos on documents.repo = repos.repo
-	where documents.name = ?""", (ident,)).fetchone()
 	# Last modified commit
-	commit = tree.Tag("last-modified-commit")
-	hash_ = tree.Tag("hash")
-	hash_.append(data["last_modified_commit_hash"])
-	commit.append(hash_)
-	date = tree.Tag("date")
-	date.append(str(data["last_modified_commit_date"]))
-	commit.append(date)
-	t.root.prepend(commit)
+	if data.get("last_modified_commit_hash"):
+		commit = tree.Tag("last-modified-commit")
+		hash_ = tree.Tag("hash")
+		hash_.append(data["last_modified_commit_hash"])
+		commit.append(hash_)
+		date = tree.Tag("date")
+		date.append(str(data["last_modified_commit_date"]))
+		commit.append(date)
+		t.root.prepend(commit)
 	# Commit
-	commit = tree.Tag("commit")
-	hash_ = tree.Tag("hash")
-	hash_.append(data["commit_hash"])
-	commit.append(hash_)
-	date = tree.Tag("date")
-	date.append(str(data["commit_date"]))
-	commit.append(date)
-	t.root.prepend(commit)
+	if data.get("commit_hash"):
+		commit = tree.Tag("commit")
+		hash_ = tree.Tag("hash")
+		hash_.append(data["commit_hash"])
+		commit.append(hash_)
+		date = tree.Tag("date")
+		date.append(str(data["commit_date"]))
+		commit.append(date)
+		t.root.prepend(commit)
 	# Path
-	path = tree.Tag("path")
-	path.append(data["path"])
-	t.root.prepend(path)
+	if data.get("path"):
+		path = tree.Tag("path")
+		path.append(data["path"])
+		t.root.prepend(path)
 	# Repository
-	repo = tree.Tag("repository")
-	identifier = tree.Tag("identifier")
-	identifier.append(data["repo_ident"])
-	repo.append(identifier)
-	name = tree.Tag("name")
-	name.append(data["repo_title"])
-	repo.append(name)
-	t.root.prepend(repo)
+	if data.get("repository"):
+		repo = tree.Tag("repository")
+		identifier = tree.Tag("identifier")
+		identifier.append(data["repo_ident"])
+		repo.append(identifier)
+		name = tree.Tag("name")
+		name.append(data["repo_title"])
+		repo.append(name)
+		t.root.prepend(repo)
 	# Identifier
-	identifier = tree.Tag("identifier")
-	identifier.append(data["ident"])
-	t.root.prepend(identifier)
+	if data.get("identifier"):
+		identifier = tree.Tag("identifier")
+		identifier.append(data["ident"])
+		t.root.prepend(identifier)
 
 def make_pretty_printable(t: tree.Tree):
 	t.coalesce()

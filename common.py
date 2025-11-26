@@ -93,6 +93,9 @@ class Database:
 
 	def __init__(self, conn):
 		self._conn = conn
+		# _protected < 0: not in a transaction
+		# _protected = 0: in a transaction, first level
+		# _protected > 0: within a nested transaction
 		self._protected = False
 
 	def execute(self, sql, *args, **kwargs):

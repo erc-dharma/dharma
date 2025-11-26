@@ -1,24 +1,22 @@
 # TODO
 
-tfb-karnataka-epigraphy supprimer complètement
-
 arie: fichiers publics
 arie-corpus: fichiers privés
 tout mettre dans le même dépot et tout afficher
 
-réafficher repo + id;
-where should we patch the XML tree to supplement useful info?
-after tei.process_tree() and before tei.Document.to_html()
-should
-
 pour bestow, pour chaque traduction, ajouter l'auteur de la traduction (support
 <div type="translation" source="bib:Hultzsch1895_01">).
 
-allow nested transactions
+allow nested transactions; automatically create checkpoints when already within
+a transaction.
+and also allow context managers: with db:...
 
 support assignment of languages in DHARMA_CritEd* et DHARMA_DiplEd*.
 
 ---
+
+need to deal properly with creation/deletion of repos. the only input parameter
+should be the repos file. add a routine for this in change.py
 
 should add extra commands to change.py to do more granular updates. because, at
 startup, we start with project-documentation and thus reindex the whole catalog only to then update each repo again. we should skip the whole catalog reindexing at startup (and only in this circumstance.)

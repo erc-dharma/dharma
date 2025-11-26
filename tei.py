@@ -91,12 +91,12 @@ class Document:
 		patch.process(ret)
 		return ret
 
-	def to_html(self, toc_depth=-1, ident=None):
+	def to_html(self, toc_depth=-1, data=None):
 		from dharma import internal2html
 		ret = self.serialize()
 		patch.process(ret)
-		if ident:
-			patch.add_file_info(ret, ident)
+		if data:
+			patch.add_file_info(ret, data)
 		ret = internal2html.process(ret, toc_depth=toc_depth)
 		return ret
 

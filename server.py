@@ -1,8 +1,11 @@
 import os, unicodedata, datetime, html, urllib, urllib.parse, ntpath, hashlib
+
 import flask, werkzeug.security # pip install flask
 from bs4 import BeautifulSoup # pip install bs4
+
 from dharma import common, change, ngrams, catalog, validate, tei, tree
 from dharma import biblio, texts, editorial, prosody, internal2html, languages
+from dharma import patch
 
 # We don't use the name "templates" for the template folder because we also
 # put other stuff in the same directory, not just templates.
@@ -407,6 +410,10 @@ def display_inscription(text):
 	return render_inscription(file, dict(data))
 
 def render_inscription(file: texts.File, data: dict):
+	if data:
+		file_data = dict(patch.fetch_file_data(file.name))
+	else:
+		file_data = {}
 	data["text"] = file.name
 	try:
 		t = tree.parse_string(file.data, path=file.full_path)
@@ -415,7 +422,7 @@ def render_inscription(file: texts.File, data: dict):
 		# inscriptions; in particular, should display file info.
 		data["highlighted_xml"] = tree.html_format(file.text)
 		return flask.render_template("invalid_inscription.tpl", **data)
-	data["doc"] = tei.process_tree(t).to_html(ident=data["text"])
+	data["doc"] = tei.process_tree(t).to_html(data=file_data)
 	data["highlighted_xml"] = tree.html_format(t)
 	return flask.render_template("inscription.tpl", **data)
 
