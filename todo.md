@@ -1,7 +1,5 @@
 # TODO
 
-fix display of file-related data
-
 arie: fichiers publics
 arie-corpus: fichiers privés
 tout mettre dans le même dépot et tout afficher
