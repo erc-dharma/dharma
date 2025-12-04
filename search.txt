@@ -2,14 +2,26 @@
 
 we need at least two subsystems.
 
-¶ the search system. for each matching document, it should return raw offsets that
-index the search representation, because we want to be able to rewrite it in a
-lower-level language later on. so, it should be able to return a list of matches
-as a series of intervals:
+¶ the search system. it maps a set of fields to their search representation. a
+single field in the original might have several search representations. these
+several representations will need to be reconciled while returning query
+results. so we have:
 
-	start offset
+	title	-> title.representation1
+		-> title.representation2
+	body	-> body.representation1
+		-> body.representation2
+		-> body.representation3
+		...
+
+it should return raw offsets that index the search representation of a given
+field, because we want to be able to rewrite the search code in a lower-level
+language later on. so, it should be able to return a list of matches as a series
+of intervals, with the following data:
+
+	start offset in the search representation of the field
 	match length
-	maybe something indicating which (sub)queries match
+	something indicating which (sub)queries match there
 	maybe some other match attributes
 
 this info should be serializable. thus, results do not need to be returned
