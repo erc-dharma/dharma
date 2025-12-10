@@ -110,7 +110,7 @@ def scripts_hierarchy_to_html() -> tree.Tag:
 tei_language_sensitive = {
 	"div", "note", "p", "ab", "lg", "q", "head", "quote",
 	"label", "foreign", "seg",
-	"lem", "rdg"
+	"lem", "rdg", "ex",
 }
 
 class LanguageInfo:

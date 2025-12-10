@@ -1,5 +1,15 @@
 # TODO
 
+INSTamilOutsideTN10002: supprimer distinction entre langue source/traduction;
+	il faut ignorer au moins "head" et "note" pour la distribution des
+	langues.
+
+mettre en gras tous les @rendition=grantha
+
+pour e.g. INSIIv04p0i0433; ne pas mettre en gras les parenthèses, les chevrons,
+les accolades, etc., les points d'interrogation et d'exclamation, bref tous les
+caractères qu'on ajoute.
+
 arie: fichiers publics
 arie-corpus: fichiers privés
 tout mettre dans le même dépot et tout afficher

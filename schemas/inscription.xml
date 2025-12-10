@@ -631,7 +631,6 @@
                         <attDef ident="prev" mode="delete"/>
                         <attDef ident="quantity" mode="delete"/>
                         <attDef ident="rend" mode="delete"/>
-                        <attDef ident="rendition" mode="delete"/>
                         <attDef ident="resp" mode="delete"/>
                         <attDef ident="sameAs" mode="delete"/>
                         <attDef ident="scope" mode="delete"/>
@@ -642,7 +641,6 @@
                         <attDef ident="unit" mode="delete"/>
                         <attDef ident="xml:base" mode="delete"/>
                         <attDef ident="xml:id" mode="delete"/>
-                        <attDef ident="xml:lang" mode="delete"/>
                         <attDef ident="xml:space" mode="delete"/>
                         <attDef ident="cert" mode="change">
                             <datatype>
@@ -1077,7 +1075,10 @@
                     <desc>Character that cannot be identified unambiguously outside of its context.
                         May contain character data and <gi>g</gi> only.</desc>
                     <content>
-                        <macroRef key="macro.xtext"/>
+                        <alternate maxOccurs="unbounded">
+                            <macroRef key="macro.xtext"/>
+                            <elementRef key="hi"/>
+                        </alternate>
                     </content>
                     <attList>
                         <attDef ident="agent" mode="delete"/>
