@@ -1,8 +1,26 @@
-## cursors
+three modules: query tree; search system; highlighting+snippets selection system
 
-we need at least two subsystems.
+## query tree.
 
-¶ the search system. it maps a set of fields to their search representation. a
+query strings must be convertible to a tree. and we should be able to patch this
+tree manually. and we should be able to patch this tree to add extra search
+criteria. for now, use a basic search syntax similar to lucene and friends. it
+doesn't really help to have a more sophisticated syntax because then we would
+also have to write extra code for converting the search form data to this
+representation. no, delete that, it's better to have a more expressive query
+language for testing; we're not gonna fill out a web form each time!
+
+in fact should have two query languages:
+* the one for the user (lucene-like)
+* the one used by the system (for serializing queries and display them). used
+  sexp for this.
+
+
+## the search system.
+
+make it independent from all other stuff.
+
+it maps a set of fields to their search representation. a
 single field in the original might have several search representations. these
 several representations will need to be reconciled while returning query
 results. so we have:
@@ -15,27 +33,48 @@ results. so we have:
 		...
 
 it should return raw offsets that index the search representation of a given
-field, because we want to be able to rewrite the search code in a lower-level
-language later on. so, it should be able to return a list of matches as a series
-of intervals, with the following data:
+field (title.representation1, etc.). need to use raw offsets instead of some
+kind of cursor because we want to be able to rewrite the search code in a
+lower-level language later on. so, it should be able to return a list of matches
+as a series of intervals, with the following data:
 
-	start offset in the search representation of the field
+	match start offset in the search representation of the field
 	match length
-	something indicating which (sub)queries match there
-	maybe some other match attributes
+	and also maybe later:
+		an index indicating which word/phrase matched in the query
+		maybe some other match attributes
 
-this info should be serializable. thus, results do not need to be returned
-lazily.
+this info should be serializable, for easier inspection, and to make it possible
+later on to rewrite the search system in a more efficient language. just use
+xml for this.
 
-¶ the highlighting+snippet selection system should translate these raw offsets
-into Selection() objects that represent an interval into the XML tree. these
-selection objects should hold at least:
+should be able to fully highlight the search representation, for debugging, and
+as a first step towards the real highlighting stuff. would also be useful to
+index texts that are not xml-encoded.
+
+## the highlighting+snippet selection system.
+
+it should translate these raw search offsets into Selection() objects that
+represent an interval into the XML tree. these selection objects should hold at
+least:
 
 	start node, start offset into this node
-	end node, end offset into this node
+	end node, end offset into thisnode
 
-we should be able to extract both the search string (for debugging, mostly) and
-the display string from selection objects.
+the start node and end node should both be text nodes. we should be able to
+extract both the search string and the display string from selection objects,
+for debugging.
+
+note that selection objects might overlap.
+
+once we are done creating selection objects for all matching passages in a
+document, we can either display the whole document with matching passages
+highlighted; or display the whole document after the user clicks on a matching
+document.
+
+but we also must create snippets for the results page. to do that, create
+Snippet() objects that behave like Selection() objects. remains to determine how
+exactly to select snippets.
 
 
 ## highlighting
