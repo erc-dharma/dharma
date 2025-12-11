@@ -27,6 +27,11 @@ class And(Node):
 		buf += ")"
 		return buf
 
+	def _complete_fields(self, name):
+		for i, child in enumerate(self.children):
+			self.children[i] = child._complete_fields(name)
+		return self
+
 class Or(Node):
 
 	def __init__(self, *children):
@@ -41,6 +46,11 @@ class Or(Node):
 		buf += ")"
 		return buf
 
+	def _complete_fields(self, name):
+		for i, child in enumerate(self.children):
+			self.children[i] = child._complete_fields(name)
+		return self
+
 class Not(Node):
 
 	def __init__(self, child=None):
@@ -52,6 +62,10 @@ class Not(Node):
 		buf += ")"
 		return buf
 
+	def _complete_fields(self, name):
+		self.child = self.child._complete_fields(name)
+		return self
+
 class Field(Node):
 
 	def __init__(self, name, child=None):
@@ -59,12 +73,22 @@ class Field(Node):
 		self.child = child
 
 	def __repr__(self):
-		return f"{self.name}:{self.child!r}"
+		return f"{self.name or '<null>'}:{self.child!r}"
+
+	def _complete_fields(self, name):
+		if not self.name:
+			self.name = name
+		if isinstance(self.child, str):
+			return self
+		return self.child._complete_fields(self.name)
 
 class _Null(Node):
 
 	def __repr__(self):
 		return "<null>"
+
+	def _complete_fields(self, name):
+		return self
 
 Null = _Null()
 
@@ -72,10 +96,7 @@ def mkbinop(klass, l, r):
 	if isinstance(l, klass):
 		l.children.append(r)
 		return l
-	elif isinstance(r, klass):
-		r.children.append(l)
-		return r
-	return And(l, r)
+	return klass(l, r)
 
 def mkand(*elems):
 	return mkbinop(And, *elems)
@@ -107,54 +128,26 @@ class GeneratedParser(Parser):
             and
             (self.expect('ENDMARKER'))
         ):
-            return r;
+            return r . _complete_fields ( "_default" );
         self._reset(mark)
         return None;
 
     @memoize
     def Exprs(self) -> Optional[Any]:
-        # Exprs: FieldExpr+
+        # Exprs: Expr*
+        # nullable=True
         mark = self._mark()
         if (
-            (r := self._loop1_1())
+            (r := self._loop0_1(),)
         ):
             return mkmerge ( * r );
         self._reset(mark)
         return None;
 
     @memoize
-    def FieldExpr(self) -> Optional[Any]:
-        # FieldExpr: Text ':' BoolExpr | BoolExpr
+    def Expr(self) -> Optional[Any]:
+        # Expr: OrExpr
         mark = self._mark()
-        if (
-            (name := self.Text())
-            and
-            (self.expect(':'))
-            and
-            (r := self.BoolExpr())
-        ):
-            return Field ( name , r );
-        self._reset(mark)
-        if (
-            (BoolExpr := self.BoolExpr())
-        ):
-            return BoolExpr;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def BoolExpr(self) -> Optional[Any]:
-        # BoolExpr: '(' OrExpr ')' | OrExpr
-        mark = self._mark()
-        if (
-            (self.expect('('))
-            and
-            (r := self.OrExpr())
-            and
-            (self.expect(')'))
-        ):
-            return r;
-        self._reset(mark)
         if (
             (OrExpr := self.OrExpr())
         ):
@@ -162,14 +155,54 @@ class GeneratedParser(Parser):
         self._reset(mark)
         return None;
 
+    @memoize
+    def FieldExpr(self) -> Optional[Any]:
+        # FieldExpr: Text (':' | '=') PrimaryExpr | PrimaryExpr
+        mark = self._mark()
+        if (
+            (name := self.Text())
+            and
+            (self._tmp_2())
+            and
+            (r := self.PrimaryExpr())
+        ):
+            return Field ( name , r );
+        self._reset(mark)
+        if (
+            (PrimaryExpr := self.PrimaryExpr())
+        ):
+            return PrimaryExpr;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def PrimaryExpr(self) -> Optional[Any]:
+        # PrimaryExpr: '(' Expr ')' | Text
+        mark = self._mark()
+        if (
+            (self.expect('('))
+            and
+            (r := self.Expr())
+            and
+            (self.expect(')'))
+        ):
+            return r;
+        self._reset(mark)
+        if (
+            (r := self.Text())
+        ):
+            return Field ( None , r );
+        self._reset(mark)
+        return None;
+
     @memoize_left_rec
     def OrExpr(self) -> Optional[Any]:
-        # OrExpr: OrExpr "or" AndExpr | AndExpr
+        # OrExpr: OrExpr ("or" | "OR") AndExpr | AndExpr
         mark = self._mark()
         if (
             (r := self.OrExpr())
             and
-            (self.expect("or"))
+            (self._tmp_3())
             and
             (s := self.AndExpr())
         ):
@@ -184,12 +217,12 @@ class GeneratedParser(Parser):
 
     @memoize_left_rec
     def AndExpr(self) -> Optional[Any]:
-        # AndExpr: AndExpr "and" NotExpr | NotExpr
+        # AndExpr: AndExpr ("and" | "AND") NotExpr | NotExpr
         mark = self._mark()
         if (
             (r := self.AndExpr())
             and
-            (self.expect("and"))
+            (self._tmp_4())
             and
             (s := self.NotExpr())
         ):
@@ -204,31 +237,26 @@ class GeneratedParser(Parser):
 
     @memoize
     def NotExpr(self) -> Optional[Any]:
-        # NotExpr: "not" NotExpr | Text
+        # NotExpr: ("not" | "NOT") NotExpr | FieldExpr
         mark = self._mark()
         if (
-            (self.expect("not"))
+            (self._tmp_5())
             and
             (r := self.NotExpr())
         ):
             return Not ( r );
         self._reset(mark)
         if (
-            (Text := self.Text())
+            (FieldExpr := self.FieldExpr())
         ):
-            return Text;
+            return FieldExpr;
         self._reset(mark)
         return None;
 
     @memoize
     def Text(self) -> Optional[Any]:
-        # Text: STRING | NAME
+        # Text: NAME
         mark = self._mark()
-        if (
-            (r := self.string())
-        ):
-            return r . string;
-        self._reset(mark)
         if (
             (r := self.name())
         ):
@@ -237,20 +265,84 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop1_1(self) -> Optional[Any]:
-        # _loop1_1: FieldExpr
+    def _loop0_1(self) -> Optional[Any]:
+        # _loop0_1: Expr
         mark = self._mark()
         children = []
         while (
-            (FieldExpr := self.FieldExpr())
+            (Expr := self.Expr())
         ):
-            children.append(FieldExpr)
+            children.append(Expr)
             mark = self._mark()
         self._reset(mark)
         return children;
 
+    @memoize
+    def _tmp_2(self) -> Optional[Any]:
+        # _tmp_2: ':' | '='
+        mark = self._mark()
+        if (
+            (literal := self.expect(':'))
+        ):
+            return literal;
+        self._reset(mark)
+        if (
+            (literal := self.expect('='))
+        ):
+            return literal;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_3(self) -> Optional[Any]:
+        # _tmp_3: "or" | "OR"
+        mark = self._mark()
+        if (
+            (literal := self.expect("or"))
+        ):
+            return literal;
+        self._reset(mark)
+        if (
+            (literal := self.expect("OR"))
+        ):
+            return literal;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_4(self) -> Optional[Any]:
+        # _tmp_4: "and" | "AND"
+        mark = self._mark()
+        if (
+            (literal := self.expect("and"))
+        ):
+            return literal;
+        self._reset(mark)
+        if (
+            (literal := self.expect("AND"))
+        ):
+            return literal;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_5(self) -> Optional[Any]:
+        # _tmp_5: "not" | "NOT"
+        mark = self._mark()
+        if (
+            (literal := self.expect("not"))
+        ):
+            return literal;
+        self._reset(mark)
+        if (
+            (literal := self.expect("NOT"))
+        ):
+            return literal;
+        self._reset(mark)
+        return None;
+
     KEYWORDS = ()
-    SOFT_KEYWORDS = ('and', 'not', 'or')
+    SOFT_KEYWORDS = ('AND', 'NOT', 'OR', 'and', 'not', 'or')
 
 
 if __name__ == '__main__':

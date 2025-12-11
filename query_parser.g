@@ -17,6 +17,11 @@ class And(Node):
 		buf += ")"
 		return buf
 
+	def _complete_fields(self, name):
+		for i, child in enumerate(self.children):
+			self.children[i] = child._complete_fields(name)
+		return self
+
 class Or(Node):
 
 	def __init__(self, *children):
@@ -31,6 +36,11 @@ class Or(Node):
 		buf += ")"
 		return buf
 
+	def _complete_fields(self, name):
+		for i, child in enumerate(self.children):
+			self.children[i] = child._complete_fields(name)
+		return self
+
 class Not(Node):
 
 	def __init__(self, child=None):
@@ -42,6 +52,10 @@ class Not(Node):
 		buf += ")"
 		return buf
 
+	def _complete_fields(self, name):
+		self.child = self.child._complete_fields(name)
+		return self
+
 class Field(Node):
 
 	def __init__(self, name, child=None):
@@ -49,12 +63,22 @@ class Field(Node):
 		self.child = child
 
 	def __repr__(self):
-		return f"{self.name}:{self.child!r}"
+		return f"{self.name or '<null>'}:{self.child!r}"
+
+	def _complete_fields(self, name):
+		if not self.name:
+			self.name = name
+		if isinstance(self.child, str):
+			return self
+		return self.child._complete_fields(self.name)
 
 class _Null(Node):
 
 	def __repr__(self):
 		return "<null>"
+
+	def _complete_fields(self, name):
+		return self
 
 Null = _Null()
 
@@ -62,10 +86,7 @@ def mkbinop(klass, l, r):
 	if isinstance(l, klass):
 		l.children.append(r)
 		return l
-	elif isinstance(r, klass):
-		r.children.append(l)
-		return r
-	return And(l, r)
+	return klass(l, r)
 
 def mkand(*elems):
 	return mkbinop(And, *elems)
@@ -86,30 +107,30 @@ def mkmerge(*elems):
 
 '''
 
-start: r=Exprs $ { r }
+start: r=Exprs $ { r._complete_fields("_default") }
 
-Exprs: r=FieldExpr+ { mkmerge(*r) }
+Exprs: r=Expr* { mkmerge(*r) }
+
+Expr: OrExpr
 
 FieldExpr:
-	| name=Text ':' r=BoolExpr { Field(name, r) }
-	| BoolExpr
+	| name=Text (':' | '=') r=PrimaryExpr { Field(name, r) }
+	| PrimaryExpr
 
-BoolExpr:
-	| '(' r=OrExpr ')' { r }
-	| OrExpr
+PrimaryExpr:
+	| '(' r=Expr ')' { r }
+	| r=Text { Field(None, r) }
 
 OrExpr:
-	| r=OrExpr "or" s=AndExpr { mkor(r, s) }
+	| r=OrExpr ("or" | "OR") s=AndExpr { mkor(r, s) }
 	| AndExpr
 
 AndExpr:
-	| r=AndExpr "and" s=NotExpr { mkand(r, s) }
+	| r=AndExpr ("and" | "AND") s=NotExpr { mkand(r, s) }
 	| NotExpr
 
 NotExpr:
-	| "not" r=NotExpr { Not(r) }
-	| Text
+	| ("not" | "NOT") r=NotExpr { Not(r) }
+	| FieldExpr
 
-Text:
-	| r=STRING { r.string }
-	| r=NAME { r.string }
+Text: r=NAME { r.string }
