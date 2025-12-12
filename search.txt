@@ -3,7 +3,7 @@ three modules: query tree; search system; highlighting+snippets selection system
 ## query tree.
 
 query strings must be convertible to a tree. and we should be able to patch this
-tree manually. and we should be able to patch this tree to add extra search
+tree manually to add extra search
 criteria. for now, use a basic search syntax similar to lucene and friends. it
 doesn't really help to have a more sophisticated syntax because then we would
 also have to write extra code for converting the search form data to this
@@ -14,6 +14,22 @@ in fact should have two query languages:
 * the one for the user (lucene-like)
 * the one used by the system (for serializing queries and display them). used
   sexp for this.
+
+## to search representation
+
+need to store it in the db, would take too long to do that live. it should be
+parseable quickly in a low level language, so use a semi-binary encoding, maybe
+with length-prefixed strings. maybe just use json for now for easier debugging;
+stick everything into a map, like:
+
+	{
+		"title.representation1": "sometext",
+		"title.representation2": "someothertext",
+		"body.representation1": "blablabla",
+		...
+	}
+
+should be enough for now. this can be encoded more efficiently later on.
 
 
 ## the search system.
@@ -41,8 +57,9 @@ as a series of intervals, with the following data:
 	match start offset in the search representation of the field
 	match length
 	and also maybe later:
-		an index indicating which word/phrase matched in the query
-		maybe some other match attributes
+	* an index indicating which word/phrase matched in the query; could be
+	  used for adding the search phrase in a tooltip
+	* maybe some other match attributes
 
 this info should be serializable, for easier inspection, and to make it possible
 later on to rewrite the search system in a more efficient language. just use
