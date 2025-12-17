@@ -56,7 +56,7 @@ Prosodic Patterns
 </div>
 <div class="card-body">
 % if item["xml"] or item["prosody"] or item["gana"]:
-<div class="data">
+<div class="card-data">
 	% if item["xml"]:
 	<div>XML</div>
 	<div><code>{{item["xml"]}}</code></div>

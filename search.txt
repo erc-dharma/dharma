@@ -19,8 +19,7 @@ in fact should have two query languages:
 
 need to store it in the db, would take too long to do that live. it should be
 parseable quickly in a low level language, so use a semi-binary encoding, maybe
-with length-prefixed strings. maybe just use json for now for easier debugging;
-stick everything into a map, like:
+with length-prefixed strings. for now just use json, for easier debugging.
 
 	{
 		"title.representation1": "sometext",
@@ -30,7 +29,6 @@ stick everything into a map, like:
 	}
 
 should be enough for now. this can be encoded more efficiently later on.
-
 
 ## the search system.
 

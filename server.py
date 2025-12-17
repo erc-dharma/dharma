@@ -518,6 +518,14 @@ def display_biblio_errors():
 		group by short_title having count(*) > 1""").fetchall()
 	return flask.render_template("biblio_errors.tpl", entries=entries)
 
+@app.get("/development-of-tamil-fractions")
+def display_development_of_tamil_fractions():
+	return flask.render_template("development-of-tamil-fractions.tpl")
+
+@app.get("/chola-fractional-calculations")
+def display_chola_fractional_calculations():
+	return flask.render_template("chola-fractional-calculations.tpl")
+
 @app.get("/cmd/count-biblio-short-title")
 @common.transaction("texts")
 def count_biblio_short_title():

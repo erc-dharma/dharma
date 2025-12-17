@@ -1,0 +1,2105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<office:document xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" xmlns:css3t="http://www.w3.org/TR/css3-text/" xmlns:grddl="http://www.w3.org/2003/g/data-view#" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xforms="http://www.w3.org/2002/xforms" xmlns:dom="http://www.w3.org/2001/xml-events" xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0" xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0" xmlns:math="http://www.w3.org/1998/Math/MathML" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:ooo="http://openoffice.org/2004/office" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" xmlns:ooow="http://openoffice.org/2004/writer" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:drawooo="http://openoffice.org/2010/draw" xmlns:oooc="http://openoffice.org/2004/calc" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:calcext="urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:of="urn:oasis:names:tc:opendocument:xmlns:of:1.2" xmlns:tableooo="http://openoffice.org/2009/table" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:dr3d="urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0" xmlns:rpt="http://openoffice.org/2005/report" xmlns:formx="urn:openoffice:names:experimental:ooxml-odf-interop:xmlns:form:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:field="urn:openoffice:names:experimental:ooo-ms-interop:xmlns:field:1.0" xmlns:number="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0" office:version="1.4" office:mimetype="application/vnd.oasis.opendocument.spreadsheet">
+ <office:meta><dc:creator>Renato Akatzin Dávalos Ramírez</dc:creator><meta:creation-date>2025-10-09T06:55:44</meta:creation-date><dc:date>2025-11-27T11:19:10</dc:date><meta:generator>LibreOffice/25.2.7.2$Linux_X86_64 LibreOffice_project/520$Build-2</meta:generator><meta:document-statistic meta:table-count="1" meta:cell-count="403" meta:object-count="0"/><meta:user-defined meta:name="AppVersion">16.0300</meta:user-defined></office:meta>
+ <office:settings>
+  <config:config-item-set config:name="ooo:view-settings">
+   <config:config-item config:name="VisibleAreaTop" config:type="int">0</config:config-item>
+   <config:config-item config:name="VisibleAreaLeft" config:type="int">0</config:config-item>
+   <config:config-item config:name="VisibleAreaWidth" config:type="int">105265</config:config-item>
+   <config:config-item config:name="VisibleAreaHeight" config:type="int">87507</config:config-item>
+   <config:config-item-map-indexed config:name="Views">
+    <config:config-item-map-entry>
+     <config:config-item config:name="ViewId" config:type="string">view1</config:config-item>
+     <config:config-item-map-named config:name="Tables">
+      <config:config-item-map-entry config:name="Tabellenblatt1">
+       <config:config-item config:name="CursorPositionX" config:type="int">6</config:config-item>
+       <config:config-item config:name="CursorPositionY" config:type="int">49</config:config-item>
+       <config:config-item config:name="ActiveSplitRange" config:type="short">2</config:config-item>
+       <config:config-item config:name="PositionLeft" config:type="int">5</config:config-item>
+       <config:config-item config:name="PositionRight" config:type="int">0</config:config-item>
+       <config:config-item config:name="PositionTop" config:type="int">43</config:config-item>
+       <config:config-item config:name="PositionBottom" config:type="int">46</config:config-item>
+       <config:config-item config:name="ZoomType" config:type="short">0</config:config-item>
+       <config:config-item config:name="ZoomValue" config:type="int">90</config:config-item>
+       <config:config-item config:name="PageViewZoomValue" config:type="int">60</config:config-item>
+       <config:config-item config:name="ShowGrid" config:type="boolean">true</config:config-item>
+       <config:config-item config:name="AnchoredTextOverflowLegacy" config:type="boolean">false</config:config-item>
+       <config:config-item config:name="LegacySingleLineFontwork" config:type="boolean">false</config:config-item>
+       <config:config-item config:name="ConnectorUseSnapRect" config:type="boolean">false</config:config-item>
+       <config:config-item config:name="IgnoreBreakAfterMultilineField" config:type="boolean">false</config:config-item>
+      </config:config-item-map-entry>
+     </config:config-item-map-named>
+     <config:config-item config:name="ActiveTable" config:type="string">Tabellenblatt1</config:config-item>
+     <config:config-item config:name="HorizontalScrollbarWidth" config:type="int">1767</config:config-item>
+     <config:config-item config:name="ZoomType" config:type="short">0</config:config-item>
+     <config:config-item config:name="ZoomValue" config:type="int">90</config:config-item>
+     <config:config-item config:name="PageViewZoomValue" config:type="int">60</config:config-item>
+     <config:config-item config:name="ShowPageBreakPreview" config:type="boolean">false</config:config-item>
+     <config:config-item config:name="ShowZeroValues" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="ShowNotes" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="ShowNoteAuthor" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="ShowFormulasMarks" config:type="boolean">false</config:config-item>
+     <config:config-item config:name="ShowGrid" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="GridColor" config:type="int">-1</config:config-item>
+     <config:config-item config:name="ShowPageBreaks" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="HasColumnRowHeaders" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="HasSheetTabs" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="IsOutlineSymbolsSet" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="IsValueHighlightingEnabled" config:type="boolean">false</config:config-item>
+     <config:config-item config:name="IsSnapToRaster" config:type="boolean">false</config:config-item>
+     <config:config-item config:name="RasterIsVisible" config:type="boolean">false</config:config-item>
+     <config:config-item config:name="RasterResolutionX" config:type="int">1000</config:config-item>
+     <config:config-item config:name="RasterResolutionY" config:type="int">1000</config:config-item>
+     <config:config-item config:name="RasterSubdivisionX" config:type="int">1</config:config-item>
+     <config:config-item config:name="RasterSubdivisionY" config:type="int">1</config:config-item>
+     <config:config-item config:name="IsRasterAxisSynchronized" config:type="boolean">true</config:config-item>
+     <config:config-item config:name="FormulaBarHeight" config:type="short">1</config:config-item>
+     <config:config-item config:name="AnchoredTextOverflowLegacy" config:type="boolean">false</config:config-item>
+     <config:config-item config:name="LegacySingleLineFontwork" config:type="boolean">false</config:config-item>
+     <config:config-item config:name="ConnectorUseSnapRect" config:type="boolean">false</config:config-item>
+     <config:config-item config:name="IgnoreBreakAfterMultilineField" config:type="boolean">false</config:config-item>
+    </config:config-item-map-entry>
+   </config:config-item-map-indexed>
+  </config:config-item-set>
+  <config:config-item-set config:name="ooo:configuration-settings">
+   <config:config-item config:name="AllowPrintJobCancel" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="ApplyUserData" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="AutoCalculate" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="CharacterCompressionType" config:type="short">0</config:config-item>
+   <config:config-item config:name="EmbedAsianScriptFonts" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="EmbedComplexScriptFonts" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="EmbedFonts" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="EmbedLatinScriptFonts" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="EmbedOnlyUsedFonts" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="GridColor" config:type="int">-1</config:config-item>
+   <config:config-item config:name="HasColumnRowHeaders" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="HasSheetTabs" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="ImagePreferredDPI" config:type="int">0</config:config-item>
+   <config:config-item config:name="IsDocumentShared" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="IsKernAsianPunctuation" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="IsOutlineSymbolsSet" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="IsRasterAxisSynchronized" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="IsSnapToRaster" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="LinkUpdateMode" config:type="short">3</config:config-item>
+   <config:config-item config:name="LoadReadonly" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="PrinterName" config:type="string"/>
+   <config:config-item config:name="PrinterPaperFromSetup" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="PrinterSetup" config:type="base64Binary"/>
+   <config:config-item config:name="RasterIsVisible" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="RasterResolutionX" config:type="int">1000</config:config-item>
+   <config:config-item config:name="RasterResolutionY" config:type="int">1000</config:config-item>
+   <config:config-item config:name="RasterSubdivisionX" config:type="int">1</config:config-item>
+   <config:config-item config:name="RasterSubdivisionY" config:type="int">1</config:config-item>
+   <config:config-item config:name="SaveThumbnail" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="SaveVersionOnClose" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="ShowFormulasMarks" config:type="boolean">false</config:config-item>
+   <config:config-item config:name="ShowGrid" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="ShowNoteAuthor" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="ShowNotes" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="ShowPageBreaks" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="ShowZeroValues" config:type="boolean">true</config:config-item>
+   <config:config-item config:name="SyntaxStringRef" config:type="short">2</config:config-item>
+   <config:config-item config:name="UpdateFromTemplate" config:type="boolean">true</config:config-item>
+  </config:config-item-set>
+ </office:settings>
+ <office:scripts>
+  <office:script script:language="ooo:Basic">
+   <ooo:libraries xmlns:ooo="http://openoffice.org/2004/office" xmlns:xlink="http://www.w3.org/1999/xlink"/>
+  </office:script>
+ </office:scripts>
+ <office:font-face-decls>
+  <style:font-face style:name="Arial" svg:font-family="Arial"/>
+  <style:font-face style:name="Arial1" svg:font-family="Arial" style:font-family-generic="swiss"/>
+  <style:font-face style:name="Liberation Sans" svg:font-family="&apos;Liberation Sans&apos;" style:font-family-generic="swiss" style:font-pitch="variable"/>
+  <style:font-face style:name="Noto Sans CJK SC" svg:font-family="&apos;Noto Sans CJK SC&apos;" style:font-family-generic="system" style:font-pitch="variable"/>
+  <style:font-face style:name="Noto Sans Devanagari" svg:font-family="&apos;Noto Sans Devanagari&apos;" style:font-family-generic="system" style:font-pitch="variable"/>
+  <style:font-face style:name="Times New Roman" svg:font-family="&apos;Times New Roman&apos;" style:font-family-generic="roman"/>
+ </office:font-face-decls>
+ <office:styles>
+  <style:default-style style:family="table-cell">
+   <style:paragraph-properties style:tab-stop-distance="1.25cm"/>
+   <style:text-properties style:font-name="Liberation Sans" fo:font-size="10pt" fo:language="en" fo:country="US" style:font-name-asian="Noto Sans CJK SC" style:font-size-asian="10pt" style:language-asian="zh" style:country-asian="CN" style:font-name-complex="Noto Sans Devanagari" style:font-size-complex="10pt" style:language-complex="hi" style:country-complex="IN"/>
+  </style:default-style>
+  <style:default-style style:family="graphic">
+   <style:graphic-properties svg:stroke-color="#3465a4" draw:fill-color="#729fcf" fo:wrap-option="no-wrap" draw:shadow-offset-x="0.3cm" draw:shadow-offset-y="0.3cm" style:writing-mode="page"/>
+   <style:paragraph-properties style:text-autospace="ideograph-alpha" style:punctuation-wrap="simple" style:line-break="strict" style:writing-mode="page" style:font-independent-line-spacing="false">
+    <style:tab-stops/>
+   </style:paragraph-properties>
+   <style:text-properties style:use-window-font-color="true" loext:opacity="0%" fo:font-family="&apos;Liberation Serif&apos;" style:font-family-generic="roman" style:font-pitch="variable" fo:font-size="12pt" fo:language="en" fo:country="US" style:letter-kerning="true" style:font-family-asian="&apos;DejaVu Sans&apos;" style:font-family-generic-asian="system" style:font-pitch-asian="variable" style:font-size-asian="12pt" style:language-asian="zh" style:country-asian="CN" style:font-family-complex="&apos;Noto Sans&apos;" style:font-family-generic-complex="system" style:font-pitch-complex="variable" style:font-size-complex="12pt" style:language-complex="hi" style:country-complex="IN"/>
+  </style:default-style>
+  <style:style style:name="Default" style:family="graphic"/>
+  <style:style style:name="Note" style:family="graphic" style:parent-style-name="Default">
+   <style:graphic-properties draw:stroke="solid" draw:marker-start="Arrowheads_20_1" draw:marker-start-width="0.2cm" draw:marker-start-center="false" draw:fill="solid" draw:fill-color="#ffffc0" draw:auto-grow-height="true" draw:auto-grow-width="false" fo:padding-top="0.1cm" fo:padding-bottom="0.1cm" fo:padding-left="0.1cm" fo:padding-right="0.1cm" draw:shadow="visible" draw:shadow-offset-x="0.1cm" draw:shadow-offset-y="0.1cm"/>
+   <style:text-properties style:font-name="Liberation Sans" fo:font-family="&apos;Liberation Sans&apos;" style:font-family-generic="swiss" style:font-pitch="variable" fo:font-size="10pt" style:font-name-asian="Noto Sans CJK SC" style:font-family-asian="&apos;Noto Sans CJK SC&apos;" style:font-family-generic-asian="system" style:font-pitch-asian="variable" style:font-size-asian="10pt" style:font-name-complex="Noto Sans Devanagari" style:font-family-complex="&apos;Noto Sans Devanagari&apos;" style:font-family-generic-complex="system" style:font-pitch-complex="variable" style:font-size-complex="10pt"/>
+  </style:style>
+  <number:number-style style:name="N0">
+   <number:number number:min-integer-digits="1"/>
+  </number:number-style>
+  <number:date-style style:name="N119">
+   <number:day number:style="long"/>
+   <number:text>-</number:text>
+   <number:month number:textual="true"/>
+   <number:text>-</number:text>
+   <number:year/>
+  </number:date-style>
+  <number:date-style style:name="N120">
+   <number:day number:style="long"/>
+   <number:text>-</number:text>
+   <number:month number:textual="true"/>
+  </number:date-style>
+  <number:date-style style:name="N121">
+   <number:month number:textual="true"/>
+   <number:text>-</number:text>
+   <number:year/>
+  </number:date-style>
+  <number:time-style style:name="N122">
+   <number:hours/>
+   <number:text>:</number:text>
+   <number:minutes number:style="long"/>
+   <number:text> </number:text>
+   <number:am-pm/>
+  </number:time-style>
+  <number:time-style style:name="N123">
+   <number:hours/>
+   <number:text>:</number:text>
+   <number:minutes number:style="long"/>
+   <number:text>:</number:text>
+   <number:seconds number:style="long"/>
+   <number:text> </number:text>
+   <number:am-pm/>
+  </number:time-style>
+  <number:number-style style:name="N124P0" style:volatile="true">
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="1" number:grouping="true"/>
+  </number:number-style>
+  <number:number-style style:name="N124">
+   <number:text>-</number:text>
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="1" number:grouping="true"/>
+   <style:map style:condition="value()&gt;=0" style:apply-style-name="N124P0"/>
+  </number:number-style>
+  <number:number-style style:name="N125P0" style:volatile="true">
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="1" number:grouping="true"/>
+  </number:number-style>
+  <number:number-style style:name="N125">
+   <style:text-properties fo:color="#ff0000"/>
+   <number:text>-</number:text>
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="1" number:grouping="true"/>
+   <style:map style:condition="value()&gt;=0" style:apply-style-name="N125P0"/>
+  </number:number-style>
+  <number:number-style style:name="N126P0" style:volatile="true">
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1" number:grouping="true"/>
+  </number:number-style>
+  <number:number-style style:name="N126">
+   <number:text>-</number:text>
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1" number:grouping="true"/>
+   <style:map style:condition="value()&gt;=0" style:apply-style-name="N126P0"/>
+  </number:number-style>
+  <number:number-style style:name="N127P0" style:volatile="true">
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1" number:grouping="true"/>
+  </number:number-style>
+  <number:number-style style:name="N127">
+   <style:text-properties fo:color="#ff0000"/>
+   <number:text>-</number:text>
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1" number:grouping="true"/>
+   <style:map style:condition="value()&gt;=0" style:apply-style-name="N127P0"/>
+  </number:number-style>
+  <number:number-style style:name="N128P0" style:volatile="true">
+   <number:text loext:blank-width-char="-"> </number:text>
+   <number:fill-character> </number:fill-character>
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="1" number:grouping="true"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:number-style style:name="N128P1" style:volatile="true">
+   <number:text>-</number:text>
+   <number:fill-character> </number:fill-character>
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="1" number:grouping="true"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:number-style style:name="N128P2" style:volatile="true">
+   <number:text loext:blank-width-char="-"> </number:text>
+   <number:fill-character> </number:fill-character>
+   <number:text loext:blank-width-char="-1">- </number:text>
+  </number:number-style>
+  <number:text-style style:name="N128">
+   <number:text loext:blank-width-char="-"> </number:text>
+   <number:text-content/>
+   <number:text loext:blank-width-char="-"> </number:text>
+   <style:map style:condition="value()&gt;0" style:apply-style-name="N128P0"/>
+   <style:map style:condition="value()&lt;0" style:apply-style-name="N128P1"/>
+   <style:map style:condition="value()=0" style:apply-style-name="N128P2"/>
+  </number:text-style>
+  <number:number-style style:name="N129P0" style:volatile="true">
+   <number:text loext:blank-width-char="-"> £</number:text>
+   <number:fill-character> </number:fill-character>
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="1" number:grouping="true"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:number-style style:name="N129P1" style:volatile="true">
+   <number:text>-£</number:text>
+   <number:fill-character> </number:fill-character>
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="1" number:grouping="true"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:number-style style:name="N129P2" style:volatile="true">
+   <number:text loext:blank-width-char="-"> £</number:text>
+   <number:fill-character> </number:fill-character>
+   <number:text loext:blank-width-char="-1">- </number:text>
+  </number:number-style>
+  <number:text-style style:name="N129">
+   <number:text loext:blank-width-char="-"> </number:text>
+   <number:text-content/>
+   <number:text loext:blank-width-char="-"> </number:text>
+   <style:map style:condition="value()&gt;0" style:apply-style-name="N129P0"/>
+   <style:map style:condition="value()&lt;0" style:apply-style-name="N129P1"/>
+   <style:map style:condition="value()=0" style:apply-style-name="N129P2"/>
+  </number:text-style>
+  <number:number-style style:name="N130P0" style:volatile="true">
+   <number:text loext:blank-width-char="-"> </number:text>
+   <number:fill-character> </number:fill-character>
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1" number:grouping="true"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:number-style style:name="N130P1" style:volatile="true">
+   <number:text>-</number:text>
+   <number:fill-character> </number:fill-character>
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1" number:grouping="true"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:number-style style:name="N130P2" style:volatile="true">
+   <number:text loext:blank-width-char="-"> </number:text>
+   <number:fill-character> </number:fill-character>
+   <number:text>-</number:text>
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="2" loext:max-blank-integer-digits="2"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:text-style style:name="N130">
+   <number:text loext:blank-width-char="-"> </number:text>
+   <number:text-content/>
+   <number:text loext:blank-width-char="-"> </number:text>
+   <style:map style:condition="value()&gt;0" style:apply-style-name="N130P0"/>
+   <style:map style:condition="value()&lt;0" style:apply-style-name="N130P1"/>
+   <style:map style:condition="value()=0" style:apply-style-name="N130P2"/>
+  </number:text-style>
+  <number:number-style style:name="N131P0" style:volatile="true">
+   <number:text loext:blank-width-char="-"> £</number:text>
+   <number:fill-character> </number:fill-character>
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1" number:grouping="true"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:number-style style:name="N131P1" style:volatile="true">
+   <number:text>-£</number:text>
+   <number:fill-character> </number:fill-character>
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1" number:grouping="true"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:number-style style:name="N131P2" style:volatile="true">
+   <number:text loext:blank-width-char="-"> £</number:text>
+   <number:fill-character> </number:fill-character>
+   <number:text>-</number:text>
+   <number:number number:decimal-places="0" number:min-decimal-places="0" number:min-integer-digits="2" loext:max-blank-integer-digits="2"/>
+   <number:text loext:blank-width-char="-"> </number:text>
+  </number:number-style>
+  <number:text-style style:name="N131">
+   <number:text loext:blank-width-char="-"> </number:text>
+   <number:text-content/>
+   <number:text loext:blank-width-char="-"> </number:text>
+   <style:map style:condition="value()&gt;0" style:apply-style-name="N131P0"/>
+   <style:map style:condition="value()&lt;0" style:apply-style-name="N131P1"/>
+   <style:map style:condition="value()=0" style:apply-style-name="N131P2"/>
+  </number:text-style>
+  <number:time-style style:name="N132">
+   <number:minutes number:style="long"/>
+   <number:text>:</number:text>
+   <number:seconds number:style="long"/>
+  </number:time-style>
+  <number:time-style style:name="N133" number:truncate-on-overflow="false">
+   <number:hours/>
+   <number:text>:</number:text>
+   <number:minutes number:style="long"/>
+   <number:text>:</number:text>
+   <number:seconds number:style="long"/>
+  </number:time-style>
+  <number:time-style style:name="N134">
+   <number:minutes number:style="long"/>
+   <number:text>:</number:text>
+   <number:seconds number:style="long" number:decimal-places="1"/>
+  </number:time-style>
+  <number:number-style style:name="N135">
+   <number:scientific-number number:decimal-places="1" number:min-decimal-places="1" number:min-integer-digits="1" number:min-exponent-digits="1" number:exponent-interval="3" number:forced-exponent-sign="true"/>
+  </number:number-style>
+  <style:style style:name="Default" style:family="table-cell">
+   <style:table-cell-properties style:rotation-align="none" style:vertical-align="bottom"/>
+   <style:text-properties fo:color="#000000" style:font-name="Arial" fo:font-family="Arial" style:font-name-complex="Arial" style:font-family-complex="Arial"/>
+  </style:style>
+  <style:style style:name="Heading" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:font-size="24pt" fo:font-style="normal" fo:font-weight="bold" style:font-size-asian="24pt" style:font-style-asian="normal" style:font-weight-asian="bold" style:font-size-complex="24pt" style:font-style-complex="normal" style:font-weight-complex="bold"/>
+  </style:style>
+  <style:style style:name="Heading_20_1" style:display-name="Heading 1" style:family="table-cell" style:parent-style-name="Heading">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:font-size="18pt" style:font-size-asian="18pt" style:font-size-complex="18pt"/>
+  </style:style>
+  <style:style style:name="Heading_20_2" style:display-name="Heading 2" style:family="table-cell" style:parent-style-name="Heading">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:font-size="12pt" style:font-size-asian="12pt" style:font-size-complex="12pt"/>
+  </style:style>
+  <style:style style:name="Text" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+  </style:style>
+  <style:style style:name="Note" style:family="table-cell" style:parent-style-name="Text">
+   <style:table-cell-properties fo:background-color="#ffffcc" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" fo:wrap-option="no-wrap" fo:border="0.74pt solid #808080" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#333333"/>
+  </style:style>
+  <style:style style:name="Footnote" style:family="table-cell" style:parent-style-name="Text">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#808080" fo:font-style="italic" style:font-style-asian="italic" style:font-style-complex="italic"/>
+  </style:style>
+  <style:style style:name="Hyperlink" style:family="table-cell" style:parent-style-name="Text">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#0000ee" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="#0000ee"/>
+  </style:style>
+  <style:style style:name="Status" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+  </style:style>
+  <style:style style:name="Good" style:family="table-cell" style:parent-style-name="Status">
+   <style:table-cell-properties fo:background-color="#ccffcc" fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#006600"/>
+  </style:style>
+  <style:style style:name="Neutral" style:family="table-cell" style:parent-style-name="Status">
+   <style:table-cell-properties fo:background-color="#ffffcc" fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#996600"/>
+  </style:style>
+  <style:style style:name="Bad" style:family="table-cell" style:parent-style-name="Status">
+   <style:table-cell-properties fo:background-color="#ffcccc" fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#cc0000"/>
+  </style:style>
+  <style:style style:name="Warning" style:family="table-cell" style:parent-style-name="Status">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#cc0000"/>
+  </style:style>
+  <style:style style:name="Error" style:family="table-cell" style:parent-style-name="Status">
+   <style:table-cell-properties fo:background-color="#cc0000" fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#ffffff" fo:font-weight="bold" style:font-weight-asian="bold" style:font-weight-complex="bold"/>
+  </style:style>
+  <style:style style:name="Accent" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:font-weight="bold" style:font-weight-asian="bold" style:font-weight-complex="bold"/>
+  </style:style>
+  <style:style style:name="Accent_20_1" style:display-name="Accent 1" style:family="table-cell" style:parent-style-name="Accent">
+   <style:table-cell-properties fo:background-color="#000000" fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#ffffff"/>
+  </style:style>
+  <style:style style:name="Accent_20_2" style:display-name="Accent 2" style:family="table-cell" style:parent-style-name="Accent">
+   <style:table-cell-properties fo:background-color="#808080" fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:color="#ffffff"/>
+  </style:style>
+  <style:style style:name="Accent_20_3" style:display-name="Accent 3" style:family="table-cell" style:parent-style-name="Accent">
+   <style:table-cell-properties fo:background-color="#dddddd" fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+  </style:style>
+  <style:style style:name="Result" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:wrap-option="no-wrap" style:shrink-to-fit="false"/>
+   <style:text-properties fo:font-style="italic" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color" fo:font-weight="bold" style:font-style-asian="italic" style:font-weight-asian="bold" style:font-style-complex="italic" style:font-weight-complex="bold"/>
+  </style:style>
+  <draw:marker draw:name="Arrowheads_20_1" draw:display-name="Arrowheads 1" svg:viewBox="0 0 20 30" svg:d="M10 0l-10 30h20z"/>
+  <loext:theme loext:name="Sheets">
+   <loext:theme-colors loext:name="Sheets">
+    <loext:color loext:name="dark1" loext:color="#000000"/>
+    <loext:color loext:name="light1" loext:color="#ffffff"/>
+    <loext:color loext:name="dark2" loext:color="#000000"/>
+    <loext:color loext:name="light2" loext:color="#ffffff"/>
+    <loext:color loext:name="accent1" loext:color="#4285f4"/>
+    <loext:color loext:name="accent2" loext:color="#ea4335"/>
+    <loext:color loext:name="accent3" loext:color="#fbbc04"/>
+    <loext:color loext:name="accent4" loext:color="#34a853"/>
+    <loext:color loext:name="accent5" loext:color="#ff6d01"/>
+    <loext:color loext:name="accent6" loext:color="#46bdc6"/>
+    <loext:color loext:name="hyperlink" loext:color="#1155cc"/>
+    <loext:color loext:name="followed-hyperlink" loext:color="#1155cc"/>
+   </loext:theme-colors>
+  </loext:theme>
+ </office:styles>
+ <office:automatic-styles>
+  <style:style style:name="co1" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="1.207cm"/>
+  </style:style>
+  <style:style style:name="co2" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="2.708cm"/>
+  </style:style>
+  <style:style style:name="co3" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="3.882cm"/>
+  </style:style>
+  <style:style style:name="co4" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="3.752cm"/>
+  </style:style>
+  <style:style style:name="co5" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="5.84cm"/>
+  </style:style>
+  <style:style style:name="co6" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="9.497cm"/>
+  </style:style>
+  <style:style style:name="co7" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="12.074cm"/>
+  </style:style>
+  <style:style style:name="co8" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="7.08cm"/>
+  </style:style>
+  <style:style style:name="co9" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="12.106cm"/>
+  </style:style>
+  <style:style style:name="co10" style:family="table-column">
+   <style:table-column-properties fo:break-before="auto" style:column-width="2.48cm"/>
+  </style:style>
+  <style:style style:name="ro1" style:family="table-row">
+   <style:table-row-properties style:row-height="1.235cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro2" style:family="table-row">
+   <style:table-row-properties style:row-height="0.661cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro3" style:family="table-row">
+   <style:table-row-properties style:row-height="1.446cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro4" style:family="table-row">
+   <style:table-row-properties style:row-height="0.988cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro5" style:family="table-row">
+   <style:table-row-properties style:row-height="1.905cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro6" style:family="table-row">
+   <style:table-row-properties style:row-height="4.471cm" fo:break-before="auto" style:use-optimal-row-height="false"/>
+  </style:style>
+  <style:style style:name="ro7" style:family="table-row">
+   <style:table-row-properties style:row-height="2.364cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro8" style:family="table-row">
+   <style:table-row-properties style:row-height="0.953cm" fo:break-before="auto" style:use-optimal-row-height="false"/>
+  </style:style>
+  <style:style style:name="ro9" style:family="table-row">
+   <style:table-row-properties style:row-height="2.822cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro10" style:family="table-row">
+   <style:table-row-properties style:row-height="3.739cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro11" style:family="table-row">
+   <style:table-row-properties style:row-height="5.115cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro12" style:family="table-row">
+   <style:table-row-properties style:row-height="3.281cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ro13" style:family="table-row">
+   <style:table-row-properties style:row-height="1.799cm" fo:break-before="auto" style:use-optimal-row-height="false"/>
+  </style:style>
+  <style:style style:name="ro14" style:family="table-row">
+   <style:table-row-properties style:row-height="0.476cm" fo:break-before="auto" style:use-optimal-row-height="false"/>
+  </style:style>
+  <style:style style:name="ro15" style:family="table-row">
+   <style:table-row-properties style:row-height="0.529cm" fo:break-before="auto" style:use-optimal-row-height="false"/>
+  </style:style>
+  <style:style style:name="ta1" style:family="table" style:master-page-name="PageStyle_5f_Tabellenblatt1">
+   <style:table-properties table:display="true" style:writing-mode="lr-tb"/>
+  </style:style>
+  <number:number-style style:name="N2">
+   <number:number number:decimal-places="2" number:min-decimal-places="2" number:min-integer-digits="1"/>
+  </number:number-style>
+  <number:text-style style:name="N100">
+   <number:text-content/>
+  </number:text-style>
+  <style:style style:name="ce1" style:family="table-cell" style:parent-style-name="Default" style:data-style-name="N100">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="15pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="bold" style:font-size-asian="15pt" style:font-style-asian="normal" style:font-weight-asian="bold" style:font-name-complex="Times New Roman" style:font-size-complex="15pt" style:font-style-complex="normal" style:font-weight-complex="bold">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce2" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#cfe2f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="15pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="bold" style:font-size-asian="15pt" style:font-style-asian="normal" style:font-weight-asian="bold" style:font-name-complex="Times New Roman" style:font-size-complex="15pt" style:font-style-complex="normal" style:font-weight-complex="bold">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce3" style:family="table-cell" style:parent-style-name="Default" style:data-style-name="N100">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce4" style:family="table-cell" style:parent-style-name="Default" style:data-style-name="N100">
+   <style:table-cell-properties fo:background-color="#f3f3f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce5" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#cfe2f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="bold" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="bold" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="bold">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce6" style:family="table-cell" style:parent-style-name="Default" style:data-style-name="N100">
+   <style:table-cell-properties fo:background-color="#f3f3f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce7" style:family="table-cell" style:parent-style-name="Default" style:data-style-name="N100">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce8" style:family="table-cell" style:parent-style-name="Default" style:data-style-name="N100">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="value-type" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce9" style:family="table-cell" style:parent-style-name="Default" style:data-style-name="N100">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="start" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce10" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:rotation-align="none"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Arial1" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Arial1" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce11" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:border-bottom="0.74pt solid #000000" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="no-wrap" fo:border-left="none" style:direction="ltr" fo:border-right="none" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" fo:border-top="0.74pt solid #000000" style:vertical-align="bottom" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties style:use-window-font-color="true" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Arial1" fo:font-size="15pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="15pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Arial1" style:font-size-complex="15pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce12" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:border-bottom="0.74pt solid #000000" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="no-wrap" fo:border-left="none" style:direction="ltr" fo:border-right="none" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" fo:border-top="0.74pt solid #000000" style:vertical-align="bottom" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties style:use-window-font-color="true" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Arial1" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Arial1" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce13" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="15pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="bold" style:font-size-asian="15pt" style:font-style-asian="normal" style:font-weight-asian="bold" style:font-name-complex="Times New Roman" style:font-size-complex="15pt" style:font-style-complex="normal" style:font-weight-complex="bold">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce14" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce15" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#f3f3f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce16" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce17" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#f3f3f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce18" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="value-type" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce19" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="value-type" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce20" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="start" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce21" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="bold" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="bold" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="bold">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce22" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#f3f3f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="bold" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="bold" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="bold">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce23" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#f3f3f3" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="no-wrap" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce24" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#f3f3f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="italic" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="italic" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="italic" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce25" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:border-bottom="0.74pt solid #000000" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="no-wrap" fo:border-left="none" style:direction="ltr" fo:border-right="0.74pt solid #000000" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" fo:border-top="0.74pt solid #000000" style:vertical-align="bottom" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties style:use-window-font-color="true" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Arial1" fo:font-size="15pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="15pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Arial1" style:font-size-complex="15pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce26" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:border-bottom="0.74pt solid #000000" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="no-wrap" fo:border-left="none" style:direction="ltr" fo:border-right="0.74pt solid #000000" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" fo:border-top="0.74pt solid #000000" style:vertical-align="bottom" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties style:use-window-font-color="true" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Arial1" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Arial1" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="ce27" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="15pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="15pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="15pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce28" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#cfe2f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="15pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="15pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="15pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:style style:name="ce29" style:family="table-cell" style:parent-style-name="Default">
+   <style:table-cell-properties fo:background-color="#cfe2f3" style:diagonal-bl-tr="none" style:diagonal-tl-br="none" style:text-align-source="fix" style:repeat-content="false" fo:wrap-option="wrap" fo:border="0.74pt solid #000000" style:direction="ltr" style:rotation-angle="0" style:rotation-align="none" style:shrink-to-fit="false" style:vertical-align="middle" loext:vertical-justify="auto"/>
+   <style:paragraph-properties fo:text-align="center" css3t:text-justify="auto" fo:margin-left="0cm" style:writing-mode="page"/>
+   <style:text-properties fo:color="#000000" style:text-outline="false" style:text-line-through-style="none" style:text-line-through-type="none" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-style="normal" fo:text-shadow="none" style:text-underline-style="none" fo:font-weight="normal" style:font-size-asian="12pt" style:font-style-asian="normal" style:font-weight-asian="normal" style:font-name-complex="Times New Roman" style:font-size-complex="12pt" style:font-style-complex="normal" style:font-weight-complex="normal">
+    <loext:char-complex-color loext:theme-type="dark1" loext:color-type="theme"/>
+   </style:text-properties>
+  </style:style>
+  <style:page-layout style:name="pm1">
+   <style:page-layout-properties style:first-page-number="continue" style:writing-mode="lr-tb"/>
+   <style:header-style>
+    <style:header-footer-properties fo:min-height="0.75cm" fo:margin-left="0cm" fo:margin-right="0cm" fo:margin-bottom="0.25cm"/>
+   </style:header-style>
+   <style:footer-style>
+    <style:header-footer-properties fo:min-height="0.75cm" fo:margin-left="0cm" fo:margin-right="0cm" fo:margin-top="0.25cm"/>
+   </style:footer-style>
+  </style:page-layout>
+  <style:page-layout style:name="pm2">
+   <style:page-layout-properties style:writing-mode="lr-tb"/>
+   <style:header-style>
+    <style:header-footer-properties fo:min-height="0.75cm" fo:margin-left="0cm" fo:margin-right="0cm" fo:margin-bottom="0.25cm" fo:border="1.5pt solid #000000" fo:padding="0.018cm" fo:background-color="#c0c0c0">
+     <style:background-image/>
+    </style:header-footer-properties>
+   </style:header-style>
+   <style:footer-style>
+    <style:header-footer-properties fo:min-height="0.75cm" fo:margin-left="0cm" fo:margin-right="0cm" fo:margin-top="0.25cm" fo:border="1.5pt solid #000000" fo:padding="0.018cm" fo:background-color="#c0c0c0">
+     <style:background-image/>
+    </style:header-footer-properties>
+   </style:footer-style>
+  </style:page-layout>
+  <style:page-layout style:name="pm3">
+   <style:page-layout-properties fo:page-width="21.001cm" fo:page-height="29.7cm" style:num-format="1" style:print-orientation="portrait" fo:margin-top="1.905cm" fo:margin-bottom="1.905cm" fo:margin-left="1.778cm" fo:margin-right="1.778cm" style:print-page-order="ttb" style:first-page-number="continue" style:scale-to="100%" style:writing-mode="lr-tb" style:print="charts drawings objects zero-values"/>
+   <style:header-style>
+    <style:header-footer-properties fo:min-height="0.75cm" fo:margin-left="0cm" fo:margin-right="0cm" fo:margin-bottom="0.25cm"/>
+   </style:header-style>
+   <style:footer-style>
+    <style:header-footer-properties fo:min-height="0.75cm" fo:margin-left="0cm" fo:margin-right="0cm" fo:margin-top="0.25cm"/>
+   </style:footer-style>
+  </style:page-layout>
+  <style:style style:name="T1" style:family="text">
+   <style:text-properties fo:color="#000000" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-weight="normal" style:text-underline-style="none" style:text-underline-color="font-color" style:text-line-through-type="none" fo:font-style="italic" style:text-outline="false" fo:text-shadow="none" style:text-position="0% 100%" style:font-name-complex="Times New Roman" style:font-size-asian="12pt" style:font-size-complex="12pt" style:font-weight-asian="normal" style:font-weight-complex="normal" style:font-style-asian="italic" style:font-style-complex="italic"/>
+  </style:style>
+  <style:style style:name="T2" style:family="text">
+   <style:text-properties fo:color="#000000" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-weight="normal" style:text-underline-style="none" style:text-underline-color="font-color" style:text-line-through-type="none" style:text-outline="false" fo:text-shadow="none" style:text-position="0% 100%" style:font-name-complex="Times New Roman" style:font-size-asian="12pt" style:font-size-complex="12pt" style:font-weight-asian="normal" style:font-weight-complex="normal" fo:font-style="normal" style:font-style-asian="normal" style:font-style-complex="normal"/>
+  </style:style>
+  <style:style style:name="T3" style:family="text">
+   <style:text-properties fo:color="#000000" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-weight="bold" style:text-underline-style="none" style:text-underline-color="font-color" style:text-line-through-type="none" fo:font-style="normal" style:text-outline="false" fo:text-shadow="none" style:text-position="0% 100%" style:font-name-complex="Times New Roman" style:font-size-asian="12pt" style:font-size-complex="12pt" style:font-weight-asian="bold" style:font-weight-complex="bold" style:font-style-asian="normal" style:font-style-complex="normal"/>
+  </style:style>
+  <style:style style:name="T4" style:family="text">
+   <style:text-properties fo:color="#000000" style:font-name="Times New Roman" fo:font-size="12pt" style:text-underline-style="none" style:text-underline-color="font-color" style:text-line-through-type="none" fo:font-style="normal" style:text-outline="false" fo:text-shadow="none" style:text-position="0% 100%" style:font-name-complex="Times New Roman" style:font-size-asian="12pt" style:font-size-complex="12pt" style:font-style-asian="normal" style:font-style-complex="normal" fo:font-weight="normal" style:font-weight-asian="normal" style:font-weight-complex="normal"/>
+  </style:style>
+  <style:style style:name="T5" style:family="text">
+   <style:text-properties fo:color="#000000" style:font-name="Times New Roman" fo:font-size="12pt" style:text-underline-style="none" style:text-underline-color="font-color" style:text-line-through-type="none" fo:font-style="normal" style:text-outline="false" fo:text-shadow="none" style:text-position="0% 100%" style:font-name-complex="Times New Roman" style:font-size-asian="12pt" style:font-size-complex="12pt" style:font-style-asian="normal" style:font-style-complex="normal" fo:font-weight="bold" style:font-weight-asian="bold" style:font-weight-complex="bold"/>
+  </style:style>
+  <style:style style:name="T6" style:family="text">
+   <style:text-properties fo:color="#000000" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-weight="normal" style:text-underline-style="none" style:text-underline-color="font-color" style:text-line-through-type="none" fo:font-style="normal" style:text-outline="false" fo:text-shadow="none" style:text-position="0% 100%" style:font-name-complex="Times New Roman" style:font-size-asian="12pt" style:font-size-complex="12pt" style:font-weight-asian="normal" style:font-weight-complex="normal" style:font-style-asian="normal" style:font-style-complex="normal"/>
+  </style:style>
+  <style:style style:name="T7" style:family="text">
+   <style:text-properties fo:color="#000000" style:font-name="Times New Roman" fo:font-size="12pt" fo:font-weight="normal" style:text-underline-style="none" style:text-underline-color="font-color" style:text-line-through-type="none" style:text-outline="false" fo:text-shadow="none" style:text-position="0% 100%" style:font-name-complex="Times New Roman" style:font-size-asian="12pt" style:font-size-complex="12pt" style:font-weight-asian="normal" style:font-weight-complex="normal" fo:font-style="italic" style:font-style-asian="italic" style:font-style-complex="italic"/>
+  </style:style>
+ </office:automatic-styles>
+ <office:master-styles>
+  <style:master-page style:name="Default" style:page-layout-name="pm1">
+   <style:header>
+    <text:p><text:sheet-name>???</text:sheet-name></text:p>
+   </style:header>
+   <style:header-left style:display="false"/>
+   <style:header-first style:display="false"/>
+   <style:footer>
+    <text:p>Page <text:page-number>1</text:page-number></text:p>
+   </style:footer>
+   <style:footer-left style:display="false"/>
+   <style:footer-first style:display="false"/>
+  </style:master-page>
+  <style:master-page style:name="Report" style:page-layout-name="pm2">
+   <style:header>
+    <style:region-left>
+     <text:p><text:sheet-name>???</text:sheet-name><text:s/>(<text:title>???</text:title>)</text:p>
+    </style:region-left>
+    <style:region-right>
+     <text:p><text:date style:data-style-name="N2" text:date-value="2025-12-16">00/00/0000</text:date>, <text:time>00:00:00</text:time></text:p>
+    </style:region-right>
+   </style:header>
+   <style:header-left style:display="false"/>
+   <style:header-first style:display="false"/>
+   <style:footer>
+    <text:p>Page <text:page-number>1</text:page-number><text:s/>/ <text:page-count>99</text:page-count></text:p>
+   </style:footer>
+   <style:footer-left style:display="false"/>
+   <style:footer-first style:display="false"/>
+  </style:master-page>
+  <style:master-page style:name="PageStyle_5f_Tabellenblatt1" style:display-name="PageStyle_Tabellenblatt1" style:page-layout-name="pm3">
+   <style:header style:display="false"/>
+   <style:header-left style:display="false"/>
+   <style:header-first style:display="false"/>
+   <style:footer style:display="false"/>
+   <style:footer-left style:display="false"/>
+   <style:footer-first style:display="false"/>
+  </style:master-page>
+ </office:master-styles>
+ <office:body>
+  <office:spreadsheet>
+   <table:calculation-settings table:case-sensitive="false" table:automatic-find-labels="false" table:use-regular-expressions="false" table:use-wildcards="true">
+    <table:iteration table:maximum-difference="0.0001"/>
+   </table:calculation-settings>
+   <table:table table:name="Tabellenblatt1" table:style-name="ta1">
+    <office:forms form:automatic-focus="false" form:apply-design-mode="false"/>
+    <table:table-column table:style-name="co1" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co2" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co3" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co4" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co5" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co6" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co7" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co8" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co9" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co10" table:number-columns-repeated="19" table:default-cell-style-name="ce10"/>
+    <table:table-column table:style-name="co10" table:number-columns-repeated="16356"/>
+    <table:table-row table:style-name="ro1">
+     <table:table-cell table:style-name="ce1" office:value-type="string" calcext:value-type="string">
+      <text:p>No.</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce1" office:value-type="string" calcext:value-type="string">
+      <text:p>Inscription (SII)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce13" office:value-type="string" calcext:value-type="string">
+      <text:p>King/Dinasty</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce13" office:value-type="string" calcext:value-type="string">
+      <text:p>Regnal year <text:s/>(c. year)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce13" office:value-type="string" calcext:value-type="string">
+      <text:p>Place</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce13" office:value-type="string" calcext:value-type="string">
+      <text:p>Description</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce13" office:value-type="string" calcext:value-type="string">
+      <text:p>Text in context (first number = line number)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce13" office:value-type="string" calcext:value-type="string">
+      <text:p>Word used for measurement</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce13" office:value-type="string" calcext:value-type="string">
+      <text:p>Notes</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce27" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro2">
+     <table:table-cell table:style-name="ce2" office:value-type="string" calcext:value-type="string" table:number-columns-spanned="9" table:number-rows-spanned="1">
+      <text:p>Pandya-Pallava Inscriptions</text:p>
+     </table:table-cell>
+     <table:covered-table-cell table:number-columns-repeated="7" table:style-name="ce11"/>
+     <table:covered-table-cell table:style-name="ce25"/>
+     <table:table-cell table:style-name="ce28" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="1" calcext:value-type="float">
+      <text:p>1</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>EI 17.16</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Jaṭilavarman, alias Varaguṇa I </text:p><text:p>(Pāṇḍya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>3rd (770)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Velvikkudi plates</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Endowment given to the engraver of royal order</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>154-155: <text:span text:style-name="T3">Iraṇṭu mā</text:span><text:span text:style-name="T4">-c cey[y]um oru puṉcey[y]um</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce4" office:value-type="float" office:value="2" calcext:value-type="float">
+      <text:p>2</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>14.45</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Śrivallabha </text:p><text:p>(Pāṇḍya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>no year (c. 815-862)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Sittanavasal, Kulattur taluk, Jaina temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land for priests of temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>7. º meḻukkuppuṟam oru <text:span text:style-name="T3">mūṉṟu māvum</text:span><text:span text:style-name="T4"> paḻukkaṟa muṟaiyāl vaḻipaṭuvāṉukk&apos; </text:span><text:span text:style-name="T5">araikkāṇi</text:span><text:span text:style-name="T4"> * mamai * nōkki </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">kāṇi </text:span><text:span text:style-name="T2">and </text:span><text:span text:style-name="T7">mā </text:span><text:span text:style-name="T2">seem to be used as units of land </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="3" calcext:value-type="float">
+      <text:p>3</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>14.78</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Śrivallabha</text:p><text:p>(Pāṇḍya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>46th (857)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Chinnamanur, Periyakulam taluk, Lakṣmīnārāyaṇa-perumaḷ temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Levying fine for wrong crop production</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>2: [vi]ḷaippār <text:span text:style-name="T3">māttāl</text:span><text:span text:style-name="T4"> pattu kācu taṇṭamum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro5">
+     <table:table-cell table:style-name="ce4" office:value-type="float" office:value="4" calcext:value-type="float">
+      <text:p>4</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>14.17</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Māṟañcaṭaiyaṉ, alias Varaguṇa II</text:p><text:p>(Pāṇḍya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>2nd (863)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Vijayanarayanam, Nanguneri taluk, Manōmaṇīśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of lands to temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>16-17: Im<text:span text:style-name="T3">muppatumā</text:span><text:span text:style-name="T4"> ni[la]ttilum</text:span></text:p><text:p><text:span text:style-name="T6">18-20: vaitta </text:span><text:span text:style-name="T5">pattu m(ā</text:span><text:span text:style-name="T4"> ni)lamu nīkki Itaṉuk(ku)-p </text:span><text:span text:style-name="T5">pattu mā</text:span><text:span text:style-name="T4"> nilamuñ</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>We follow Krishnan&apos;s identification of Māṟañcaṭaiyāṉ with Varaguṇa II Krishnan, K. G. 2002. I<text:span text:style-name="T1">nscriptions of the Early Pandyas: From c. 300 B.C. to 984 A.D</text:span><text:span text:style-name="T2">. New Delhi: Northern Book Centre. p. 33 (hereafter: IEP)</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro6">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="5" calcext:value-type="float">
+      <text:p>5</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>14.19</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Māṟañcaṭaiyaṉ, alias Varaguṇa II </text:p><text:p>(Pāṇḍya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>4th (c. 867)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tirukkurungudi, Nanguneri taluk, on a stone belonging to Nambi temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Sale of land for provision of offerings</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>31-33: (ni)la(m) <text:span text:style-name="T3">mummāvarai araikk(āṇi)yum</text:span></text:p><text:p><text:span text:style-name="T6">62-63: nilaṉ </text:span><text:span text:style-name="T5">mākāṇi</text:span><text:span text:style-name="T4"> </text:span><text:span text:style-name="T5">Araikkāṇi</text:span><text:span text:style-name="T4">yum </text:span></text:p><text:p><text:span text:style-name="T6">79-80: nilaṉ </text:span><text:span text:style-name="T5">kālē</text:span><text:span text:style-name="T4">(y*) </text:span><text:span text:style-name="T5">kāṇiyum </text:span></text:p><text:p><text:span text:style-name="T6">89-90: Ik</text:span><text:span text:style-name="T5">kālē</text:span><text:span text:style-name="T4"> </text:span><text:span text:style-name="T5">kāṇi</text:span><text:span text:style-name="T4">-c ceyyum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Fractions given for measurement of land </text:p><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>The epigraphist assigns the record to the reign of Varaguṇa I on palaeographical grounds. However, Krishnan (IEP, p. 37) attributes it instead to Parāntaka II, which I follow. Gillet, Valérie. “Devotion and Dominion: Ninth-Century Donations of a Pāṇḍyan King in Temples along the River Kāvēri.” Indo-Iranian Journal 60, no. 3 (2017): 219–283, p. 225) stresses the difficulty of securely identifying many of the records relating to the first Māṟañcaṭaiyaṉ and his grandson.</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro7">
+     <table:table-cell table:style-name="ce4" office:value-type="float" office:value="6" calcext:value-type="float">
+      <text:p>6</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>12.58</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Nandivarman III (Pallava)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>22nd (c. 868)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvaigavur, Papanasam taluk, Bilvānātheśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land for offerings and a lamp to the temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>6-7: nilam <text:span text:style-name="T3">1{arai}</text:span><text:span text:style-name="T4"> iṉṉilam oṉṟaraiyum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Use of mathematical notation for half (<text:span text:style-name="T1">arai</text:span><text:span text:style-name="T2">)</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Epigraphist wrongly transcribes the symbols for 1 and 1/2 as <text:span text:style-name="T1">kaṟa, </text:span><text:span text:style-name="T2">which is corrected by Mahalingam, T. V. 1988. </text:span><text:span text:style-name="T7">Inscriptions of the Pallavas</text:span><text:span text:style-name="T2">. New Delhi: Indian Council of Historical Research, p. 419. Copy of an older inscription (present version seems to be of the 11th century, according to Mahalingam)</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="7" calcext:value-type="float">
+      <text:p>7</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>6.446</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Māṟañcaṭaiyāṉ, alias Varaguṇa II </text:p><text:p>(Pāṇḍya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>10th (873)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Sendalai, Thanjavur taluk, Sundareśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land to piṭāri</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>10: nilam <text:span text:style-name="T3">Araikāṇi</text:span><text:span text:style-name="T4">-k kaṭaṉ</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Use of <text:span text:style-name="T1">kāṇi</text:span><text:span text:style-name="T2"> unclear</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce4" office:value-type="float" office:value="8" calcext:value-type="float">
+      <text:p>8</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>7.524</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Nandivarman III (Pallava)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>no year (c. 846-869)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruchennampoondi, Tañjavur taluk, Śaḍaiyar temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of gold for a lamp</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>16-18: koṇṭa bhūmi nilaṅ <text:span text:style-name="T3">kāl</text:span></text:p><text:p><text:span text:style-name="T6">33-36: iñnilattukku nāṟṟukkāl </text:span><text:span text:style-name="T5">orumā</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Damaged</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="9" calcext:value-type="float">
+      <text:p>9</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>5.572</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Nṛpatuṅka-varman <text:s/>(Pallava)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>21st (c. 890)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Kandiyur, Thiruvaiyaru taluk, Vīraṭṭanīśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce21" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T6">10. āka </text:span><text:span text:style-name="T5">orumā-</text:span><text:span text:style-name="T4">c ceyyum [Āka patiṉ</text:span><text:span text:style-name="T5">o]rumā-</text:span><text:span text:style-name="T4">c ceyyum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land (1 </text:span><text:span text:style-name="T7">mā</text:span><text:span text:style-name="T2">)</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce4" office:value-type="float" office:value="10" calcext:value-type="float">
+      <text:p>10</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>12.80</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Nṛpatuṅka-varman (Pallava)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>2* (889-95)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Pillaippakkam, Sripperumbudur taluk, Ruined Śiva temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land for the offerings dedicated to the god</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>2:<text:span text:style-name="T3"> </text:span><text:span text:style-name="T4">kuṭutta nilam puṟampāṭṭile </text:span><text:span text:style-name="T5">(Ā)ṟumā</text:span><text:span text:style-name="T4"> nilam Ittevarai vaḻipaṭum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro5">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="11" calcext:value-type="float">
+      <text:p>11</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>4.531</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Nṛpatuṅka-varman (Pallava)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>23 (892)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Lalgudi, Lalgudi taluk, Saptaṛṣīśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Sale of land to temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>8-10: ... nilamāvatu vaṭavūr <text:span text:style-name="T3">nāṉmāvaraiyum * * </text:span><text:span text:style-name="T4"> (</text:span><text:span text:style-name="T5">muṉṟumāvum</text:span><text:span text:style-name="T4"> itaṉ kiḻai </text:span><text:span text:style-name="T5">nā)[ṉ]māvaraiyum</text:span><text:span text:style-name="T4"> itaṉ kīḻakkāṟ ceyum itan kīḻai </text:span><text:span text:style-name="T5">mūṉṟumā(vum)</text:span><text:span text:style-name="T4"> itaṉ kiḻai </text:span><text:span text:style-name="T5">araimāvum</text:span><text:span text:style-name="T4"> āka-t taṭi āṟiṉāl nilam vēli-yum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Earliest epigr. ref. mentioning Māmallapuram</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce4" office:value-type="float" office:value="12" calcext:value-type="float">
+      <text:p>12</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>12.81</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Nṛpatuṅka-varman (Pallava)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>no year (c. 869-895)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Pillaippakkam, Sripperumbudur taluk, Ruined Śiva temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land to temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>2: ceṟuvu <text:span text:style-name="T3">eḻumā</text:span><text:span text:style-name="T4">vuṅ kuṭuttēṉ</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Damaged</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="13" calcext:value-type="float">
+      <text:p>13</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>12.84</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Aparājita-varman</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>3rd (c. 898)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Puduppakkam, Kañcipuram taluk, Śelliyamman temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Remission of taxes</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>13:<text:span text:style-name="T3">Āṟ&apos; araimā</text:span><text:span text:style-name="T4"> * * * * </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Fragmentary</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro8">
+     <table:table-cell table:style-name="ce5" office:value-type="string" calcext:value-type="string" table:number-columns-spanned="9" table:number-rows-spanned="1">
+      <text:p>10th Century Inscriptions </text:p>
+     </table:table-cell>
+     <table:covered-table-cell table:number-columns-repeated="7" table:style-name="ce12"/>
+     <table:covered-table-cell table:style-name="ce26"/>
+     <table:table-cell table:style-name="ce29" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="1" calcext:value-type="float">
+      <text:p>1</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>14.40</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Māṟañcaṭaiyaṉ, alias Parāntaka II </text:p><text:p>(Pāṇḍya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>41st (904)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Dalapatisamudram, Nanguneri taluk, Pillar lyingin Paṟacēri of village</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land to temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>74-78: 2 nilaṉ <text:span text:style-name="T3">{mā}{kāṇi} </text:span><text:span text:style-name="T4">taṇṇīrt- tuṭavai taṭi + nilaṉ </text:span><text:span text:style-name="T5">{mukkāṇi}</text:span><text:span text:style-name="T4"> Eṟṟittaṭi 3 nilaṉ </text:span><text:span text:style-name="T5">iraṇṭumā</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Fractions given for measurement of land </text:p><text:p>Use of mathematical notation for 1/20 (<text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2">), 1/80 (</text:span><text:span text:style-name="T7">kāṇi</text:span><text:span text:style-name="T2">), and 3/80 (</text:span><text:span text:style-name="T7">mukkāṇi</text:span><text:span text:style-name="T2">)</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce4" office:value-type="float" office:value="2" calcext:value-type="float">
+      <text:p>2</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>19.25</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>2nd (909)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvavaduthurai, Mayuram taluk, Gomuktīṡvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Sale of land by the <text:span text:style-name="T1">sabhai</text:span><text:span text:style-name="T2"> for the maintenance of a coconut garden and a flower garden</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string"><text:p>2: potunilam-āṉa <text:span text:style-name="T3">nālmā</text:span><text:span text:style-name="T4">-c ce((y))yum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Epigraphist assigns this record to Parāntaka I.</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro9">
+     <table:table-cell table:style-name="ce3" office:value-type="float" office:value="3" calcext:value-type="float">
+      <text:p>3</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>19.190</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>7th (914)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvavaduthurai, Mayuram taluk, Gomuktīṡvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Sale of two mās and odd for 15 kācu made by the sabhai of Cattaṉūr to Omāci Oṟṟiyūraṉ Kūttaṉ</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>9:<text:span text:style-name="T3"> </text:span><text:span text:style-name="T4">ni⟨la⟩m 1/4+ 3/80 + (1/2 *1/320) kuḻi 1/4 + 3/16 In-nilam </text:span><text:span text:style-name="T5">kālē mukkāṇi Arai mun=tirikai</text:span><text:span text:style-name="T4">-k kuḻi </text:span><text:span text:style-name="T5">Oṉpatu mākkāṇiyil</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Use of mathematical notation for quarter (<text:span text:style-name="T1">kāl</text:span><text:span text:style-name="T2">), half (</text:span><text:span text:style-name="T7">arai</text:span><text:span text:style-name="T2">), one-three-hundred-twentieth (1/320), one-twentieth (3/20), and one-eightieth (1/80). Combination of fractions with numerals to form other symbols, such as 3/20, 3/80 (?)</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Another inscr. fr. Tiruvāvaṭutuṟai has a similar beginning to this inscription, which can be found in https://dharmalekha.info/texts/INSTiruvavatuturai10003. On paleaographical grounds, we have dated this inscription to the 10th century</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce4" office:value-type="float" office:value="4" calcext:value-type="float">
+      <text:p>4</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>5.571</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>11th (918)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Kandiyur, Thiruvaiyaru taluk, Vīraṭṭānīśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce22" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T6">7:</text:span><text:span text:style-name="T5"> </text:span><text:span text:style-name="T4">nilattil mipilāṟṟu koṭṭakan=tu </text:span><text:span text:style-name="T5">Aṟumā</text:span><text:span text:style-name="T4"> ce[y*]il Ivaḷ</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce24" office:value-type="string" calcext:value-type="string"><text:p>mā <text:span text:style-name="T6">as unit of land; cey as type of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>5</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>14.56</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Māṟañcaṭaiyaṉ, alias Rājasiṁha (Pandya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>34d (922)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Ambasamudram, Ambasamudram taluk, Tirumūlanātha temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of lands for food offerings</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Aññāḻi-k kālā(l) māttāl kalaṉē-y tūṇi</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>6</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>32app.2.2</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>23rd (930)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruchendurai, Tiruchirappalli taluk, Chandraśekhara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of tax-free land for food offerings </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>4: nilam <text:span text:style-name="T3">oṉṟaraiyē yoru mā mukkāṇi araikkāṇi muntirikaiyum</text:span><text:span text:style-name="T4"> tūpparuppu nāḻi nel</text:span></text:p><text:p><text:span text:style-name="T6">7: nilam </text:span><text:span text:style-name="T5">mukkāṇi muntirikaiyāl </text:span><text:span text:style-name="T4">nālkalaṉē</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Use of muntirikai</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>7</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>23.330</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>24th (931)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvisalur, Kumbhakonam taluk, Śivayoganāthasvāmin temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Sale of land prob. for the benefit of the temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>3: nāṅkaḷ vilaikoṇṭuṭaiya <text:span text:style-name="T3">araikkāl</text:span><text:span text:style-name="T4"> ceyyum </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>No unit of land</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro10">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>8</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>17.636</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>29th (936)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Srinivasanallur, Musiri taluk, Kuraṅganātha temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Sale of land to te. from taxes from villages</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string"><text:p>7-12: nilam vayaṉ nilattuḷ ālañcey (<text:span text:style-name="T3">{mummmā}{iraṇṭumā}{kāṇi}</text:span><text:span text:style-name="T4">)yum ka(ḷā)ñcey {</text:span><text:span text:style-name="T5">unknown}{kāṇi}{muntirikai}({kīḻ}){iraṇṭumā} iraṇṭu mā</text:span><text:span text:style-name="T4">veṉṉum piyaru*</text:span><text:span text:style-name="T5">{kāṇi}{mukkāl?}yum</text:span><text:span text:style-name="T4"> kiḻpirāṟṟu </text:span><text:span text:style-name="T5">{mukkāṇi?}{kāṇi}{muntirikai}yum </text:span><text:span text:style-name="T4">puṉṉai vākkāliṉ teṉvāykkāl </text:span><text:span text:style-name="T5">{araimā?}{kāṇi}yum</text:span><text:span text:style-name="T4"> Arai(ca)ṅkāl </text:span><text:span text:style-name="T5">{iraṇṭumā}{arai}yum</text:span><text:span text:style-name="T4"> kuṇṭai vaḷḷivākkāliṉ vaṭavākkāl </text:span><text:span text:style-name="T5">{kāṇi}{mummākāṇi?}{arai}yum</text:span><text:span text:style-name="T4"> Āka nilam </text:span><text:span text:style-name="T5">1{mukkāṇi}{muntirikai}{arai} oṉṟēy mukkāṇi muntirikaiyarai</text:span><text:span text:style-name="T4"> nilamum </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Use of mathematical notation for quarter (<text:span text:style-name="T1">kāl</text:span><text:span text:style-name="T2">), half (</text:span><text:span text:style-name="T7">arai</text:span><text:span text:style-name="T2">), one-twentieth (</text:span><text:span text:style-name="T7">mā</text:span><text:span text:style-name="T2">), one-eightieth (1/80), one-three-hundred-twentieth (1/320), one-twentieth (3/20), and one-eightieth (1/80).</text:span></text:p><text:p><text:span text:style-name="T3">Earliest attestation of kīḻ.</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>The last symbol here transcribed (ends of line 11-line 12) seems to be the symbol for <text:span text:style-name="T1">kīḻ</text:span><text:span text:style-name="T2"> and then the symbol for </text:span><text:span text:style-name="T7">arai</text:span><text:span text:style-name="T2">. The symbols here seem to have an expression that is one fraction longer than the written portion. Either the engraver omitted what seems to have been [</text:span><text:span text:style-name="T7">kīḻ</text:span><text:span text:style-name="T2">]</text:span><text:span text:style-name="T7">arai</text:span><text:span text:style-name="T2"> or the epigraphist transliterated the notation for arai (beginning of line 12) with two different symbols. It remains to be confirmed </text:span><text:span text:style-name="T7">in situ</text:span><text:span text:style-name="T2">.</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>9</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>5.547</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>31st (938)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvaiyaru, Tiruvaiyaru taluk, Panchanadīśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of a land by a queen</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>7: puṉcey mēlpāṟku kīḻ <text:span text:style-name="T3">eḻumāviṟ</text:span><text:span text:style-name="T4"> maṭuṅkāṟ ceyyum vāykkālum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Use of <text:span text:style-name="T1">kīḻ</text:span><text:span text:style-name="T2"> is unclear, but probably used as direction</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>10</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>IEP 90</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Vīrapāṇḍya (Pandya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>3rd (940)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Sivakasi Plates, Chennai Museum</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Establishment of brahmadeyam</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>69: <text:span text:style-name="T3">pattu mā</text:span><text:span text:style-name="T4">vum</text:span></text:p><text:p><text:span text:style-name="T6"/></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>11</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>5.711</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>37th (944)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvidaimarudur, Kumbhakonam taluk, Mahalingasvamin temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land for a lamp</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>16-17: <text:span text:style-name="T3">Araikālum</text:span><text:span text:style-name="T4"> Itaṉ kiḻai </text:span><text:span text:style-name="T5">mākāṇiyum</text:span><text:span text:style-name="T4"> Āka nilam </text:span><text:span text:style-name="T5">muṉṟumā mukkāṇi</text:span><text:span text:style-name="T4">-c ceyyuṅ koṇṭu </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Fractions included, but no complex operation present.</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string">
+      <text:p>12</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string">
+      <text:p>24.7</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>39th (946)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>Srirangam, Tiruchirappalli taluk, Raṅganāthasvāmin temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>Grant of land for food offerings</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>22-24: nilam uṇṇilam oḻiviṉṟi <text:span text:style-name="T3">mukkālēy muṉṟumā </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce7" office:value-type="string" calcext:value-type="string">
+      <text:p>13</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce7" office:value-type="string" calcext:value-type="string">
+      <text:p>14.84-85</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string">
+      <text:p>Vīrapāṇḍya (Pandya)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string">
+      <text:p>9th (946)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string">
+      <text:p>Kilmattur, Madurai taluk, Maṇikaṇṭheśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string">
+      <text:p>Construction of stone temple and arrangement of worship therein.</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string"><text:p>84.3-4: nirnilaṉ <text:span text:style-name="T3">Araiyē Iraṇṭumā</text:span><text:span text:style-name="T4"> (ni) * * * raiyē </text:span><text:span text:style-name="T5">Araikkālālum</text:span><text:span text:style-name="T4"> Ittevarkkuº</text:span></text:p><text:p><text:span text:style-name="T6">85.2: nilaṉ </text:span><text:span text:style-name="T5">Oṉṟē-y nāṉmāvaraiyuñ</text:span><text:span text:style-name="T4"> cuṭṭiº</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro7">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>14</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>24.9</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Parāntaka I </text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>41st (948)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>Srirangam, Tiruchirappalli taluk, Devasthanam museum</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land for offerings</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>16-17: nilam <text:span text:style-name="T3">eṭṭumā</text:span><text:span text:style-name="T4">vum </text:span></text:p><text:p><text:span text:style-name="T6">20-22: vaṭakkum nāṟṟukkāl </text:span><text:span text:style-name="T5">Arakkāṇi-y iraṇtukkum araimā-v</text:span><text:span text:style-name="T4"> iraṇtukkum</text:span></text:p><text:p><text:span text:style-name="T6">24-26: nilam </text:span><text:span text:style-name="T5">kālē-y arai māvum</text:span><text:span text:style-name="T4"> āka Iraṇṭu kiṭakk&apos; aṭaiyumāy ñilam </text:span><text:span text:style-name="T5">araiyē((y))mum māvaraiyāl</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Mentions the measure <text:span text:style-name="T1">rājakesari</text:span><text:span text:style-name="T2"> (same as in Thanjavur inscriptions)</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro7">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>15</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>34.103</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, alias (possibly) Gaṇḍarāditya <text:s/>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>5th (965)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruverumbur, Trichy taluk, Pipīlikēśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Endowment of land for feeding brahmanas</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>11-12: tuṇṭaṅkuṟaiya<text:span text:style-name="T3"> kālē Arai māvum</text:span><text:span text:style-name="T4"> Icce((y)) </text:span></text:p><text:p><text:span text:style-name="T6">13: nilam </text:span><text:span text:style-name="T5">Iraṇṭumā mukkāṇiyum</text:span><text:span text:style-name="T4">...</text:span></text:p><text:p><text:span text:style-name="T6">14-15: nilam tuṇṭaṅkuṟaiya </text:span><text:span text:style-name="T5">Araimāvum</text:span><text:span text:style-name="T4"> devatāṉam</text:span></text:p><text:p><text:span text:style-name="T6">17-18: cuvaraṉ dvādaśa(k)kattu </text:span><text:span text:style-name="T5">Iraṇṭumāvum</text:span><text:span text:style-name="T4"> ko(ḻaiku)rai </text:span><text:span text:style-name="T5">(I)raṇṭumāvum</text:span><text:span text:style-name="T4"> vetivēḷ Iraṇṭumāka* * *</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro5">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>16</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>13.141</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, alias (possibly) Gaṇḍarāditya <text:s/>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>6th (966)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Palur, Trichi taluk, Sundareśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Endowment of land for two singers of tiruppatiyam</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>5: nilan {<text:span text:style-name="T3">arai</text:span><text:span text:style-name="T4">} Itaṟk&apos; ellai </text:span></text:p><text:p><text:span text:style-name="T6">10: nilam </text:span><text:span text:style-name="T5">pattu(mā</text:span><text:span text:style-name="T4">vum uṇṇi)lam oḻiviṉṟi </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>17</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>32.43</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Uttamacōḻa</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>7th (976)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvisalur, Kumbhakonam taluk, Śivayoganāthasvāmin temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Buying of land for feeding brahmanas</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>3: nilamā <text:span text:style-name="T3">{naṉkumā?} {mummākāṇi?} {nilam?/kku?}</text:span><text:span text:style-name="T4"> * * ... </text:span><text:span text:style-name="T5">{muṉṟumā} {araikkāl}</text:span><text:span text:style-name="T4"> </text:span><text:span text:style-name="T5">muṉṟumā</text:span><text:span text:style-name="T4"> Araikkā(linu)kku</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Notations for fractions</text:p><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro11">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>18</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>3.151/151A</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Uttamacōḻa</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>7th (976)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Konerirajapuram, Mayiladuthurai taluk, Umāmaheśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Refers to stone building by queen Mahādēvi</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>151.119: nilan <text:span text:style-name="T3">iraṇ(ṭa)raiyē-y nāṉku mā mukkāṇi muntirikai-k kiḻ orumāvarai muntirikai-yum</text:span></text:p><text:p><text:span text:style-name="T6"> 135-137: </text:span><text:span text:style-name="T5">kāṇi-y arai(kkā)ṇi-(k)-kiḻ (kāl)ē-y A(r)ai((y))māvarai-k (kā)ṇi muntirik(ai)yum </text:span><text:span text:style-name="T4">Āka I[t]tirunallattu nilam </text:span><text:span text:style-name="T5">Onpat(ē)</text:span><text:span text:style-name="T4">* * * * * (n)tirikai-k </text:span><text:span text:style-name="T5">ki(ḻ ar)aiyē(y) mākāṇi</text:span><text:span text:style-name="T4">-(y āka) veṇṇāṭṭu</text:span></text:p><text:p><text:span text:style-name="T6">151A.12: </text:span><text:span text:style-name="T5">Orumā muntirikai-k kiḻ araiyē-y orumā mukkāṇi</text:span><text:span text:style-name="T4"> turuttiyil </text:span><text:span text:style-name="T5">(E)ḻumā-(v a)raikkāṇi muntirikai-k kiḻ nāṉkumā-(k) kiḻ* * Oṉṟarai</text:span></text:p><text:p><text:span text:style-name="T6">69: </text:span><text:span text:style-name="T5">nāṉmāvarai mun=tirikai </text:span></text:p><text:p><text:span text:style-name="T6">70: pūṅkuṭiyil </text:span><text:span text:style-name="T5">araiyē mummāvarai-y araikkāṇi mun=tirikai</text:span><text:span text:style-name="T4"> putukkupuṟam</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p><text:p><text:span text:style-name="T6">Addition and substraction of small fractions</text:span></text:p><text:p><text:span text:style-name="T6">Use of </text:span><text:span text:style-name="T7">kīḻ</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro5">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>19</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>32.app.2.64</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Uttamacōḻa</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>9th (978)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Kovil Devarayan Pettai, Papanasam taluk, Matsyapurīśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Endowment of lands for the merit of queen Sembiyan&apos;s son</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>41: ni[la]m <text:span text:style-name="T3">{kāl}{vēli?}</text:span><text:span text:style-name="T4">m </text:span></text:p><text:p><text:span text:style-name="T6">51: nilam </text:span><text:span text:style-name="T5">{arai}{mummā}</text:span><text:span text:style-name="T4">yum</text:span></text:p><text:p><text:span text:style-name="T6">81-83: teṟk&apos; aṭain=ta </text:span><text:span text:style-name="T5">{kāl}{vēli?}</text:span><text:span text:style-name="T4">māvil meṟkk&apos; aṭaiya </text:span><text:span text:style-name="T5">{mummā}</text:span><text:span text:style-name="T4">vum</text:span></text:p><text:p><text:span text:style-name="T6"/></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Notations for fractions</text:p><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>20</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>3.139</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Uttamacōḻa</text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>14th (983)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Andanallur, Srirangam taluk, Vaṭatīrthanātha temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Grant of land to temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>7-8: ceṉnaṭaikku <text:span text:style-name="T3">Oṉṟē-y kālē Aṟaimāvum</text:span><text:span text:style-name="T4"> [tiru]viḷakku</text:span></text:p><text:p><text:span text:style-name="T6">10: kaṇṭikai </text:span><text:span text:style-name="T5">Oṉṟukku mummāvaraiyum</text:span></text:p><text:p><text:span text:style-name="T6">11: tirumeḻukku </text:span><text:span text:style-name="T5">muṉṟukku eḻumāvaraiyum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>21</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>19.389</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Parakesari-varman, alias Uttama </text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>16th (987)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Uṟaiyur, Trichi taluk, Pañchaneśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land for offerings</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>19: kiṭakkai nilamum Āy <text:span text:style-name="T3">Iraṇṭumā</text:span><text:span text:style-name="T4"> Ivv-</text:span><text:span text:style-name="T5">iraṇṭu māvil</text:span><text:span text:style-name="T4"> vanta pōkam koṇṭu uttiramayaṉam </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>22</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>17.617</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, alias <text:s/>Rājarāja I (Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>7th (992)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvarur, Nagappatinam taluk, Tyāgarājasvāmin temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Building of stone shrine and setting up two images</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>3: mañcāṭiyu <text:span text:style-name="T3">mukkāṇi</text:span><text:span text:style-name="T4">-y āka Ivvūr</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of weight</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Only inscription found so far where weight is also measured using <text:span text:style-name="T1">kāṇi</text:span><text:span text:style-name="T2"> (1/80). It matches measured weight in SII No. 5 (see, for instance, line 5). </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro7">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>23</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>13.170</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājajakesari-varman, alias Rājarāja I (Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>7th (992)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Kuttalam, Mayiladuthurai taluk, Uktadeśvarar temple </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Provision for recitation of Vedas and tiruppatiyam (10 fragments)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>1.12: nilam <text:span text:style-name="T3">mukkālē</text:span><text:span text:style-name="T4">-y nā* * *  * * </text:span></text:p><text:p><text:span text:style-name="T6">3.5-8: nilam </text:span><text:span text:style-name="T5">patiṉeḻē-y nāṉkumā mukkāṇi-k kiḻ Araimuntirikaiyum</text:span><text:span text:style-name="T4">aṉai muppattāṟum </text:span></text:p><text:p><text:span text:style-name="T6">3.32-33: nilam patiṉ </text:span><text:span text:style-name="T5">muṉṟē-y Eṭṭumā mukkāṇi-k kiḻ Arai muntirikaiyu</text:span><text:span text:style-name="T4">* </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p><text:p><text:span text:style-name="T6">use of kīḻ</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro9">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>24</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>41.124</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, alias <text:s/>Rājarāja I (Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>10th (995)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruppudaimarutur, Ambasamudram taluk, Pūtarjaneśvara temple, </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Sale of pieces of land by some brahmanas</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string"><text:p>17: Akappaṭṭa nilam <text:span text:style-name="T3">mūṉrumā</text:span><text:span text:style-name="T4"> innilam muṉṟumāvilum</text:span></text:p><text:p><text:span text:style-name="T6">19: nilam </text:span><text:span text:style-name="T5">Irumāvaraiyum</text:span></text:p><text:p><text:span text:style-name="T6">21-22: ni(lam) </text:span><text:span text:style-name="T5">kāṇi muntirikaiyum</text:span></text:p><text:p><text:span text:style-name="T6">23: nilam</text:span><text:span text:style-name="T5"> kāṇi mun(tirikaiyu)m </text:span><text:span text:style-name="T4">vēmpaṉnilamum… Ivv-</text:span><text:span text:style-name="T5">araimāvarai-k kāṇi</text:span><text:span text:style-name="T4"> nilamum āka </text:span><text:span text:style-name="T5">Irumāvarai</text:span><text:span text:style-name="T4"> innilam irumāvarai nilamum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce24" office:value-type="string" calcext:value-type="string"><text:p>mā <text:span text:style-name="T6">as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro7">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>25</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>41.117</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, alias <text:s/>Rājarāja I (Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>11th (996)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruvalisvaram, Ambasamudram taluk, Valīśvara temple, </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land for different expenses needed for services at temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>2: <text:span text:style-name="T3">kāṇi araikkāṇi</text:span></text:p><text:p><text:span text:style-name="T6">3-4: nilaṉ </text:span><text:span text:style-name="T5">mukkālē-y mūṉṟumāvilum araiyēkāṇi muntirikai</text:span><text:span text:style-name="T4"> nilam* * * 4: Innilam </text:span><text:span text:style-name="T5">Araiyē-y kāṇi muntirikai</text:span><text:span text:style-name="T4">… Innilaṉ </text:span><text:span text:style-name="T5">araiyē kāṇi muntirikaiyum</text:span><text:span text:style-name="T4"> </text:span></text:p><text:p><text:span text:style-name="T6">9: nilaṉ </text:span><text:span text:style-name="T5">mūṉṟumā mukkāṇiyum</text:span><text:span text:style-name="T4"> caṅkiraṇṭum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Addition and substraction of fractions</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>26</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>38.255</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, alias <text:s/>Rājarāja I (Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>11th (996)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Kattur, Ponneri taluk, Tiruvalisvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Ūrār of Kāṭṭūr sold two pieces of tax-free land </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>6-7: <text:span text:style-name="T3">Orumāvum</text:span><text:span text:style-name="T4"> ke* * </text:span></text:p><text:p><text:span text:style-name="T6">8: kiḻakk&apos; aṭaiya </text:span><text:span text:style-name="T5">kāṇi māvum</text:span><text:span text:style-name="T4"> villi</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">kāṇi</text:span><text:span text:style-name="T2"> here refers to the hereditary rights of land. </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>27</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>36.134</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, alias <text:s/>Rājarāja I (Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>17th (1002) </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Thenkarai, Nilakkottai taluk, Mūlasthāneśvara temple </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of lands to temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>39-41: nilam Iraṇṭē-y <text:span text:style-name="T3">mukkālē mukkāṇi Araikkāṇiyum</text:span></text:p><text:p><text:span text:style-name="T6">45-47: nilam vēli innilam vēliyilum </text:span><text:span text:style-name="T5">pattumā</text:span><text:span text:style-name="T4"> nilamum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as fraction of land and unit of land?</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>28</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string">
+      <text:p>4.547</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, <text:s/>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>6th (c. 10th century)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruverumbūr, Trichy taluk, Pipīlikēśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>Endowment of land for feeding brahmanas</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>8-9: mūṉṟumāvil-k kiḻakk&apos; aṭaiya orumāvum Āka nāṉmā-c ce[y]kkum </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro12">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>29</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce7" office:value-type="string" calcext:value-type="string">
+      <text:p>34.101</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, <text:s/>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string">
+      <text:p>7th (c. second half of 10th century?)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruverumbūr, Trichy taluk, Pipīlikēśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string">
+      <text:p>Big endowment of land by a brahmana for daily feeding of sivayogis and brahmanas</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string"><text:p>3-4: nilamā(ṟu)mā </text:p><text:p>5: vaṭakkaṭaiya Irumā nīkki Itaṉōṭum aṭaiya cekkāccey mūṉṟumāvum Iv(vū)r</text:p><text:p>6-7: nilam pattu-c ceyyum nīkki niṉṟa (nilam) 4 + {arai} nāṉkaraiyum muṉ cuṭṭappaṭṭa mūṉṟumāvum Āka nilam 4 +{arai} + {muṉṟumā}</text:p><text:p/>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā</text:span><text:span text:style-name="T2"> as fraction of land</text:span></text:p><text:p><text:span text:style-name="T6">Notations in fractions</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce16" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>30</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>8.521</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Rājarakesari-varman </text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>6th (second half of 10th/first half 11th?)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gudimallam, Gudiyattam taluk</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land for offerings, to an image set up by king Gaṇḍarāditya</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce23" office:value-type="string" calcext:value-type="string"><text:p>23-25: Añpatu kuḻi koṇṭatu <text:span text:style-name="T3">Orumā</text:span><text:span text:style-name="T4">vāka Āyiraṅ kuḻi koṇṭatu oru paṭṭi-y āka</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>50 <text:span text:style-name="T1">kuḻi</text:span><text:span text:style-name="T2"> = 1 </text:span><text:span text:style-name="T7">mā</text:span><text:span text:style-name="T2">; 1000 </text:span><text:span text:style-name="T7">kuḻi</text:span><text:span text:style-name="T2"> = 1 </text:span><text:span text:style-name="T7">paṭṭi</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro3">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>31</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>13.183</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājakesari-varman, <text:s/>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>8th (second half of 10th/first half 11th?)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Palur, Trichi taluk, Sundareśvara temple, NORTH WALL, CENTRAL SHRINE</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land <text:s/>for the bathing of the god in the temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>18-20: akappaṭṭa nilam <text:span text:style-name="T3">eḻumā eḻumāvum</text:span><text:span text:style-name="T4"> uṇṇilam oḻiviṉṟi viṟṟukkuṭuttu</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>double <text:span text:style-name="T1">eḻumā</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro9">
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>32</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce4" office:value-type="string" calcext:value-type="string">
+      <text:p>34.101</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>Rājarakesari-varman </text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>7th (second half of 10th/first half 11th?)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruverumbūr, Trichy taluk, Pipīlikēśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>Big endowment of land by a brahmana for daily feeding of sivayogis and brahmanas</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p>5: nilattilum āka vaṭakkaṭaiya <text:span text:style-name="T3">Irumā</text:span><text:span text:style-name="T4"> nīkki itaṉōṭum aṭaiya cekkā-c cey </text:span><text:span text:style-name="T5">mūṉṟumā</text:span><text:span text:style-name="T4">vum</text:span></text:p><text:p><text:span text:style-name="T6">6-7: Aivēliyil Ivaṉē Ivv-ūr tiruvāyppāṭi śrīkṛṣṇarkku kuṭutta nilam pattu ceyyum nīkki niṉṟa (nilam) </text:span><text:span text:style-name="T5">4 {arai} nāṉkaraiyum</text:span><text:span text:style-name="T4"> muṉcuṭṭapaṭṭa muṉṟumāvum āka nilam </text:span><text:span text:style-name="T5">4 {arai} {arai} {muṉṟumā}{vēli/cey}</text:span><text:span text:style-name="T4">li </text:span><text:span text:style-name="T5">nāṉkaraiyē muṉṟumā</text:span><text:span text:style-name="T4">c ceyyum</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string">
+      <text:p>mā as fraction of land</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro4">
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>33</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce3" office:value-type="string" calcext:value-type="string">
+      <text:p>4.549</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>Rājarakesari-varman </text:p><text:p>(Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>6th (second half of 10th/first half 11th?)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Tiruverumbur, Trichy taluk, Pipīlikēśvara temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string">
+      <text:p>Decision of the sabhai to give lands</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p>aṭakkaṭaiya <text:span text:style-name="T3">mūṉṟumāvil-</text:span><text:span text:style-name="T4">k kiḻakk&apos; aṭaiya </text:span><text:span text:style-name="T5">orumāvum</text:span><text:span text:style-name="T4"> āka</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce14" table:number-columns-repeated="20"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro13">
+     <table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string">
+      <text:p>34</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string">
+      <text:p>No. 44 (Cane)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>Rājajakesari-varman, alias Rājarāja I (Chola)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>15th (1000)</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>Tirumaṅkalam, Lalgudi taluk, Sāmavedīśvara temple </text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>Gift of land made tax-free to temple</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string"><text:p>32-33: nūṟu kuḻi koṇṭatu <text:span text:style-name="T3">Orumā-v</text:span><text:span text:style-name="T4"> āka van=ta nilam </text:span><text:span text:style-name="T5">Eḻu māvaraiyum</text:span><text:span text:style-name="T4"> </text:span></text:p><text:p><text:span text:style-name="T6">34-35: nilam </text:span><text:span text:style-name="T5">muvēliyē mukkālē mākāṇiyum</text:span><text:span text:style-name="T4"> </text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce15" office:value-type="string" calcext:value-type="string"><text:p><text:span text:style-name="T1">mā </text:span><text:span text:style-name="T2">as fraction of land and unit of land</text:span></text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" office:value-type="string" calcext:value-type="string">
+      <text:p>From Cane, Nicolas. 2017. “Cempiyaṉ-Mahādevī, reine et dévote: un ‘personnage épigraphique’ du Xe siècle.” PhD diss., <text:s/>École pratique des hautes études (EPHE). No. 44.</text:p>
+     </table:table-cell>
+     <table:table-cell table:style-name="ce17" table:number-columns-repeated="19"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14" table:number-rows-repeated="8">
+     <table:table-cell table:style-name="ce8" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce18" table:number-columns-repeated="26"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14" table:number-rows-repeated="16">
+     <table:table-cell table:style-name="ce9" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce19"/>
+     <table:table-cell table:style-name="ce20"/>
+     <table:table-cell table:style-name="ce19" table:number-columns-repeated="24"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14">
+     <table:table-cell table:style-name="ce8" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce18" table:number-columns-repeated="26"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14">
+     <table:table-cell table:style-name="ce9" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce19"/>
+     <table:table-cell table:style-name="ce20"/>
+     <table:table-cell table:style-name="ce19" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce18"/>
+     <table:table-cell table:style-name="ce19" table:number-columns-repeated="21"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14">
+     <table:table-cell table:style-name="ce9" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce19"/>
+     <table:table-cell table:style-name="ce20"/>
+     <table:table-cell table:style-name="ce19" table:number-columns-repeated="24"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14" table:number-rows-repeated="6">
+     <table:table-cell table:style-name="ce9" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce19"/>
+     <table:table-cell table:style-name="ce20"/>
+     <table:table-cell table:style-name="ce19" table:number-columns-repeated="24"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14" table:number-rows-repeated="3">
+     <table:table-cell table:style-name="ce8" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce18" table:number-columns-repeated="26"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14" table:number-rows-repeated="164">
+     <table:table-cell table:style-name="ce9" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce19"/>
+     <table:table-cell table:style-name="ce20"/>
+     <table:table-cell table:style-name="ce19" table:number-columns-repeated="24"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro14" table:number-rows-repeated="750">
+     <table:table-cell table:style-name="ce8" table:number-columns-repeated="2"/>
+     <table:table-cell table:style-name="ce18" table:number-columns-repeated="26"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro15" table:number-rows-repeated="1047575">
+     <table:table-cell table:number-columns-repeated="28"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+    <table:table-row table:style-name="ro15">
+     <table:table-cell table:number-columns-repeated="28"/>
+     <table:table-cell table:style-name="ce10" table:number-columns-repeated="16356"/>
+    </table:table-row>
+   </table:table>
+   <table:named-expressions/>
+  </office:spreadsheet>
+ </office:body>
+</office:document>

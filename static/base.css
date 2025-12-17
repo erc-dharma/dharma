@@ -41,28 +41,33 @@ a.nav-link {
 .collapsible i:hover {
   border-color: black; }
 
-.data {
+/* Cards */
+.card-data {
   display: grid;
   grid-template-columns: auto 1fr;
   padding-top: 0.5em; }
 
-.data > * {
+.card-data > * {
   padding: 0 0.5em; }
 
-/* Keys */
-.data > :nth-child(odd) {
-  text-align: right; }
+/* Card data keys are at odd numbers, values are at even numbers */
+.card-data > :nth-child(odd) {
+  text-align: right;
+  max-width: 10em; }
+
+.card-data > :nth-child(even) p:first-child {
+  margin-top: 0; }
 
 .card-list .card {
   margin: 1em 0; }
 
-.card p {
+.card > p {
   text-align: left; }
 
-.card p:first-child {
+.card > p:first-child {
   margin-block-start: 0; }
 
-.card p:last-child {
+.card > p:last-child {
   margin-block-end: 0; }
 
 .card {

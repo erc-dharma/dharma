@@ -40,6 +40,13 @@
          <li><a href="/prosody">Prosodic Patterns</a></li>
       </ul>
    </li>
+   <li class="submenu">
+      <a href="#">Resources <i class="fa-solid fa-caret-down"></i></a>
+      <ul class="hidden">
+         <li><a href="/development-of-tamil-fractions">Development of Tamil Fractions</a></li>
+         <li><a href="/chola-fractional-calculations">Chola Fractional Calculations</a></li>
+      </ul>
+   </li>
    <li>
       <a href="/parallels">
       <i class="fa-solid fa-grip-lines-vertical"></i> Parallels</a>

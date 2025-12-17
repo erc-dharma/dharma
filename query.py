@@ -5,7 +5,7 @@ The parsing grammar is in query_parser.g.
 
 import argparse, tokenize, traceback
 from pegen.tokenizer import Tokenizer
-from dharma.query_parser import GeneratedParser, And, Or, Not, Field, Null
+from dharma import common, tree, query_parser
 
 class InvalidQuery(Exception):
 	pass
@@ -60,7 +60,7 @@ def tokenize_query(s):
 def parse_query(expr):
 	gen = tokenize_query(expr)
 	tokenizer = Tokenizer(gen, verbose=False)
-	parser = GeneratedParser(tokenizer, verbose=False)
+	parser = query_parser.GeneratedParser(tokenizer, verbose=False)
 	root = parser.start()
 	if not root:
 		err = parser.make_syntax_error("<query expression>")
@@ -70,7 +70,7 @@ def parse_query(expr):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Tests the query parser.")
-	parser.add_argument("-t", "--tokenize", help="""tokenize the query,
+	parser.add_argument("-t", "--tokenize", help="""tokenize the query
 		instead of parsing it""", action="store_true")
 	parser.add_argument("query")
 	args = parser.parse_args()

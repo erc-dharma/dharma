@@ -42,12 +42,12 @@ where, and it's error-prone.
 """
 
 import re, sys
-from dharma import tree, common, languages, query
+from dharma import tree, common, languages, query_bits
 
 def fix_search(t: tree.Tree):
 	for node in t.find(".//search"):
 		assert isinstance(node, tree.Tag)
-		segs = query.extract_text(node)
+		segs = query_bits.extract_text(node)
 		text = "".join(str(s) for s in segs)
 		node.clear()
 		node.append(text)

@@ -166,7 +166,7 @@ class Tokenizer(Cursor):
 def extract_text(root: tree.Node):
 	buf = []
 	extract_text_inner(root, buf)
-	return buf
+	return "".join(str(s) for s in buf)
 
 def extract_text_inner(root, buf):
 	match root:
@@ -221,11 +221,14 @@ class SearchableDocument:
 			return self.tree.first("/document/edition/logical")
 		raise NotImplementedError
 
-if __name__ == "__main__":
+@common.transaction("texts")
+def main():
 	import sys
-	from dharma import tree
-	t = tree.parse(sys.argv[1])
-	doc = SearchableDocument(t)
-	edition = doc.field("edition")
-	text = extract_text(edition)
-	print("".join(str(s) for s in text))
+	from dharma import tei, tree
+	doc = tree.parse(sys.argv[1])
+	ed = doc.first("/document/edition/logical")
+	text = extract_text(ed)
+	print(text)
+
+if __name__ == "__main__":
+	main()

@@ -1130,14 +1130,20 @@ def handle_gap_ellipsis(p, gap):
 	p.append("\N{horizontal ellipsis}")
 	p.join()
 
-def parse_gap(p, gap) -> tuple[str, str, str]:
-	reason = gap["reason"] or "undefined" # most generic choice
+GAP_CHAR = "."
+GAP_DEFAULT_REPL = 5 * GAP_CHAR
+
+def parse_gap(p, gap) -> tuple[str, str, str, str]:
+	"Return values are: phys_repl, log_repl, search_repl, tooltip."
+	# @reason="undefined" is the most generic choice, so we default to it
+	# if @reason is not given.
+	reason = gap["reason"] or "undefined"
 	quantity = gap["quantity"]
 	precision = gap["precision"]
 	unit = gap["unit"] or "character"
 	if reason == "ellipsis":
 		repl = "\N{horizontal ellipsis}"
-		return repl, repl, ""
+		return repl, repl, repl, ""
 	if reason == "undefined":
 		reason = "lost or illegible"
 	if gap.first("stuck-child::certainty[@match='..' and @locus='name']"):
@@ -1145,6 +1151,7 @@ def parse_gap(p, gap) -> tuple[str, str, str]:
 	if unit == "component":
 		unit = "character component"
 	phys_repl = None
+	search_repl = None
 	if quantity.isdigit():
 		quantity = int(quantity)
 		repl = "["
@@ -1158,10 +1165,13 @@ def parse_gap(p, gap) -> tuple[str, str, str]:
 			else:
 				# reason = "undefined" (lost or illegible)
 				repl += f"{quantity}*"
+			search_repl = GAP_CHAR * quantity
 		elif unit == "character component":
 			repl += quantity * "."
+			search_repl = GAP_CHAR # better than nothing.
 		else:
 			repl += "%d %s %s" % (quantity, reason, common.numberize(unit, quantity))
+			search_repl = GAP_DEFAULT_REPL
 		repl += "]"
 		phys_repl = "["
 		if precision == "low" and unit != "character":
@@ -1182,8 +1192,9 @@ def parse_gap(p, gap) -> tuple[str, str, str]:
 			repl = "[…]"
 		else:
 			repl = "[unknown number of %s %s]" % (reason, common.numberize(unit, +333))
+		search_repl = GAP_DEFAULT_REPL
 		tip = "Unknown number of %s %s" % (reason, common.numberize(unit, +333))
-	return phys_repl or repl, repl, tip
+	return phys_repl or repl, repl, search_repl, tip
 
 # XXX not refactored
 # @unit="component" is for character components like vowel markers, etc.
@@ -1192,7 +1203,7 @@ def parse_gap(p, gap) -> tuple[str, str, str]:
 # EGD: "Scribal Omission without Editorial Restoration"
 @handler("gap")
 def handle_gap(p, gap):
-	phys_repl, log_repl, tip = parse_gap(p, gap)
+	phys_repl, log_repl, search_repl, tip = parse_gap(p, gap)
 	assert not isinstance(log_repl, tree.Node)
 	p.push(tree.Tag("views"))
 	for display, node in (("physical", phys_repl), ("logical", log_repl),
@@ -1200,12 +1211,19 @@ def handle_gap(p, gap):
 		p.push(tree.Tag(display, lang=gap.notes["assigned_lang"]))
 		if tip:
 			p.push(tree.Tag("span", tip=tip))
+			p.push(tree.Tag("split"))
+			p.push(tree.Tag("display"))
 			p.append(node)
 			p.join()
+			p.push(tree.Tag("search"))
+			p.append(search_repl)
+			p.join()
+			p.join("split")
+			p.join("span")
 		else:
 			p.append(node)
 		p.join()
-	p.join()
+	p.join("views")
 
 """
 The following table was produced with this code:

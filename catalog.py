@@ -76,7 +76,7 @@ def make_document_record(file, doc: tree.Tree):
 	rec["summary"] = copy_node_contents(doc.first("/document/summary"))
 	return rec
 
-def make_searchable_record(data):
+def make_indexed_record(data):
 	rec = {}
 	rec["name"] = data["name"]
 	rec["ident"] = common.normalize_text(data["name"])
@@ -114,14 +114,19 @@ def make_searchable_record(data):
 		rec["summary"] = None
 	return rec
 
+def make_search_record(t):
+	return {}
+
 def insert(file: texts.File):
 	db = common.db("texts")
 	logging.info(f"processing {file!r}")
 	# XXX should store XML fields as such in the DB, not as HTML, because
-	# we need to be able to highlight them.
+	# we need to be able to highlight them later on.
 	try:
 		doc = tei.process_file(file)
-		data = make_document_record(file, doc.to_internal())
+		internal = doc.to_internal()
+		data = make_document_record(file, internal)
+		data["search"] = make_search_record(internal)
 		html_doc = doc.to_html()
 	except tree.Error:
 		data = {}
@@ -132,11 +137,12 @@ def insert(file: texts.File):
 		data["editors"] = []
 		data["editors_ids"] = []
 		data["summary"] = None
+		data["search"] = {}
 		html_doc = internal2html.HTMLDocument()
 	data["name"] = file.name
 	data["repo"] = file.repo
 	data["status"] = file.status
-	search = make_searchable_record(data)
+	indexed = make_indexed_record(data)
 	if html_doc and html_doc.titles:
 		data["title"] = html_doc.titles[0].html()
 	if html_doc and html_doc.summary:
@@ -154,7 +160,7 @@ def insert(file: texts.File):
 	insert into documents_index(name, ident, repo, title, author, editor,
 		editor_id, lang, summary, script)
 	values (:name, :ident, :repo, :title, :author, :editor,
-		:editor_id, :lang, :summary, :script)""", search)
+		:editor_id, :lang, :summary, :script)""", indexed)
 
 # Rebuild the full catalog with the data already present in the db, i.e. without
 # fetching files from github repos but instead from the db. This should be used

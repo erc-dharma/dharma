@@ -224,9 +224,14 @@ create table if not exists documents(
 	summary html check(
 		summary is null
 		or typeof(summary) = 'text' and length(summary) > 0),
-	-- See the enum in change.py
+	-- How valid/invalid the XML document is. 0 is valid, the larger the
+	-- value, the more corrupt the document is. See the enum in validate.py
 	status integer check(
 		typeof(status) = 'integer' and status between 0 and 3),
+	search json check(
+		typeof(search) = 'text'
+		and json_valid(search)
+		and json_type(search) = 'object'),
 	foreign key(name) references files(name)
 );
 
