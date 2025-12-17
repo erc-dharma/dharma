@@ -1,5 +1,13 @@
 # TODO
 
+Malayalam à ajouter à liste des langues + à liste des écritures (ajouter sous brāhmī_southern)
+
+autoriser hi rend=grantha dans <unclear> (devrait supprimer qqes erreurs dans INSSIIv04p0i0434)
+
+regarder https://dharmalekha.info/errors/DHARMA_INSSIIv04p0i0433, qui n'a pas d'erreur.
+
+===
+
 INSTamilOutsideTN10002: supprimer distinction entre langue source/traduction;
 	il faut ignorer au moins "head" et "note" pour la distribution des
 	langues.

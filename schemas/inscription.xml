@@ -1072,14 +1072,6 @@
                     </attList>
                 </elementSpec>
                 <elementSpec ident="unclear" module="core" mode="change">
-                    <desc>Character that cannot be identified unambiguously outside of its context.
-                        May contain character data and <gi>g</gi> only.</desc>
-                    <content>
-                        <alternate maxOccurs="unbounded">
-                            <macroRef key="macro.xtext"/>
-                            <elementRef key="hi"/>
-                        </alternate>
-                    </content>
                     <attList>
                         <attDef ident="agent" mode="delete"/>
                         <attDef ident="ana" mode="delete"/>
