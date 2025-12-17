@@ -468,7 +468,7 @@ Dataset of Fractions in the Chola Thanjavur Village Grants (SII 2.4-2.5)
 	</div>
 	<div>kīḻ series (in order of appearance)</div>
 	<div>
-		<div><p>1. 1/320 * (1/2 + 1/320) </p><p><b>2. </b>1/320 * (1/2 + 2/20<b>)</b></p></div>
+		<div><p>1. 1/320 * (1/2 + 1/320) </p><p><b>2. </b>1/320 * (1/2 + 2/20)</p></div>
 		<div><p>1. 1/320 * (1/20 + 1/80 + 1/160)</p></div>
 		<div><p><b>1. </b>1/320 * (8/20 + 1/40 + 1/160 + 1/320)</p><p><b>2. </b> 1/320 * 4/20</p></div>
 	</div>
