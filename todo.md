@@ -1,9 +1,5 @@
 # TODO
 
-Malayalam à ajouter à liste des langues + à liste des écritures (ajouter sous brāhmī_southern)
-
-autoriser hi rend=grantha dans <unclear> (devrait supprimer qqes erreurs dans INSSIIv04p0i0434)
-
 regarder https://dharmalekha.info/errors/DHARMA_INSSIIv04p0i0433, qui n'a pas d'erreur.
 
 ===

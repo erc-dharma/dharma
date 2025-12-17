@@ -150,6 +150,7 @@
                             <valItem ident="kaw"><desc>Kawi</desc></valItem>
                             <valItem ident="khm"><desc>Khmer</desc></valItem>
                             <valItem ident="kxm"><desc>Khmer, Northern</desc></valItem>
+                            <valItem ident="mal"><desc>Malayalam</desc></valItem>
                             <valItem ident="mya"><desc>Burmese</desc></valItem>
                             <valItem ident="nld"><desc>Dutch</desc></valItem>
                             <valItem ident="obr"><desc>Burmese, Old</desc></valItem>
