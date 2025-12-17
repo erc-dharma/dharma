@@ -21,6 +21,8 @@
 </div>
 % endif
 
+{{summary | safe}}
+
 {{doc.body.html() | safe}}
 
 % endblock body

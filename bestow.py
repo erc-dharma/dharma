@@ -55,14 +55,14 @@ import tei
 HANDLERS.extend(tei.HANDLERS)
 
 def process():
-	t = tree.parse("repos/BESTOW/DHARMA_Sircar1965.xml")
+	t = tree.parse("repos/BESTOW/DHARMA_BESTOW.xml")
 	document = tei.process_tree(t, handlers=HANDLERS)
 	return document
 
 if __name__ == "__main__":
 	@common.transaction("texts")
 	def main():
-		t = tree.parse("repos/BESTOW/DHARMA_Sircar1965.xml")
+		t = tree.parse("repos/BESTOW/DHARMA_BESTOW.xml")
 		document = tei.process_tree(t, handlers=HANDLERS)
 		print(document.to_html(toc_depth=1))
 	main()

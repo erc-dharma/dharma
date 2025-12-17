@@ -188,10 +188,7 @@ but where exactly should we abbreviate snippets?
 
 
 
-
-
-
-Pour rendre cherchaboes les notes, les placer.à la fin du document. Et considérer <note> comme une sorte de division. On devrai également considérer l'élément quote commee une div, et avoir des éléments para ou verse dedans. Idem for list and dlist items.
+Pour rendre cherchables les notes, les placer à la fin du document. Et considérer <note> comme une sorte de division. On devrai également considérer l'élément quote commee une div, et avoir des éléments para ou verse dedans. Idem for list and dlist items.
 
 
 

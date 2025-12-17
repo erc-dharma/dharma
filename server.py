@@ -274,7 +274,11 @@ def show_catalog():
 def show_bestow():
 	import bestow
 	doc = bestow.process().to_html(toc_depth=2)
-	return flask.render_template("bestow.tpl", doc=doc)
+	# XXX should not read it directly, stick it in the db first
+	with open(common.path_of("repos/BESTOW/BestowPresentation.md")) as f:
+		text = f.read()
+	text = common.pandoc(text, standalone=False)
+	return flask.render_template("bestow.tpl", doc=doc, summary=text)
 
 @app.get("/editorial-conventions")
 @common.transaction("texts")
