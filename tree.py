@@ -677,7 +677,7 @@ class Branch(Node, list):
 	def insert(self, i, node):
 		if isinstance(node, Node):
 			if isinstance(node, Tree):
-				for j, child in enumerate(node):
+				for j, child in enumerate(list(node)):
 					self.insert(i + j, child)
 				return
 			# Detach the node from the tree it belongs to, if any.
