@@ -1087,7 +1087,7 @@ def parse_other_seg(p, seg):
 	else:
 		return parse_seg(p, seg)
 	p.push(tree.Tag("span", lang=seg.notes["assigned_lang"]))
-	_, _, tip = parse_gap(p, seg.first("stuck-child::gap"))
+	_, _, tip, _ = parse_gap(p, seg.first("stuck-child::gap"))
 	if tip:
 		p.top["tip"] = tip
 	p.append_display("[")
