@@ -65,7 +65,7 @@ status:
 follow:
 	sudo journalctl -fu 'dharma.change'
 
-.PHONY: start-all stop-all start stop status follow
+.PHONY: start stop status follow
 
 update-repos:
 	@for d in repos/*; do \
