@@ -74,6 +74,15 @@ update-repos:
 		sleep 5; \
 	done
 
+# Only keep the latest commit of each repo under ./repos
+shallow-repos:
+	@for d in repos/*; do \
+	echo "% $$(basename $$d)"; \
+		git -C $$d pull -q --depth 1; \
+		git -C $$d gc --prune=all; \
+		sleep 5; \
+	done
+
 update-db:
 	rsync --progress dharma:dbs/texts.sqlite dharma:dbs/texts.sqlite-wal dbs/
 

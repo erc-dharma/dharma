@@ -114,9 +114,6 @@ def make_indexed_record(data):
 		rec["summary"] = None
 	return rec
 
-def make_search_record(t):
-	return {}
-
 def insert(file: texts.File):
 	db = common.db("texts")
 	logging.info(f"processing {file!r}")
@@ -126,7 +123,6 @@ def insert(file: texts.File):
 		doc = tei.process_file(file)
 		internal = doc.to_internal()
 		data = make_document_record(file, internal)
-		data["search"] = make_search_record(internal)
 		html_doc = doc.to_html()
 	except tree.Error:
 		data = {}
@@ -137,7 +133,6 @@ def insert(file: texts.File):
 		data["editors"] = []
 		data["editors_ids"] = []
 		data["summary"] = None
-		data["search"] = {}
 		html_doc = internal2html.HTMLDocument()
 	data["name"] = file.name
 	data["repo"] = file.repo
@@ -161,6 +156,8 @@ def insert(file: texts.File):
 		editor_id, lang, summary, script)
 	values (:name, :ident, :repo, :title, :author, :editor,
 		:editor_id, :lang, :summary, :script)""", indexed)
+	import search
+	search.add_document(file)
 
 # Rebuild the full catalog with the data already present in the db, i.e. without
 # fetching files from github repos but instead from the db. This should be used

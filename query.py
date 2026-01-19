@@ -1,6 +1,16 @@
 """Query tokenizer and parser.
 
-The parsing grammar is in query_parser.g.
+We need two query languages: one for the user, another one for the application.
+
+For the user-facing language, we use a simple query syntax that is similar to
+the one used in traditional search systems, like Lucene and Xapian. The parsing
+grammar is in query_parser.g.
+
+For the application language, we should use S-expressions (or maybe XML or JSON,
+but they are less readable and take longer to write). We need an application
+language because we want to be able to serialize queries for tests and for
+debugging. We shouldn't have to fill out a Web form each time we want to try out
+something.
 """
 
 import argparse, tokenize, traceback
@@ -11,11 +21,10 @@ class InvalidQuery(Exception):
 	pass
 
 def make_token(s, t):
-	# For now we don't bother to indicate correct offsets. And we also
-	# don't bother to distinguish operators, strings, etc. as python does,
-	# because it doesn't matter for us.
-	# (type, string, start, end, line)
-	# start and end are tuples (line_no, col_no)
+	# For now we don't bother to indicate correct offsets. Might want to do
+	# that later on to improve error messages. And we also don't bother to
+	# distinguish operators, strings, etc. as python does, because it
+	# doesn't matter for us.
 	token = tokenize.TokenInfo(type=tokenize.NAME, string=t,
 		start=(1, 0), end=(1, 0), line=s)
 	return token
@@ -39,7 +48,7 @@ def tokenize_query(s):
 			i += 1
 			continue
 		if s[i] in char_token:
-			yield make_token(s,s[i])
+			yield make_token(s, s[i])
 			i += 1
 			continue
 		if s[i] == '"':

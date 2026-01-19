@@ -39,6 +39,11 @@ make a root div without a @type or with an unknown type an anonymous division.
 should have an axis for "everything except <note>", because there are a #
 lots of cases where we _must_ avoid <note>, and it's not immediately clear #
 where, and it's error-prone.
+
+
+For pandoc, the relevant documentation is:
+https://pandoc.org/using-the-pandoc-api.html
+https://hackage-content.haskell.org/package/pandoc-types-1.23.1.1/docs/Text-Pandoc-Definition.html
 """
 
 import re, sys
@@ -1410,6 +1415,9 @@ def process(t: tree.Tree):
 	languages.finish_internal(t)
 
 def fetch_file_data(ident):
+	# XXX should do this from the File() object, not from the db, because
+	# we should not depend on the file being already inserted in the db.
+	"""The return value is meant to be used by add_file_info()."""
 	db = common.db("texts")
 	return db.execute("""
 	select

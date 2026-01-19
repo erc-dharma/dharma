@@ -60,6 +60,7 @@ scripts = element scripts {
 	}+
 }
 
+
 block = para | verse | quote | dlist | elist
 
 # Elements that do not cross a paragraph boundary (or a line boundary).
@@ -202,6 +203,7 @@ verse = element verse { head?, verse-line+ }
 
 verse-line = element verse-line {
 	attribute lang { text }?,
+	# Whether there is a break at the beginning of this line.
 	attribute break { xsd:boolean },
 	attribute n { text }?,
 	attribute tip { text }?,

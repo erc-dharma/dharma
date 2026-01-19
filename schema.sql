@@ -228,11 +228,12 @@ create table if not exists documents(
 	-- value, the more corrupt the document is. See the enum in validate.py
 	status integer check(
 		typeof(status) = 'integer' and status between 0 and 3),
-	search json check(
-		typeof(search) = 'text'
-		and json_valid(search)
-		and json_type(search) = 'object'),
 	foreign key(name) references files(name)
+);
+
+create table if not exists documents_search(
+	identifier text primary key,
+	logical text check(logical is null or typeof(logical) = 'text')
 );
 
 -- Inverted index for the catalog display. We have exactly one row for each text

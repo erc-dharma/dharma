@@ -214,6 +214,13 @@ class Row:
 			raise KeyError(f"no column '{key}'")
 		return self._convert(column)
 
+	def get(self, key, default=None):
+		assert not isinstance(key, int)
+		column = self._column_name_to_index(key)
+		if column < 0:
+			return default
+		return self._convert(column)
+
 	def __setitem__(self, key, value):
 		if isinstance(self._row, tuple):
 			self._row = list(self._row)

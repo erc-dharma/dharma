@@ -1,20 +1,5 @@
 three modules: query tree; search system; highlighting+snippets selection system
 
-## query tree.
-
-query strings must be convertible to a tree. and we should be able to patch this
-tree manually to add extra search
-criteria. for now, use a basic search syntax similar to lucene and friends. it
-doesn't really help to have a more sophisticated syntax because then we would
-also have to write extra code for converting the search form data to this
-representation. no, delete that, it's better to have a more expressive query
-language for testing; we're not gonna fill out a web form each time!
-
-in fact should have two query languages:
-* the one for the user (lucene-like)
-* the one used by the system (for serializing queries and display them). used
-  sexp for this.
-
 ## to search representation
 
 need to store it in the db, would take too long to do that live. it should be
@@ -32,7 +17,31 @@ should be enough for now. this can be encoded more efficiently later on.
 
 ## the search system.
 
+for now (january 2026) editions (only the edited text) in plain text and in
+UTF-8 weigh 29M in total, for about 7M code points. we should just stick all the
+data in a single string and search that.
+
+On ferait sans doute mieux de convertir le texte une seule fois, vers une forme générique, et ensuite seulement générer des représentations spécialisées
+
+Avec ou sans tiret
+Avec ou sans capitales
+Avec ou sans diacritiques
+
+use edlib.align("ātman", amalg, mode="HW"); only returns matches with the lowest
+edit distance.
+
 make it independent from all other stuff.
+
+should do the search stuff in a separate process, to be able to share the
+in-memory search data, and also to make debugging and testing easier. should be
+implemented as a sqlite extension, so that we don't need to worry about
+transactional logic within the search stuff. from within the search stuff,
+detect db modifications (https://www.sqlite.org/c3ref/update_hook.html; and also
+https://rogerbinns.github.io/apsw/example.html#update-hook) and reload the
+in-memory data when this happens. write the code in python (for simplicity and
+because we don't know yet what unicode/etc. libraries we will need to use). we
+must sticj the search stuff in a separate process, but in this case how to
+guarantee it views the same data as the client?
 
 it maps a set of fields to their search representation. a
 single field in the original might have several search representations. these
@@ -185,10 +194,6 @@ but where exactly should we abbreviate snippets?
 
 
 =====
-
-
-
-Pour rendre cherchables les notes, les placer à la fin du document. Et considérer <note> comme une sorte de division. On devrai également considérer l'élément quote commee une div, et avoir des éléments para ou verse dedans. Idem for list and dlist items.
 
 
 
