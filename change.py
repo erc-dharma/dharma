@@ -284,7 +284,7 @@ def read_changes(fd):
 # To be used by clients, not when running this __main__ (this would release the
 # lock we hold on the fifo).
 def notify(name):
-	msg = name.encode("ascii") + b"\n"
+	msg = name.encode("utf-8") + b"\n"
 	assert len(msg) <= PIPE_BUF
 	fd = os.open(FIFO_ADDR, os.O_RDWR | os.O_NONBLOCK)
 	try:

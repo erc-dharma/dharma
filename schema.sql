@@ -231,9 +231,17 @@ create table if not exists documents(
 	foreign key(name) references files(name)
 );
 
+-- Data to be accessed by the external search tool. For simplicity, we stick
+-- everything here, because the external search tool should not depend on a
+-- sophisticated access pattern.
 create table if not exists documents_search(
 	identifier text primary key,
-	logical text check(logical is null or typeof(logical) = 'text')
+	-- There can be several titles. Thus the following is a list of strings.
+	title json,
+	logical text check(logical is null or typeof(logical) = 'text'),
+	-- Internal representation.
+	internal xml check(typeof(internal) = 'text'),
+	foreign key(identifier) references files(identifier)
 );
 
 -- Inverted index for the catalog display. We have exactly one row for each text

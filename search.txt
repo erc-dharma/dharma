@@ -1,3 +1,6 @@
+
+====
+
 three modules: query tree; search system; highlighting+snippets selection system
 
 ## to search representation

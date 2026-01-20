@@ -187,6 +187,12 @@ class Row:
 		buf.append("}")
 		return "".join(buf)
 
+	def json(self):
+		tbl = collections.OrderedDict()
+		for i, (col_name, _) in enumerate(self._columns):
+			tbl[col_name] = self._convert(i)
+		return tbl
+
 	def _convert(self, i):
 		data = self._row[i]
 		_, col_type = self._columns[i]
@@ -323,6 +329,9 @@ def from_json(o):
 class JSONEncoder(json.JSONEncoder):
 
 	def default(self, o):
+		f = getattr(o, "json", None)
+		if f is not None:
+			return f()
 		return str(o)
 
 def to_json(obj):

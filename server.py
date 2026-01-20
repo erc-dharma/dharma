@@ -2,6 +2,7 @@ import os, unicodedata, datetime, html, urllib, urllib.parse, ntpath, hashlib
 
 import flask, werkzeug.security # pip install flask
 from bs4 import BeautifulSoup # pip install bs4
+import requests # pip install requests
 
 from dharma import common, change, ngrams, catalog, validate, tei, tree
 from dharma import biblio, texts, editorial, prosody, internal2html, languages
@@ -557,6 +558,27 @@ def handle_github():
 	repo = js["repository"]["name"]
 	change.notify(repo)
 	return ""
+
+@app.get("/search")
+def search():
+	q = flask.request.args.get("q", "")
+	if not q:
+		return flask.render_template("search.tpl")
+	ret = query_search_service(q)
+	return flask.render_template("search.tpl", **ret)
+
+@common.transaction("texts") # XXX don't query the db, only the go code should access it
+def query_search_service(query):
+	assert query
+	r = requests.get("http://localhost:8026/search", params={"q": query})
+	r.raise_for_status()
+	answer = r.json()
+	ret = {"query": answer["query"], "matching_count": answer["count"], "matches": []}
+	for match in answer["matches"]:
+		file = common.db("texts").load_file(answer["identifier"])
+		t = tree.parse(file)
+		#XXX
+	return ret
 
 def render_markdown(f: texts.File):
 	html = common.pandoc(f.text)
