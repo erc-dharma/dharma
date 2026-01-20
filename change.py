@@ -214,7 +214,7 @@ def update_project():
 	if to_update:
 		# We use sorted() below to make sure that we always call modules
 		# in the same order.
-		for module in sorted(to_update):
+		for module in sorted(to_update, key=lambda m: m.__name__):
 			module.update()
 		catalog.rebuild()
 	repo = "project-documentation"
