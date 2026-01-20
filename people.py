@@ -46,7 +46,9 @@ def iter_members_list():
 		row["affiliation"] = affil or None
 		yield row
 
-def make_db():
+dependencies = {"DHARMA_gitNames.tsv", "DHARMA_idListMembers_v01.xml"}
+
+def update():
 	db = common.db("texts")
 	db.execute("delete from people_github")
 	db.execute("delete from people_main")
@@ -84,5 +86,5 @@ def plain_from_github(github_id):
 if __name__ == "__main__":
 	@common.transaction("texts")
 	def main():
-		make_db()
+		update()
 	main()

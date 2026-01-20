@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -50,30 +52,44 @@ type Searcher struct {
 func (s *Searcher) LoadCorpus(path string) error {
 	log.Printf("Loading corpus from %s...", path)
 	start := time.Now()
-	data, err := os.ReadFile(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal(data, &s.Documents); err != nil {
-		return err
+	defer file.Close()
+	reader := bufio.NewReader(file)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if err != nil && err != io.EOF {
+			return err
+		}
+		if err == nil {
+			line = line[:len(line)-1]
+		}
+		if len(line) > 0 {
+			var doc Document
+			if err := json.Unmarshal(line, &doc); err != nil {
+				return err
+			}
+			s.Documents = append(s.Documents, doc)
+		}
+		if err == io.EOF {
+			break
+		}
 	}
-	log.Printf("✅ Corpus loaded: %d documents in %v", len(s.Documents), time.Since(start))
+	log.Printf("Corpus loaded: %d documents in %v", len(s.Documents), time.Since(start))
 	return nil
 }
 
 // Search performs a linear scan over all documents.
-// It looks for the query substring within the 'Logical' field.
 func (s *Searcher) Search(query string) []SearchMatch {
 	var results []SearchMatch
-	// Normalize query to lowercase for case-insensitive search
-	queryLower := strings.ToLower(query)
 	for _, doc := range s.Documents {
 		var occurrences []Occurrence
-		occurrences = append(occurrences, findMatches(doc.Logical, "logical", query, queryLower)...)
+		occurrences = append(occurrences, findMatches(doc.Logical, "logical", query)...)
 		for _, title := range doc.Title {
-			occurrences = append(occurrences, findMatches(title, "title", query, queryLower)...)
+			occurrences = append(occurrences, findMatches(title, "title", query)...)
 		}
-
 		if len(occurrences) == 0 {
 			continue
 		}
@@ -86,18 +102,17 @@ func (s *Searcher) Search(query string) []SearchMatch {
 	return results
 }
 
-func findMatches(text, field, query, queryLower string) []Occurrence {
+func findMatches(text, field, query string) []Occurrence {
 	var matches []Occurrence
 	// Skip documents with empty content
 	if text == "" {
 		return matches
 	}
-	contentLower := strings.ToLower(text)
 	// Find all occurrences of the query
 	startPos := 0
 	for {
 		// strings.Index returns the byte index of the first instance of query
-		idx := strings.Index(contentLower[startPos:], queryLower)
+		idx := strings.Index(text[startPos:], query)
 		if idx == -1 {
 			break
 		}
@@ -119,13 +134,14 @@ func findMatches(text, field, query, queryLower string) []Occurrence {
 
 func main() {
 	// Command line flags configuration
-	jsonPath := flag.String("corpus", "../corpus.json", "Path to the JSON corpus file")
+	jsonPath := flag.String("corpus", "../corpus.jsonl.hid", "Path to the JSON corpus file")
 	port := flag.String("port", "8026", "HTTP server port")
+	pretty := flag.Bool("pretty", true, "Prettify JSON output")
 	flag.Parse()
 	// Initialize search engine
 	searcher := &Searcher{}
 	if err := searcher.LoadCorpus(*jsonPath); err != nil {
-		log.Fatalf("❌ Failed to load corpus: %v", err)
+		log.Fatalf("Failed to load corpus: %v", err)
 	}
 	// Define search route
 	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
@@ -144,7 +160,11 @@ func main() {
 		matches := searcher.Search(query)
 		duration := time.Since(start)
 		// Encode response to JSON
-		json.NewEncoder(w).Encode(SearchResponse{
+		enc := json.NewEncoder(w)
+		if *pretty {
+			enc.SetIndent("", "\t")
+		}
+		enc.Encode(SearchResponse{
 			Query:    query,
 			Count:    len(matches),
 			Duration: duration.String(),
@@ -152,7 +172,7 @@ func main() {
 		})
 	})
 	// Start server
-	log.Printf("🚀 Search server running on http://localhost:%s", *port)
+	log.Printf("Search server running on http://localhost:%s", *port)
 	if err := http.ListenAndServe(":"+*port, nil); err != nil {
 		log.Fatal(err)
 	}

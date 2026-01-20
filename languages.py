@@ -338,7 +338,9 @@ def finish_internal(node: tree.Branch):
 
 ########################## Database construction ###############################
 
-def update_db():
+dependencies = {"DHARMA_languages.tsv", "DHARMA_scripts.xml"}
+
+def update():
 	update_langs()
 	update_scripts()
 
@@ -572,7 +574,7 @@ def make_hierarchy(root, rid=0, parent=None):
 
 @common.transaction("texts")
 def cmd_update_db():
-	update_db()
+	update()
 
 @common.transaction("texts")
 def cmd_print_stuff():

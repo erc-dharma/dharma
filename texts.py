@@ -26,8 +26,8 @@ class File:
 		self.repo: str = repo
 		"Name of the repository (e.g. `tfa-pallava-epigraphy`)."
 		self.path: str = path
-		"""Path of the file relative to the repository directory"
-		(`texts/xml/DHARMA_INSPallava00002.xml`)."""
+		"""Path of the file relative to the repository directory
+		(e.g. `texts/xml/DHARMA_INSPallava00002.xml`)."""
 		self._status = None
 		self._mtime = None
 		self._data = None
@@ -112,9 +112,26 @@ class File:
 		"""
 		return common.path_of("repos", self.repo, self.path)
 
+def iter_files_in_repo(repo) -> typing.Generator[File, None, None]:
+	"""Iterates over all files in a given repository (but ignores hidden
+	directories). `repo` is the name of the repository (e.g.
+	`tfa-pallava-epigraphy`).
+	"""
+	repo_path = common.path_of("repos", repo)
+	for root, dirs, files in os.walk(repo_path):
+		# Ignore hidden directories.
+		for dir in list(dirs):
+			if dir.startswith("."):
+				dirs.remove(dir)
+		for file in files:
+			full_path = os.path.join(root, file)
+			rel_path = os.path.relpath(full_path, repo_path)
+			yield File(repo, rel_path)
+
 def iter_texts_in_repo(repo) -> typing.Generator[File, None, None]:
 	"""Iterates over TEI editions in a repository. `repo` is the name of the
-	repository (e.g. `tfa-pallava-epigraphy`)."""
+	repository (e.g. `tfa-pallava-epigraphy`).
+	"""
 	repo_path = common.path_of("repos", repo)
 	for root, dirs, files in os.walk(repo_path):
 		# Ignore hidden directories.

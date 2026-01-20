@@ -21,10 +21,11 @@ def split_lines(text):
 
 class Message:
 
-	line = -1
-	column = -1
-	text = None
-	assertion = None # schematron
+	def __init__(self):
+		self.line: int = -1
+		self.column: int = -1
+		self.text: str | None = None
+		self.assertion: str | None = None # schematron
 
 	def __repr__(self):
 		ret = f"{self.line}:{self.column}: {self.text}"

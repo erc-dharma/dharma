@@ -1,5 +1,5 @@
 import uuid
-from dharma import common, tei, tree, texts
+from dharma import common, tei, tree, texts, patch
 
 class DocumentIndexer:
 	"""Handles the parsing of DHARMA XML files to produce search-ready text
@@ -203,6 +203,7 @@ def get_identifier(doc):
 	"""Retrieves the document identifier from metadata.
 	"""
 	ident = doc.first("/document/identifier")
+	assert ident
 	return ident.text() if ident else ""
 
 def get_title(doc):
@@ -227,7 +228,13 @@ def prepare_search_data(doc: tree.Tree):
 	return data, indexer.mapping
 
 def add_document(file: texts.File):
-	doc = tei.process_file(file).to_internal()
+	try:
+		doc = tei.process_file(file).to_internal()
+	except tree.Error:
+		doc = tree.Tag("document").tree
+	# XXX just don't bother separating file data from the rest, add all data
+	# in patch.py and update the internal schema accordingly.
+	patch.add_file_info(doc, patch.fetch_file_data(file.name))
 	search_data, _ = prepare_search_data(doc)
 	db = common.db("texts")
 	db.execute("""insert or replace
@@ -237,9 +244,9 @@ def add_document(file: texts.File):
 @common.transaction("texts")
 def export_corpus():
 	db = common.db("texts")
-	corpus = db.execute("""select * from documents_search
-		where identifier glob 'DHARMA_INS*'""").fetchall()
-	print(common.to_json(corpus))
+	for row in db.execute("""select * from documents_search
+		where identifier glob 'DHARMA_INS*'"""):
+		print(common.to_json(row))
 
 if __name__ == "__main__":
 	export_corpus()

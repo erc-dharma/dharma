@@ -33,7 +33,9 @@ def get(name):
 	}
 	return ret
 
-def make_db():
+dependencies = {"gaiji/DHARMA_gaiji.tsv"}
+
+def update():
 	db = common.db("texts")
 	data = load_data()
 	db.execute("delete from gaiji")

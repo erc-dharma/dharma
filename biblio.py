@@ -122,7 +122,6 @@ def insert_entry(db, entry):
 		data) values(?, ?, ?, ?)""", (short_title, entry["key"],
 		sort_key, entry["data"]))
 
-@common.transaction("texts")
 def update():
 	db = common.db("texts")
 	(min_version,) = db.execute("""select value from metadata

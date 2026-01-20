@@ -2,7 +2,9 @@
 import html, re
 from dharma import common, tree, biblio, people, texts, languages
 
-def make_db():
+dependencies = {"DHARMA_prosodicPatterns_v01.xml"}
+
+def update():
 	texts.save("project-documentation", "DHARMA_prosodicPatterns_v01.xml")
 	_, index = parse_prosody()
 	db = common.db("texts")
@@ -244,5 +246,5 @@ if __name__ == "__main__":
 	@common.transaction("texts")
 	def main():
 		#print(common.to_json(parse_prosody()))
-		make_db()
+		update()
 	main()

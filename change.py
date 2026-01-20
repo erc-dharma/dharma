@@ -38,7 +38,6 @@ last_pull = 0
 # Wait at least this long between two pulls, counting in seconds.
 min_pull_wait = 10
 
-@common.transaction("texts")
 def all_useful_repos():
 	db = common.db("texts")
 	# Always process repos in the same order.
@@ -47,6 +46,10 @@ def all_useful_repos():
 		order by repo""")
 	ret = [name for (name,) in ret]
 	return ret
+
+@common.transaction("texts")
+def all_useful_repos_protected():
+	return all_useful_repos()
 
 def clone_repo(name):
 	path = common.path_of("repos", name)
@@ -109,6 +112,10 @@ class Changes:
 			(self.repo,)).fetchone() or (None, None)
 		if commit_hash == self.commit_hash:
 			if code_hash == common.CODE_HASH:
+				# If we have already processed the commit of the
+				# source repository and have not updated the
+				# code in the meantime, there is no reason to
+				# reprocess the repository.
 				self.done = True
 				return
 			# The code changed, we need to update everything
@@ -126,11 +133,16 @@ class Changes:
 			where repo = ?""", (self.repo,)):
 			self.before.add(name)
 
+	def pertinent_files(self):
+		if self.repo == "project-documentation":
+			return texts.iter_files_in_repo(self.repo)
+		return texts.iter_texts_in_repo(self.repo)
+
 	def check_repo(self):
 		if self.done:
 			return
 		seen = set()
-		for file in texts.iter_texts_in_repo(self.repo):
+		for file in self.pertinent_files():
 			seen.add(file.name)
 			if file.name not in self.before:
 				self.insert.append(file)
@@ -169,20 +181,42 @@ def update_db(repo):
 			db.save_file(file)
 			catalog.insert(file)
 
-# We should always put stuff like names, etc. in the db instead of keeping it
+# XXX We should always put stuff like names, etc. in the db instead of keeping it
 # in-memory, so that we can tell what's the current data just by looking at
 # the db. Otherwise would have to write introspection code. Other reason: at
 # some point, we want to have a downloadable read-only db. Ideally, it should
 # be possible to run the code without having to set up repositories.
 def update_project():
-	# TODO add tests to verify whether the files we need changed, to avoid
-	# doing a full rebuild when not necessary.
-	people.make_db()
-	languages.update_db()
-	gaiji.make_db()
-	prosody.make_db()
-	repos.make_db()
-	catalog.rebuild()
+	changes = Changes("project-documentation")
+	changes.check_db()
+	if changes.done:
+		return
+	changes.check_repo()
+	modified = set(file.path for files in (changes.insert, changes.update,
+		changes.delete) for file in files)
+	# Each of these modules has a .dependencies list of files that
+	# enumerates all files from project-documentation the module needs to
+	# read during an update. Each of these modules also has an update()
+	# function that updates the db with the data found in these files.
+	# Knowing which files each module needs to read allows us to not trigger
+	# a full corpus update if none of these files have been modified. We
+	# could do something more fine-grained, but I'm not sure the extra
+	# complexity would be worth it.
+	modules = {people, languages, gaiji, prosody, repos}
+	files = {}
+	for module in modules:
+		for file in module.dependencies:
+			files.setdefault(file, set()).add(module)
+	to_update = set()
+	for file, file_modules in files.items():
+		if file in modified:
+			to_update |= file_modules
+	if to_update:
+		# We use sorted() below to make sure that we always call modules
+		# in the same order.
+		for module in sorted(to_update):
+			module.update()
+		catalog.rebuild()
 	repo = "project-documentation"
 	commit_hash, commit_date = latest_commit_in_repo(repo)
 	db = common.db("texts")
@@ -197,7 +231,6 @@ def backup_biblio():
 	common.command("bash", "-x", common.path_of("backup_biblio.sh"),
 		capture_output=False)
 
-@common.transaction("texts")
 def handle_changes(name):
 	update_repo(name)
 	if name == "project-documentation":
@@ -214,7 +247,7 @@ PIPE_BUF = 512
 NEXT_FULL_UPDATE = time.time()
 
 # Force a full update every FORCE_UPDATE_DELTA seconds.
-FORCE_UPDATE_DELTA = 1 * 60 * 60
+FORCE_UPDATE_DELTA = 4 * 60 * 60
 
 # In the worst case, if we're not fast enough to handle any update events, we
 # just end up running forced full updates continuously. We check if a full
@@ -245,46 +278,71 @@ def read_names(fd):
 		data = os.read(fd, PIPE_BUF)
 		buf += data.decode("ascii")
 
+@common.transaction("texts")
+def update_everything():
+	# For the initial run to work properly, need to update in this order:
+	# the bibliography (some files cite it in project-documentation);
+	# project-documentation (it contains a list of all dharma repos); and
+	# all other repos in whatever order.
+	start = time.time()
+	logging.info("updating everything...")
+	logging.info("updating biblio...")
+	biblio.update()
+	logging.info("updated biblio")
+	name = "project-documentation"
+	logging.info(f"updating {name!r}")
+	handle_changes(name)
+	logging.info(f"updated {name!r}")
+	repos = all_useful_repos()
+	repos.remove(name)
+	for name in repos:
+		logging.info(f"updating {name!r}")
+		handle_changes(name)
+		logging.info(f"updated {name!r}")
+	backup_biblio()
+	logging.info(f"updated everything in {time.time() - start}s")
+
+@common.transaction("texts")
+def update_biblio():
+	start = time.time()
+	logging.info("updating biblio...")
+	biblio.update()
+	backup_biblio()
+	logging.info(f"updated biblio in {time.time() - start}s")
+
+@common.transaction("texts")
+def rebuild_catalog():
+	start = time.time()
+	logging.info("rebuilding catalog...")
+	catalog.rebuild()
+	logging.info(f"rebuilt catalog in {time.time() - start}s")
+
+@common.transaction("texts")
+def update_repository(name):
+	"Updates a single repository."
+	start = time.time()
+	logging.info(f"updating single repo {name!r}...")
+	handle_changes(name)
+	logging.info(f"updated single repo {name!r} in {time.time() - start}s")
+
 def read_changes(fd):
 	for name in read_names(fd):
-		if name == "all":
-			# For the initial run to work properly, need to update
-			# in this order: the bibliography (some files cite it in
-			# project-documentation); project-documentation (it
-			# contains a list of all dharma repos); and all other
-			# repos in whatever order.
-			logging.info("updating everything...")
-			logging.info("updating biblio...")
-			biblio.update()
-			logging.info("updated biblio")
-			name = "project-documentation"
-			logging.info(f"updating {name!r}")
-			handle_changes(name)
-			logging.info(f"updated {name!r}")
-			repos = all_useful_repos()
-			repos.remove(name)
-			for name in repos:
-				logging.info(f"updating {name!r}")
-				handle_changes(name)
-				logging.info(f"updated {name!r}")
-			backup_biblio()
-			logging.info("updated everything")
-		elif name == "bib":
-			logging.info("updating biblio...")
-			biblio.update()
-			backup_biblio()
-			logging.info("updated biblio")
-		elif name in all_useful_repos():
-			logging.info(f"updating single repo {name!r}...")
-			handle_changes(name)
-			logging.info(f"updated single repo {name!r}")
-		else:
-			logging.warning(f"junk command: {name!r}")
+		match name:
+			case "all":
+				update_everything()
+			case "bib":
+				update_biblio()
+			case "rebuild":
+				rebuild_catalog()
+			case _ if name in all_useful_repos_protected():
+				update_repository(name)
+			case _:
+				logging.warning(f"junk command: {name!r}")
 
 # To be used by clients, not when running this __main__ (this would release the
 # lock we hold on the fifo).
 def notify(name):
-	msg = name.encode("utf-8") + b"\n"
+	msg = name.encode("ascii") + b"\n"
 	assert len(msg) <= PIPE_BUF
 	fd = os.open(FIFO_ADDR, os.O_RDWR | os.O_NONBLOCK)
 	try:

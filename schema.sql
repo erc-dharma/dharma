@@ -241,7 +241,7 @@ create table if not exists documents_search(
 	logical text check(logical is null or typeof(logical) = 'text'),
 	-- Internal representation.
 	internal xml check(typeof(internal) = 'text'),
-	foreign key(identifier) references files(identifier)
+	foreign key(identifier) references files(name)
 );
 
 -- Inverted index for the catalog display. We have exactly one row for each text

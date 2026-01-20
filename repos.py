@@ -21,7 +21,9 @@ def load_data():
 		repos[row["name"]] = row
 	return repos
 
-def make_db():
+dependencies = {"DHARMA_repositories.tsv"}
+
+def update():
 	db = common.db("texts")
 	for _, rec in sorted(load_data().items()):
 		db.execute("""
@@ -33,5 +35,5 @@ def make_db():
 if __name__ == "__main__":
 	@common.transaction("texts")
 	def main():
-		make_db()
+		update()
 	main()
