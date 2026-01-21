@@ -108,10 +108,13 @@ class DocumentIndexer:
 			if first:
 				first = False
 			elif common.to_boolean(line["break"]):
+				# If there is a word break at the end of this
+				# line, add space before it. Otherwise, we will
+				# just concatenate the two verse lines.
 				self._append(" ", line, "structure")
 			for child in line:
 				self._extract_inner(child)
-			self._append("\n", line, "structure")
+		self._append("\n", root, "structure")
 
 	def _generate_list_labels(self, node: tree.Tag):
 		"""Generates markers for different list types.
