@@ -1,255 +1,376 @@
+import sys
 import uuid
-from dharma import common, tei, tree, texts, patch
+import json
+from dharma import common, tei, tree, patch
 
-class DocumentIndexer:
-	"""Handles the parsing of DHARMA XML files to produce search-ready text
-	and its mapping.
+# Unicode Private Use Area characters for search markers
+MARKER_START = "\uE000"
+MARKER_END   = "\uE001"
+
+# --- Extraction Logic ---
+
+def extract_text(root: tree.Node):
+	"""Extracts text from a node, ensuring a clean structure with a single trailing newline."""
+	buf = []
+	extract_text_inner(root, buf)
+	# Cleanup trailing newlines to avoid duplication
+	while buf and buf[-1] == "\n":
+		buf.pop()
+	buf.append("\n")
+	return "".join(str(s) for s in buf)
+
+def extract_text_from_tag(root, buf):
+	match root.name:
+		case "logical" | "title":
+			for node in root:
+				extract_text_inner(node, buf)
+		case "para":
+			for node in root:
+				extract_text_inner(node, buf)
+			buf.append("\n")
+		case "npage" | "nline" | "ncell" | "display":
+			pass
+		case "span" | "search" | "link":
+			for node in root:
+				extract_text_inner(node, buf)
+		case "split":
+			node = root.first("search")
+			if node:
+				extract_text_inner(node, buf)
+		case "verse":
+			extract_from_verse(root, buf)
+		case "div" if common.to_boolean(root["phantom"]):
+			pass
+		case "div":
+			head = root.first("stuck-child::head")
+			for node in root:
+				if node is head:
+					continue
+				extract_text_inner(node, buf)
+			buf.append("\n")
+		case "note":
+			pass
+		case "elist":
+			extract_from_elist(root, buf)
+		case "dlist":
+			extract_from_dlist(root, buf)
+		case "quote":
+			source = root.first("stuck-child::source")
+			buf.append("\t")
+			for node in root:
+				if node is source:
+					continue
+				extract_text_inner(node, buf)
+		case _:
+			pass
+
+def extract_from_elist(root, buf):
+	labels = generate_list_labels(root)
+	for label, item in zip(labels, root.find("item")):
+		buf.append(label)
+		buf.append(" ")
+		for thing in item:
+			extract_text_inner(thing, buf)
+
+def extract_from_dlist(root, buf):
+	keys = root.find("key")
+	values = root.find("value")
+	assert len(keys) == len(values)
+	for key, value in zip(keys, values):
+		tmp = []
+		for thing in key:
+			extract_text_inner(thing, tmp)
+		while tmp and tmp[-1] == "\n":
+			tmp.pop()
+		buf.extend(tmp)
+		buf.append("➤")
+		tmp.clear()
+		for thing in value:
+			extract_text_inner(thing, tmp)
+		while tmp and tmp[-1] == "\n":
+			tmp.pop()
+		buf.extend(tmp)
+		buf.append("\n")
+
+def extract_from_verse(root, buf):
+	first = True
+	for line in root.find("verse-line"):
+		if first:
+			first = False
+		elif common.to_boolean(line["break"]):
+			buf.append(" ")
+		for child in line:
+			extract_text_inner(child, buf)
+
+def generate_list_labels(node):
+	match node["type"]:
+		case "plain":
+			while True: yield "◦"
+		case "bulleted":
+			while True: yield "•"
+		case "numbered":
+			i = 0
+			while True:
+				i += 1
+				yield f"{i}."
+		case _:
+			raise Exception(f"bad value: {node!r}")
+
+def extract_text_inner(root, buf):
+	match root:
+		case tree.String():
+			buf.append(translate_string(root))
+		case tree.Tag():
+			extract_text_from_tag(root, buf)
+		case tree.Comment():
+			pass
+		case _:
+			raise Exception(f"unexpected: {root!r}")
+
+def translate_string(s):
+	tmp = []
+	for c in s.data:
+		# Normalize straight quotes to curly quotes for indexing consistency
+		if c == "'":
+			c = "’"
+		tmp.append(c)
+	return "".join(tmp)
+
+# --- Highlighting Logic (Stream Injection) ---
+
+class Highlighter:
 	"""
+	Re-traverses the XML tree while consuming the highlighted text stream from Go.
+	Injects <match-start id="x"> and <match-end id="x"> tags into the tree.
+	"""
+	def __init__(self, stream):
+		self.stream = stream
+		self.cursor = 0
+		self.match_counter = 0
+		self.id_stack = []
+		self.pending_structure = []
 
-	def __init__(self):
-		self.mapping = []
-		self.current_idx = 0
-		self.buf = []
+	def highlight(self, root: tree.Node):
+		self._process(root)
 
-	def _append(self, text: str, node: tree.Node, node_type: str = "text"):
-		"""Appends text and records its range in the mapping.
-		"""
-		if not text:
-			return
-		start = self.current_idx
-		self.buf.append(text)
-		self.current_idx += len(text.encode("utf-8"))
-		self.mapping.append({
-			"start": start,
-			"end": self.current_idx,
-			"node": node,
-			"type": node_type
-		})
+		while self.pending_structure and self.pending_structure[-1] == "\n":
+			self.pending_structure.pop()
 
-	def extract_text(self, root: tree.Node):
-		"""Extracts text while building the offset mapping.
-		"""
-		self.mapping = []
-		self.current_idx = 0
-		self.buf = []
-		self._extract_inner(root)
-		# Clean trailing newlines for a compact index.
-		while self.buf and self.buf[-1] == "\n":
-			self.buf.pop()
-		self.buf.append("\n")
-		return "".join(str(s) for s in self.buf)
+		self.pending_structure.append("\n")
+		self._flush_pending_structure()
 
-	def _extract_inner(self, root: tree.Node):
-		"""Internal recursive dispatcher for node types.
-		"""
+	def _process(self, root: tree.Node):
 		match root:
 			case tree.String():
-				self._append(root.data, root)
+				self._handle_string(root)
 			case tree.Tag():
-				self._extract_from_tag(root)
+				self._handle_tag(root)
+			case _:
+				pass
 
-	def _extract_from_tag(self, root: tree.Tag):
-		"""Processes XML tags according to their semantic role.
-		"""
+	def _handle_string(self, node: tree.String):
+		self._flush_pending_structure()
+
+		normalized = translate_string(node)
+		if not normalized:
+			return
+
+		new_nodes = []
+		current_text = []
+
+		for char in normalized:
+			self._consume_markers_into(new_nodes, current_text)
+
+			if self.cursor >= len(self.stream):
+				break
+
+			current_text.append(char)
+			self.cursor += 1
+
+		self._consume_markers_into(new_nodes, current_text)
+
+		if new_nodes:
+			if current_text:
+				new_nodes.append(tree.String("".join(current_text)))
+			node.replace_with(*new_nodes)
+
+	def _consume_markers_into(self, nodes_list, current_text_buffer):
+		while self.cursor < len(self.stream) and self.stream[self.cursor] in (MARKER_START, MARKER_END):
+			marker = self.stream[self.cursor]
+			self.cursor += 1
+
+			if current_text_buffer:
+				nodes_list.append(tree.String("".join(current_text_buffer)))
+				current_text_buffer.clear()
+
+			if marker == MARKER_START:
+				self.match_counter += 1
+				mid = self.match_counter
+				self.id_stack.append(mid)
+				# CORRECTION: Utilisation des arguments nommés pour tree.Tag
+				nodes_list.append(tree.Tag("match-start", id=str(mid)))
+			else:
+				if self.id_stack:
+					mid = self.id_stack.pop()
+					# CORRECTION: Utilisation des arguments nommés pour tree.Tag
+					nodes_list.append(tree.Tag("match-end", id=str(mid)))
+
+	def _flush_pending_structure(self):
+		while self.pending_structure:
+			char = self.pending_structure.pop(0)
+			while self.cursor < len(self.stream) and self.stream[self.cursor] in (MARKER_START, MARKER_END):
+				m = self.stream[self.cursor]
+				if m == MARKER_START:
+					self.match_counter += 1
+					self.id_stack.append(self.match_counter)
+				elif m == MARKER_END and self.id_stack:
+					self.id_stack.pop()
+				self.cursor += 1
+
+			if self.cursor < len(self.stream) and self.stream[self.cursor] == char:
+				self.cursor += 1
+
+	def _handle_tag(self, root: tree.Tag):
 		match root.name:
-			case "logical" | "para" | "span" | "search" | "link":
-				for node in root:
-					self._extract_inner(node)
-				if root.name == "para":
-					self._append("\n", root, "structure")
-			case "npage" | "nline" | "ncell" | "display" | "note":
-				pass
+			case "logical" | "title":
+				for node in root: self._process(node)
+
+			case "para":
+				for node in root: self._process(node)
+				self.pending_structure.append("\n")
+
+			case "span" | "search" | "link":
+				for node in root: self._process(node)
+
 			case "split":
-				# split logic: index <search>, map to <split>.
 				search_node = root.first("search")
-				if search_node:
-					txt = search_node.text(space="preserve")
-					self._append(txt, root, "split")
+				if search_node: self._process(search_node)
+
 			case "verse":
-				self._extract_from_verse(root)
-			case "div" if common.to_boolean(root["phantom"]):
-				pass
+				self._handle_verse(root)
+
 			case "div":
-				head = root.first("stuck-child::head")
-				for node in root:
-					if node is head:
-						continue
-					self._extract_inner(node)
-				self._append("\n", root, "structure")
+				if not common.to_boolean(root["phantom"]):
+					head = root.first("stuck-child::head")
+					for node in root:
+						if node is head: continue
+						self._process(node)
+					self.pending_structure.append("\n")
+
 			case "elist":
-				labels = self._generate_list_labels(root)
-				for label, item in zip(labels, root.find("item")):
-					self._append(label + " ", root, "structure")
-					for thing in item:
-						self._extract_inner(thing)
-					self._append("\n", root, "structure")
+				self._handle_elist(root)
+
 			case "dlist":
-				keys, values = root.find("key"), root.find("value")
-				for key, value in zip(keys, values):
-					for thing in key: self._extract_inner(thing)
-					self._append(" ➤ ", root, "structure")
-					for thing in value: self._extract_inner(thing)
-					self._append("\n", root, "structure")
+				self._handle_dlist(root)
+
 			case "quote":
 				source = root.first("stuck-child::source")
-				self._append("\t", root, "structure")
+				self.pending_structure.append("\t")
 				for node in root:
 					if node is source: continue
-					self._extract_inner(node)
-			case _:
-				raise Exception(f"unsupported: {root.name}")
+					self._process(node)
 
-	def _extract_from_verse(self, root: tree.Tag):
-		"""Extracts text from verse-lines.
-		"""
+			case _:
+				pass
+
+	def _handle_verse(self, root):
 		first = True
 		for line in root.find("verse-line"):
-			assert isinstance(line, tree.Tag)
-			if first:
-				first = False
+			if first: first = False
 			elif common.to_boolean(line["break"]):
-				# If there is a word break at the end of this
-				# line, add space before it. Otherwise, we will
-				# just concatenate the two verse lines.
-				self._append(" ", line, "structure")
+				self.pending_structure.append(" ")
 			for child in line:
-				self._extract_inner(child)
-		self._append("\n", root, "structure")
+				self._process(child)
 
-	def _generate_list_labels(self, node: tree.Tag):
-		"""Generates markers for different list types.
-		"""
-		match node["type"]:
-			case "plain":
-				while True: yield "◦"
-			case "bulleted":
-				while True: yield "•"
-			case "numbered":
-				i = 0
-				while True:
-					i += 1
-					yield f"{i}."
-			case _:
-				raise Exception(f"bad value: {node!r}")
+	def _handle_elist(self, root):
+		labels = generate_list_labels(root)
+		for label, item in zip(labels, root.find("item")):
+			for c in label: self.pending_structure.append(c)
+			self.pending_structure.append(" ")
+			for thing in item:
+				self._process(thing)
 
-class SnippetGenerator:
-	"""Generates highlighted HTML snippets from index offsets.
-	"""
+	def _handle_dlist(self, root):
+		keys = root.find("key")
+		values = root.find("value")
+		for key, value in zip(keys, values):
+			for thing in key: self._process(thing)
+			while self.pending_structure and self.pending_structure[-1] == "\n":
+				self.pending_structure.pop()
+			self.pending_structure.append("➤")
+			for thing in value: self._process(thing)
+			while self.pending_structure and self.pending_structure[-1] == "\n":
+				self.pending_structure.pop()
+			self.pending_structure.append("\n")
 
-	def generate_snippet(self, mapping: list, start: int, end: int) -> str:
-		"""Creates a highlighted XML fragment for a match range.
-		"""
-		target_entry = None
-		for entry in mapping:
-			if entry['start'] <= start < entry['end']:
-				target_entry = entry
-				break
-		if not target_entry:
-			return ""
-		context_node = self._find_context(target_entry['node'])
-		overlap = [
-			e for e in mapping if max(e['start'], start) < min(e['end'], end)
-		]
-		temp_ids = {}
-		for entry in overlap:
-			uid = str(uuid.uuid4())
-			temp_ids[uid] = entry['type']
-			entry['node'].notes['__hi_id__'] = uid
-		snippet_copy = context_node.copy()
-		self._apply_highlights(snippet_copy, temp_ids)
-		for entry in overlap:
-			if '__hi_id__' in entry['node'].notes:
-				del entry['node'].notes['__hi_id__']
-		return snippet_copy.xml(html=True)
-
-	def _find_context(self, node: tree.Node) -> tree.Node:
-		"""Finds a suitable block-level container.
-		"""
-		curr = node
-		while curr.parent:
-			if isinstance(curr, tree.Tag) and curr.name in (
-				'para', 'lg', 'verse', 'ab', 'note', 'item'
-			):
-				return curr
-			curr = curr.parent
-		return node.parent or node
-
-	def _apply_highlights(self, node: tree.Node, temp_ids: dict):
-		"""Recursively applies <hi> tags to marked nodes.
-		"""
-		uid = node.notes.get('__hi_id__')
-		if uid:
-			if temp_ids[uid] == 'split':
-				self._highlight_split(node)
-			elif temp_ids[uid] == 'text':
-				self._highlight_text(node)
-			del node.notes['__hi_id__']
-		if isinstance(node, tree.Branch):
-			for child in list(node):
-				self._apply_highlights(child, temp_ids)
-
-	def _highlight_split(self, split_node: tree.Tag):
-		"""Replaces <split> with <hi> containing the <display> child.
-		"""
-		display = split_node.first("display")
-		if display:
-			hi = tree.Tag("hi", rend="search-match")
-			for child in list(display): hi.append(child)
-			split_node.replace_with(hi)
-
-	def _highlight_text(self, text_node: tree.String):
-		hi = tree.Tag("span", style="search-match")
-		text_node.replace_with(hi)
-		hi.append(text_node)
+# --- Integration ---
 
 def get_identifier(doc):
-	"""Retrieves the document identifier from metadata.
-	"""
 	ident = doc.first("/document/identifier")
-	assert ident
-	return ident.text() if ident else ""
+	if ident:
+		return ident.text()
+	return ""
+
+def get_logical(doc):
+	logical = doc.first("/document/edition/logical")
+	if not logical:
+		return ""
+	return extract_text(logical)
 
 def get_title(doc):
-	"""Retrieves the document title from metadata.
-	"""
-	return [t.text() for t in doc.find("/document/title")]
+	"""Extracts text from all title elements in metadata."""
+	title = doc.find("/document/metadata/title")
+	return [extract_text(t) for t in title]
 
-def prepare_search_data(doc: tree.Tree):
-	"""Prepares flat data for Go and mapping for snippet generation.
-	"""
-	indexer = DocumentIndexer()
+def prepare_search_data(doc):
 	data = {}
-	data["internal"] = doc.xml()
 	data["identifier"] = get_identifier(doc)
+	data["logical"] = get_logical(doc)
 	data["title"] = get_title(doc)
-	# Target the logical view for search.
-	logical_node = doc.first("/document/edition/logical")
-	if not logical_node:
-		data["logical"] = ""
-		return data, []
-	data["logical"] = indexer.extract_text(logical_node)
-	return data, indexer.mapping
+	return data
 
-def add_document(file: texts.File):
+def add_document(file):
 	try:
 		doc = tei.process_file(file).to_internal()
 	except tree.Error:
-		doc = tree.Tag("document").tree
-	# XXX just don't bother separating file data from the rest, add all data
-	# in patch.py and update the internal schema accordingly.
-	patch.add_file_info(doc, patch.fetch_file_data(file.name))
-	search_data, _ = prepare_search_data(doc)
+		doc = tree.Tree()
+		doc.append(tree.Tag("document"))
+	data = patch.fetch_file_data(file.name)
+	patch.add_file_info(doc, data)
+
+	search_data = prepare_search_data(doc)
+
+	# Serialize list to JSON string for SQLite storage
+	search_data["title"] = json.dumps(search_data["title"])
+
 	db = common.db("texts")
-	db.execute("""insert or replace
-		into documents_search(identifier, logical, title, internal)
-		values (:identifier, :logical, :title, :internal)""", search_data)
+	db.execute("""
+	insert or replace into documents_search(identifier, logical, title)
+	values (:identifier, :logical, :title)""", search_data)
 
 @common.transaction("texts")
-def export_corpus():
+def export_search():
 	db = common.db("texts")
-	for row in db.execute("""select * from documents_search
-		where identifier glob 'DHARMA_INS*'"""):
-		print(common.to_json(row))
+	records = db.execute("""select * from documents_search
+		where identifier glob 'DHARMA_INS*'""").fetchall()
+
+	# Deserialize SQLite string back to list before final JSON export
+	output = []
+	for r in records:
+		row_dict = dict(r)
+		if row_dict.get("title"):
+			try:
+				row_dict["title"] = json.loads(row_dict["title"])
+			except json.JSONDecodeError:
+				row_dict["title"] = []
+		else:
+			row_dict["title"] = []
+		output.append(row_dict)
+
+	print(json.dumps(output))
+
+def main():
+	export_search()
 
 if __name__ == "__main__":
-	export_corpus()
+	main()

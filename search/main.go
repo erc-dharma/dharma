@@ -1,179 +1,217 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
-	"flag"
-	"io"
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
-	"time"
+	"sync"
 )
 
-// --- Data Structures ---
+const (
+	MarkerStart = "\uE000"
+	MarkerEnd   = "\uE001"
+)
 
-// Document represents the simplified document structure.
-// It matches the JSON output from the Python indexer.
 type Document struct {
 	Identifier string   `json:"identifier"`
-	Logical    string   `json:"logical"` // The normalized text content of the edition
+	Logical    string   `json:"logical"`
 	Title      []string `json:"title"`
 }
 
-type Occurrence struct {
-	Field string `json:"field"` // Will always be "logical" in this version
-	Start int    `json:"start"` // Byte offset start
-	End   int    `json:"end"`   // Byte offset end
+type SearchResult struct {
+	Identifier string   `json:"identifier"`
+	Logical    string   `json:"logical"`
+	Title      []string `json:"title"`
 }
 
-// SearchMatch represents a single hit in the text.
-type SearchMatch struct {
-	Identifier  string       `json:"identifier"`
-	Occurrences []Occurrence `json:"occurrences"`
-}
+var (
+	corpus []Document
+	mu     sync.RWMutex
+)
 
-// SearchResponse is the JSON payload sent back to the Python/Client.
-type SearchResponse struct {
-	Query    string        `json:"query"`
-	Count    int           `json:"count"`
-	Duration string        `json:"duration"`
-	Matches  []SearchMatch `json:"matches"`
-}
+func main() {
+	if len(os.Args) < 2 {
+		log.Fatal("Usage: search <corpus_json_path>")
+	}
 
-// --- Search Engine Logic ---
-
-type Searcher struct {
-	Documents []Document
-}
-
-// LoadCorpus reads the JSON file and unmarshals it into memory.
-func (s *Searcher) LoadCorpus(path string) error {
+	path := os.Args[1]
 	log.Printf("Loading corpus from %s...", path)
-	start := time.Now()
-	file, err := os.Open(path)
+	if err := loadCorpus(path); err != nil {
+		log.Fatalf("Failed to load corpus: %v", err)
+	}
+	log.Printf("Corpus loaded: %d documents", len(corpus))
+
+	http.HandleFunc("/search", handleSearch)
+	log.Println("Listening on :8026...")
+	log.Fatal(http.ListenAndServe(":8026", nil))
+}
+
+func loadCorpus(path string) error {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	reader := bufio.NewReader(file)
-	for {
-		line, err := reader.ReadBytes('\n')
-		if err != nil && err != io.EOF {
-			return err
-		}
-		if err == nil {
-			line = line[:len(line)-1]
-		}
-		if len(line) > 0 {
-			var doc Document
-			if err := json.Unmarshal(line, &doc); err != nil {
-				return err
-			}
-			s.Documents = append(s.Documents, doc)
-		}
-		if err == io.EOF {
-			break
-		}
+	var docs []Document
+	if err := json.Unmarshal(data, &docs); err != nil {
+		return err
 	}
-	log.Printf("Corpus loaded: %d documents in %v", len(s.Documents), time.Since(start))
+
+	mu.Lock()
+	corpus = docs
+	mu.Unlock()
 	return nil
 }
 
-// Search performs a linear scan over all documents.
-func (s *Searcher) Search(query string) []SearchMatch {
-	var results []SearchMatch
-	for _, doc := range s.Documents {
-		var occurrences []Occurrence
-		occurrences = append(occurrences, findMatches(doc.Logical, "logical", query)...)
-		for _, title := range doc.Title {
-			occurrences = append(occurrences, findMatches(title, "title", query)...)
+func handleSearch(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		http.Error(w, "Missing query parameter 'q'", http.StatusBadRequest)
+		return
+	}
+
+	results := performSearch(query)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
+
+func performSearch(query string) []SearchResult {
+	mu.RLock()
+	defer mu.RUnlock()
+
+	var results []SearchResult
+	terms := strings.Fields(strings.ToLower(query))
+
+	for _, doc := range corpus {
+		matchFound := true
+
+		// Collect match intervals for all terms in all fields
+		var logicalMatches [][2]int
+		var titleMatchesMap = make(map[int][][2]int) // index -> matches
+
+		termFoundCounts := make([]bool, len(terms))
+
+		// Scan Logical
+		textLower := strings.ToLower(doc.Logical)
+		for i, term := range terms {
+			intervals := findOccurrences(textLower, term)
+			if len(intervals) > 0 {
+				termFoundCounts[i] = true
+				logicalMatches = append(logicalMatches, intervals...)
+			}
 		}
-		if len(occurrences) == 0 {
-			continue
+
+		// Scan Titles
+		for tIdx, title := range doc.Title {
+			titleLower := strings.ToLower(title)
+			for i, term := range terms {
+				intervals := findOccurrences(titleLower, term)
+				if len(intervals) > 0 {
+					termFoundCounts[i] = true
+					if titleMatchesMap[tIdx] == nil {
+						titleMatchesMap[tIdx] = make([][2]int, 0)
+					}
+					titleMatchesMap[tIdx] = append(titleMatchesMap[tIdx], intervals...)
+				}
+			}
 		}
-		result := SearchMatch{
-			Identifier:  doc.Identifier,
-			Occurrences: occurrences,
+
+		// Check boolean AND condition
+		for _, found := range termFoundCounts {
+			if !found {
+				matchFound = false
+				break
+			}
 		}
-		results = append(results, result)
+
+		if matchFound {
+			// Apply highlights
+			res := SearchResult{
+				Identifier: doc.Identifier,
+				Title:      make([]string, len(doc.Title)),
+			}
+
+			res.Logical = injectMarkers(doc.Logical, logicalMatches)
+
+			for i, title := range doc.Title {
+				if matches, ok := titleMatchesMap[i]; ok {
+					res.Title[i] = injectMarkers(title, matches)
+				} else {
+					res.Title[i] = title
+				}
+			}
+
+			results = append(results, res)
+		}
 	}
 	return results
 }
 
-func findMatches(text, field, query string) []Occurrence {
-	var matches []Occurrence
-	// Skip documents with empty content
-	if text == "" {
-		return matches
-	}
-	// Find all occurrences of the query
-	startPos := 0
+func findOccurrences(text, term string) [][2]int {
+	var matches [][2]int
+	start := 0
 	for {
-		// strings.Index returns the byte index of the first instance of query
-		idx := strings.Index(text[startPos:], query)
+		idx := strings.Index(text[start:], term)
 		if idx == -1 {
 			break
 		}
-		// Calculate absolute offsets
-		absStart := startPos + idx
-		absEnd := absStart + len(query)
-		matches = append(matches, Occurrence{
-			Field: field,
-			Start: absStart,
-			End:   absEnd,
-		})
-		// Move search window forward to find subsequent matches
-		startPos = absStart + 1
+		absStart := start + idx
+		absEnd := absStart + len(term)
+		matches = append(matches, [2]int{absStart, absEnd})
+		start = absStart + 1
 	}
 	return matches
 }
 
-// --- HTTP Server ---
+func injectMarkers(text string, intervals [][2]int) string {
+	if len(intervals) == 0 {
+		return text
+	}
 
-func main() {
-	// Command line flags configuration
-	jsonPath := flag.String("corpus", "../corpus.jsonl.hid", "Path to the JSON corpus file")
-	port := flag.String("port", "8026", "HTTP server port")
-	pretty := flag.Bool("pretty", true, "Prettify JSON output")
-	flag.Parse()
-	// Initialize search engine
-	searcher := &Searcher{}
-	if err := searcher.LoadCorpus(*jsonPath); err != nil {
-		log.Fatalf("Failed to load corpus: %v", err)
+	type Point struct {
+		idx  int
+		kind int // 1 = start, -1 = end
 	}
-	// Define search route
-	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
-		// Set CORS headers to allow requests from other services/browsers
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Content-Type", "application/json")
-		// Get query parameter
-		query := r.URL.Query().Get("q")
-		// Basic validation
-		if len(query) < 2 {
-			http.Error(w, `{"error": "Query too short (min 2 chars)"}`, http.StatusBadRequest)
-			return
+	var points []Point
+
+	for _, interval := range intervals {
+		points = append(points, Point{interval[0], 1})
+		points = append(points, Point{interval[1], -1})
+	}
+
+	// Sort Ascending by Index.
+	// If indices are equal, process End (-1) before Start (1)
+	// to properly close adjacent tags: ...<E><S>...
+	sort.Slice(points, func(i, j int) bool {
+		if points[i].idx != points[j].idx {
+			return points[i].idx < points[j].idx
 		}
-		// Execute search and measure duration
-		start := time.Now()
-		matches := searcher.Search(query)
-		duration := time.Since(start)
-		// Encode response to JSON
-		enc := json.NewEncoder(w)
-		if *pretty {
-			enc.SetIndent("", "\t")
-		}
-		enc.Encode(SearchResponse{
-			Query:    query,
-			Count:    len(matches),
-			Duration: duration.String(),
-			Matches:  matches,
-		})
+		return points[i].kind < points[j].kind
 	})
-	// Start server
-	log.Printf("Search server running on http://localhost:%s", *port)
-	if err := http.ListenAndServe(":"+*port, nil); err != nil {
-		log.Fatal(err)
+
+	var sb strings.Builder
+	// Optimization: pre-allocate memory
+	sb.Grow(len(text) + len(points)*len(MarkerStart))
+
+	cur := 0
+	for _, p := range points {
+		if p.idx > cur {
+			sb.WriteString(text[cur:p.idx])
+			cur = p.idx
+		}
+
+		if p.kind == 1 {
+			sb.WriteString(MarkerStart)
+		} else {
+			sb.WriteString(MarkerEnd)
+		}
 	}
+	if cur < len(text) {
+		sb.WriteString(text[cur:])
+	}
+
+	return sb.String()
 }

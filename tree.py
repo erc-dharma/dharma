@@ -396,15 +396,17 @@ class Node:
 		"""Returns a list of `Tag` children of this node."""
 		return []
 
-	def replace_with(self, other) -> 'Node':
+	def replace_with(self, *replacement_nodes) -> 'Node':
 		"""Removes this node and its descendants from the tree, and
-		puts another node in its place. Returns the removed subtree.
+		in its place the nodes given as arguments. Returns the removed
+		subtree.
 		"""
 		parent = self.parent
 		assert parent is not None
 		i = parent.index(self)
 		del parent[i]
-		parent.insert(i, other)
+		for i, node in enumerate(replacement_nodes, i):
+			parent.insert(i, node)
 		return self
 
 	def insert_after(self, other):
