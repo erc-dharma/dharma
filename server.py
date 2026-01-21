@@ -1,12 +1,12 @@
-import os, unicodedata, datetime, html, urllib, urllib.parse, ntpath, hashlib
-
+import os, unicodedata, datetime, html, urllib, urllib.parse, ntpath, io
+import unicodedata
 import flask, werkzeug.security # pip install flask
 from bs4 import BeautifulSoup # pip install bs4
 import requests # pip install requests
 
 from dharma import common, change, ngrams, catalog, validate, tei, tree
 from dharma import biblio, texts, editorial, prosody, internal2html, languages
-from dharma import patch
+from dharma import patch, search
 
 # We don't use the name "templates" for the template folder because we also
 # put other stuff in the same directory, not just templates.
@@ -560,25 +560,15 @@ def handle_github():
 	return ""
 
 @app.get("/search")
-def search():
-	q = flask.request.args.get("q", "")
-	if not q:
+def render_search_page():
+	query = flask.request.args.get("q", "").strip()
+	if not query:
 		return flask.render_template("search.tpl")
-	ret = query_search_service(q)
-	return flask.render_template("search.tpl", **ret)
-
-@common.transaction("texts") # XXX don't query the db, only the go code should access it
-def query_search_service(query):
-	assert query
-	r = requests.get("http://localhost:8026/search", params={"q": query})
-	r.raise_for_status()
-	answer = r.json()
-	ret = {"query": answer["query"], "matching_count": answer["count"], "matches": []}
-	for match in answer["matches"]:
-		file = common.db("texts").load_file(answer["identifier"])
-		t = tree.parse(file)
-		#XXX
-	return ret
+	try:
+		context = search.query_search_service(query)
+	except Exception as e:
+		return flask.render_template("search.tpl", error=f"Search error: {e}")
+	return flask.render_template("search.tpl", **context)
 
 def render_markdown(f: texts.File):
 	html = common.pandoc(f.text)

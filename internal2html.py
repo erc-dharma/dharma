@@ -391,6 +391,12 @@ def render_split(self, node):
 	assert display
 	self.dispatch_children(display)
 
+@handler("match")
+def render_match(self, node):
+	self.push(tree.Tag("span", class_="highlight"))
+	self.dispatch_children(node)
+	self.join()
+
 @handler("*")
 def render_tag(self, node):
 	assert isinstance(node, tree.Tag)

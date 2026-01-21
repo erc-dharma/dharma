@@ -50,7 +50,7 @@ def main():
 
 	docs_found = 0
 
-	for res in results:
+	for res in results["matches"]:
 		identifier = res['identifier']
 		docs_found += 1
 

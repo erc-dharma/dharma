@@ -21,6 +21,9 @@
 .sub {
   vertical-align: sub; }
 
+.highlight {
+  background: yellow; }
+
 a {
   text-decoration: none; }
 

@@ -6,7 +6,7 @@ Search
 
 % block body
 
-<form action="{{url_for("search")}}" method="get">
+<form action="/search" method="get">
 <ul>
    <li>
    <label for="text-input">Find:</label>
@@ -23,7 +23,20 @@ Search
 </form>
 
 % if query
-<p>{{matching_count}} matching.</p>
+
+<p>{{match_count}} matching.</p>
+
+<div class="catalog-list">
+% for doc in matches:
+<div class="catalog-card">
+	<p>{{doc.identifier.html() | safe }}</p>
+% for title in doc.titles
+	<p>{{title.html() | safe}}</p>
+% endfor
+</div>
+% endfor
+</div>
+
 % endif
 
 % endblock

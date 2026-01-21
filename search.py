@@ -2,14 +2,16 @@ import sys
 import uuid
 import json
 import unicodedata
-from dharma import common, tei, tree, patch
+import requests
+import io
+from dharma import common, tei, tree, patch, internal2html
 
 # Unicode Private Use Area characters for search markers
 MARKER_START = "\uE000"
 MARKER_END   = "\uE001"
+GO_SERVER_URL = "http://localhost:8026/search"
 
 # Configuration table mapping search fields to their XPath in the internal XML.
-# This serves as the single source of truth for locating content.
 SEARCH_FIELDS = {
 	"identifier": "/document/identifier",
 	"logical":    "/document/edition/logical",
@@ -25,6 +27,70 @@ def translate_string(s):
 			c = "’"
 		tmp.append(c)
 	return unicodedata.normalize('NFC', "".join(tmp))
+
+# --- Service Logic ---
+
+def query_search_service(query):
+	# Normalize query to NFC to match Go index
+	norm_query = unicodedata.normalize('NFC', query)
+	try:
+		resp = requests.get(GO_SERVER_URL, params={"q": norm_query})
+		resp.raise_for_status()
+		data = resp.json()
+	except requests.exceptions.RequestException:
+		return {"query": query, "match_count": 0, "matches": []}
+	processed_matches = process_matches(data.get("matches", []))
+	return {
+		"query": query,
+		"match_count": data.get("count", 0),
+		"matches": processed_matches
+	}
+
+def process_matches(raw_matches):
+	results = []
+	for item in raw_matches:
+		processed = process_single_match(item)
+		if processed:
+			results.append(processed)
+	return results
+
+def process_single_match(item):
+	# Parse the internal XML returned by Go directly from memory
+	xml_str = item.get("internal", "")
+	if not xml_str:
+		return None
+	try:
+		doc = tree.parse(io.StringIO(xml_str))
+		highlight_document(doc, item)
+		# Pass the fully highlighted tree to the internal HTML processor
+		return internal2html.process(doc)
+	except Exception as e:
+		print(f"Error processing match {item.get('identifier')}: {e}")
+		return None
+
+def highlight_document(doc, item_data):
+	# Iterate over configured fields to apply highlights in-place
+	for field, xpath in SEARCH_FIELDS.items():
+		marked_data = item_data.get(field)
+		nodes = doc.find(xpath)
+		if not marked_data or not nodes:
+			continue
+		if isinstance(marked_data, list):
+			apply_list_highlight(nodes, marked_data)
+		else:
+			apply_string_highlight(nodes, marked_data)
+
+def apply_list_highlight(nodes, marked_list):
+	for i, content in enumerate(marked_list):
+		if i < len(nodes) and MARKER_START in content:
+			hl = Highlighter(content)
+			hl.highlight(nodes[i])
+
+def apply_string_highlight(nodes, marked_string):
+	# For single string fields (logical, identifier), take the first node
+	if MARKER_START in marked_string:
+		hl = Highlighter(marked_string)
+		hl.highlight(nodes[0])
 
 # --- Core Logic: Structure Walker ---
 
