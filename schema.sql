@@ -236,12 +236,26 @@ create table if not exists documents(
 -- sophisticated access pattern.
 create table if not exists documents_search(
 	identifier text primary key,
-	-- There can be several titles. Thus the following is a list of strings.
-	title json,
+	repo text check(typeof(repo) = 'text' and length(repo) > 0),
+	title json check(
+		typeof(title) = 'text'
+		and json_valid(title)
+		and json_type(title) = 'array'),
+	author json check(
+		typeof(author) = 'text'
+		and json_valid(author)
+		and json_type(author) = 'array'),
+	editor json check(
+		typeof(editor) = 'text'
+		and json_valid(editor)
+		and json_type(editor) = 'array'),
+	hand text check(hand is null or typeof(hand) = 'text'),
+	summary text check(summary is null or typeof(summary) = 'text'),
 	logical text check(logical is null or typeof(logical) = 'text'),
-	-- Internal representation.
-	internal xml check(typeof(internal) = 'text'),
-	foreign key(identifier) references files(name)
+	-- The corresponding document in the internal XML representation.
+	source xml check(typeof(source) = 'text' and length(source) > 0),
+	foreign key(identifier) references files(name),
+	foreign key(repo) references repos(repo)
 );
 
 -- Inverted index for the catalog display. We have exactly one row for each text
