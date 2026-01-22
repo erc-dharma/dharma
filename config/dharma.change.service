@@ -1,12 +1,14 @@
 [Unit]
+Description=DHARMA Change Monitor
+After=network.target
 
 [Service]
 User=michael
 Group=michael
 WorkingDirectory=/home/michael/dharma
 Environment="PYTHONPATH=/home/michael:$PYTHONPATH"
-ExecStart=python3 change.py
-Restart=on-failure
+ExecStart=/usr/bin/python3 change.py
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

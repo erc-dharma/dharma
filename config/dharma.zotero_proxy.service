@@ -1,13 +1,15 @@
 [Unit]
+Description=DHARMA Zotero Proxy
+After=network.target
 
 [Service]
 User=michael
 Group=michael
 WorkingDirectory=/home/michael/dharma
 Environment="PYTHONPATH=/home/michael:$PYTHONPATH"
-ExecStart=gunicorn -k gevent -w 4 -b localhost:8024 dharma.zotero_proxy:app
-ExecReload=kill -HUP $MAINPID
-Restart=on-failure
+ExecStart=/usr/bin/gunicorn -k gevent -w 4 -b localhost:8024 dharma.zotero_proxy:app
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

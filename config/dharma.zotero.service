@@ -1,12 +1,16 @@
 [Unit]
+Description=DHARMA Zotero Sync Service
+After=network.target
 
 [Service]
 User=michael
 Group=michael
 WorkingDirectory=/home/michael/dharma
 Environment="PYTHONPATH=/home/michael:$PYTHONPATH"
-ExecStart=python3 zotero.py
-Restart=on-failure
+
+ExecStart=/usr/bin/python3 zotero.py
+Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
