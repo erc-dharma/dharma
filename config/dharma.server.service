@@ -1,15 +1,13 @@
 [Unit]
-Description=DHARMA Web Server
-After=network.target
 
 [Service]
 User=michael
 Group=michael
 WorkingDirectory=/home/michael/dharma
 Environment="PYTHONPATH=/home/michael:$PYTHONPATH"
-ExecStart=/usr/bin/gunicorn -k sync -w 4 -t 60 -b localhost:8023 dharma.server:app
-ExecReload=/bin/kill -s HUP $MAINPID
-Restart=always
+ExecStart=gunicorn -k sync -w 4 -t 60 -b localhost:8023 dharma.server:app
+ExecReload=kill -HUP $MAINPID
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
