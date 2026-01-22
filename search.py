@@ -30,14 +30,16 @@ def translate_string(s):
 
 # --- Service Logic ---
 
-def query_search_service(query):
+def query_search_service(query, offset=0, limit=20):
 	# Normalize query to NFC to match Go index
 	norm_query = unicodedata.normalize('NFC', query)
 	try:
-		resp = requests.get(GO_SERVER_URL, params={"q": norm_query})
+		params = {"q": norm_query, "offset": offset, "limit": limit}
+		resp = requests.get(GO_SERVER_URL, params=params)
 		resp.raise_for_status()
 		data = resp.json()
 	except requests.exceptions.RequestException:
+		# Return empty result set on connection failure
 		return {"query": query, "match_count": 0, "matches": []}
 	processed_matches = process_matches(data.get("matches", []))
 	return {

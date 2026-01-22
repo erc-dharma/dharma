@@ -6,7 +6,7 @@ Search
 
 % block body
 
-<form action="/search" method="get">
+<form action="{{url_for('render_search_page')}}" method="get">
 <ul>
    <li>
    <label for="text-input">Find:</label>
@@ -35,6 +35,21 @@ Search
 % endfor
 </div>
 % endfor
+
+<div class="pagination">
+% if page > 1:
+   <a href="{{url_for('render_search_page', q=query, p=page - 1)}}">← Previous</a>
+% else:
+   ← Previous
+% endif
+   |
+% if page < pages_nr:
+   <a href="{{url_for('render_search_page', q=query, p=page + 1)}}">Next →</a>
+% else:
+   Next →
+% endif
+</div>
+
 </div>
 
 % endif

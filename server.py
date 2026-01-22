@@ -467,6 +467,9 @@ def make_links_absolute(soup, attr):
 # Number of bibliographic entries to display on a single Web page.
 BIBLIO_PER_PAGE = 100
 
+# Number of matching documents to display on a single Web page.
+SEARCH_PER_PAGE = 20
+
 @app.get("/bibliography/entry/<short_title>")
 @common.transaction("texts")
 def display_biblio_entry(short_title):
@@ -562,12 +565,23 @@ def handle_github():
 @app.get("/search")
 def render_search_page():
 	query = flask.request.args.get("q", "").strip()
+	page = flask.request.args.get("p", 1, type=int)
+	if page < 1:
+		page = 1
 	if not query:
 		return flask.render_template("search.tpl")
+	offset = (page - 1) * SEARCH_PER_PAGE
 	try:
-		context = search.query_search_service(query)
+		context = search.query_search_service(query, offset, SEARCH_PER_PAGE)
 	except Exception as e:
 		return flask.render_template("search.tpl", error=f"Search error: {e}")
+	count = context.get("match_count", 0)
+	pages_nr = (count + SEARCH_PER_PAGE - 1) // SEARCH_PER_PAGE
+	context.update({
+		"page": page,
+		"pages_nr": pages_nr,
+		"per_page": SEARCH_PER_PAGE
+	})
 	return flask.render_template("search.tpl", **context)
 
 def render_markdown(f: texts.File):
