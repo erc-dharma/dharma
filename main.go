@@ -6,11 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -50,14 +52,12 @@ var (
 func main() {
 	dbPath, err := getDBPath()
 	if err != nil {
-		log.Fatalf("Failed to determine DB path: %v", err)
+		log.Fatalf("Path error: %v", err)
 	}
 	if err := initDB(dbPath); err != nil {
-		log.Fatalf("Failed to open DB: %v", err)
+		log.Fatalf("DB error: %v", err)
 	}
-	http.HandleFunc("/search", handleSearch)
-	log.Println("Listening on :8026...")
-	log.Fatal(http.ListenAndServe(":8026", nil))
+	startServer()
 }
 
 func getDBPath() (string, error) {
@@ -65,28 +65,77 @@ func getDBPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	exPath := filepath.Dir(ex)
-	return filepath.Join(exPath, "dbs", "texts.sqlite"), nil
+	return filepath.Join(filepath.Dir(ex), "dbs", "texts.sqlite"), nil
 }
 
 func initDB(path string) error {
 	var err error
-	dsn := path + "?mode=ro"
-	db, err = sql.Open("sqlite3", dsn)
+	db, err = sql.Open("sqlite3", path+"?mode=ro")
 	if err != nil {
 		return err
 	}
 	return db.Ping()
 }
 
+func startServer() {
+	server := &http.Server{Addr: ":8026"}
+	go func() {
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("HTTP error: %v", err)
+		}
+	}()
+	log.Printf("Listening on :8026 (PID: %d)...", os.Getpid())
+	http.HandleFunc("/search", handleSearch)
+	manageLifecycle(server)
+}
+
+func manageLifecycle(server *http.Server) {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGUSR2)
+	<-ch
+	log.Println("SIGUSR2 received. Upgrading binary...")
+	if err := server.Close(); err != nil {
+		log.Printf("Server close error: %v", err)
+	}
+	if err := db.Close(); err != nil {
+		log.Printf("DB close error: %v", err)
+	}
+	restartSelf()
+}
+
+func restartSelf() {
+	bin, err := os.Executable()
+	if err != nil {
+		log.Fatalf("Executable path error: %v", err)
+	}
+	if err := syscall.Exec(bin, os.Args, os.Environ()); err != nil {
+		log.Fatalf("Exec error: %v", err)
+	}
+}
+
 func handleSearch(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-	query, offset, limit := parseRequest(r)
-	if query == "" {
-		sendResponse(w, 0, offset, limit, []SearchResult{})
+	setupHeaders(w)
+	q, off, lim := parseRequest(r)
+	if q == "" {
+		sendResponse(w, 0, off, lim, []SearchResult{})
 		return
 	}
+	processRequest(w, q, off, lim)
+}
+
+func setupHeaders(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+}
+
+func parseRequest(r *http.Request) (string, int, int) {
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	return q, off, lim
+}
+
+func processRequest(w http.ResponseWriter, q string, off, lim int) {
 	tx, err := db.Begin()
 	if err != nil {
 		http.Error(w, "DB error", 500)
@@ -98,76 +147,70 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Sync error", 500)
 		return
 	}
-	performSearch(w, tx, query, offset, limit)
+	performSearch(w, tx, q, off, lim)
 }
 
-func parseRequest(r *http.Request) (string, int, int) {
-	q := strings.TrimSpace(r.URL.Query().Get("q"))
-	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	return q, off, lim
-}
-
-func performSearch(w http.ResponseWriter, tx *sql.Tx, query string, offset, limit int) {
-	// Pass 1: Filter documents (lightweight check)
-	matchingDocs := searchCorpus(query)
-	total := len(matchingDocs)
-	// Pagination on raw documents
-	pageDocs := paginateDocs(matchingDocs, offset, limit)
-	// Pass 2: Highlighting (expensive operation) on subset only
-	results := generateResults(pageDocs, query)
+func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int) {
+	allDocs := filterDocs(q)
+	total := len(allDocs)
+	pageDocs := paginateDocs(allDocs, off, lim)
+	results := buildResults(pageDocs, q)
 	enrichMatches(tx, results)
-	sendResponse(w, total, offset, limit, results)
+	sendResponse(w, total, off, lim, results)
 }
 
-func paginateDocs(docs []Document, offset, limit int) []Document {
-	if offset < 0 {
-		offset = 0
+func paginateDocs(docs []Document, off, lim int) []Document {
+	if off < 0 {
+		off = 0
 	}
-	if offset >= len(docs) {
+	if off >= len(docs) {
 		return []Document{}
 	}
 	end := len(docs)
-	if limit > 0 {
-		end = offset + limit
+	if lim > 0 {
+		end = off + lim
 		if end > len(docs) {
 			end = len(docs)
 		}
 	}
-	return docs[offset:end]
+	return docs[off:end]
 }
 
-func generateResults(docs []Document, query string) []SearchResult {
+func buildResults(docs []Document, q string) []SearchResult {
 	results := make([]SearchResult, 0, len(docs))
 	for _, doc := range docs {
-		results = append(results, matchDocument(doc, query))
+		results = append(results, matchDocument(doc, q))
 	}
 	return results
 }
 
 func syncCorpus(tx *sql.Tx) error {
-	var currentVersion int
-	if err := tx.QueryRow("pragma data_version").Scan(&currentVersion); err != nil {
+	var ver int
+	if err := tx.QueryRow("pragma data_version").Scan(&ver); err != nil {
 		return err
 	}
 	mu.RLock()
-	isFresh := currentVersion == lastDataVersion
+	fresh := ver == lastDataVersion
 	mu.RUnlock()
-	if isFresh {
+	if fresh {
 		return nil
 	}
+	return reloadCorpus(tx, ver)
+}
+
+func reloadCorpus(tx *sql.Tx, ver int) error {
 	mu.Lock()
 	defer mu.Unlock()
-	if currentVersion == lastDataVersion {
+	if ver == lastDataVersion {
 		return nil
 	}
-	log.Printf("Reloading corpus (v%d -> v%d)...", lastDataVersion, currentVersion)
+	log.Printf("Reloading corpus (v%d -> v%d)...", lastDataVersion, ver)
 	docs, err := fetchDocuments(tx)
 	if err != nil {
 		return err
 	}
 	corpus = docs
-	lastDataVersion = currentVersion
+	lastDataVersion = ver
 	return nil
 }
 
@@ -214,28 +257,28 @@ func scanOne(rows *sql.Rows) (Document, error) {
 	return Document{Identifier: id, Logical: logical, Title: titles}, nil
 }
 
-func searchCorpus(query string) []Document {
+func filterDocs(q string) []Document {
 	mu.RLock()
-	snapshot := corpus
+	snap := corpus
 	mu.RUnlock()
 	var docs []Document
-	for _, doc := range snapshot {
-		if docMatches(doc, query) {
+	for _, doc := range snap {
+		if docMatches(doc, q) {
 			docs = append(docs, doc)
 		}
 	}
 	return docs
 }
 
-func docMatches(doc Document, query string) bool {
-	if strings.Contains(doc.Identifier, query) {
+func docMatches(doc Document, q string) bool {
+	if strings.Contains(doc.Identifier, q) {
 		return true
 	}
-	if strings.Contains(doc.Logical, query) {
+	if strings.Contains(doc.Logical, q) {
 		return true
 	}
 	for _, t := range doc.Title {
-		if strings.Contains(t, query) {
+		if strings.Contains(t, q) {
 			return true
 		}
 	}
@@ -251,42 +294,36 @@ func enrichMatches(tx *sql.Tx, matches []SearchResult) {
 	defer stmt.Close()
 	for i := range matches {
 		var internal string
-		err := stmt.QueryRow(matches[i].Identifier).Scan(&internal)
-		if err == nil {
+		if err := stmt.QueryRow(matches[i].Identifier).Scan(&internal); err == nil {
 			matches[i].Internal = internal
 		}
 	}
 }
 
-func sendResponse(w http.ResponseWriter, count, offset, limit int, matches []SearchResult) {
-	response := SearchResponse{
-		Count:   count,
-		Offset:  offset,
-		Limit:   limit,
-		Matches: matches,
-	}
+func sendResponse(w http.ResponseWriter, count, off, lim int, matches []SearchResult) {
+	resp := SearchResponse{Count: count, Offset: off, Limit: lim, Matches: matches}
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
-	if err := enc.Encode(response); err != nil {
-		log.Printf("Error encoding response: %v", err)
+	if err := enc.Encode(resp); err != nil {
+		log.Printf("Encoding error: %v", err)
 	}
 }
 
-func matchDocument(doc Document, query string) SearchResult {
+func matchDocument(doc Document, q string) SearchResult {
 	res := SearchResult{
 		Identifier: doc.Identifier,
 		Logical:    doc.Logical,
 		Title:      make([]string, len(doc.Title)),
 	}
 	copy(res.Title, doc.Title)
-	processField(&res.Logical, doc.Logical, query)
-	processTitles(res.Title, doc.Title, query)
-	processField(&res.Identifier, doc.Identifier, query)
+	processField(&res.Logical, doc.Logical, q)
+	processTitles(res.Title, doc.Title, q)
+	processField(&res.Identifier, doc.Identifier, q)
 	return res
 }
 
-func processField(target *string, source, query string) bool {
-	intervals := findOccurrences(source, query)
+func processField(target *string, source, q string) bool {
+	intervals := findOccurrences(source, q)
 	if len(intervals) > 0 {
 		*target = injectMarkers(source, intervals)
 		return true
@@ -294,10 +331,10 @@ func processField(target *string, source, query string) bool {
 	return false
 }
 
-func processTitles(targets []string, sources []string, query string) bool {
+func processTitles(targets []string, sources []string, q string) bool {
 	matched := false
 	for i, title := range sources {
-		if processField(&targets[i], title, query) {
+		if processField(&targets[i], title, q) {
 			matched = true
 		}
 	}
