@@ -235,16 +235,21 @@ create table if not exists documents(
 -- everything here, because the external search tool should not depend on a
 -- sophisticated access pattern.
 create table if not exists documents_search(
-	identifier text primary key,
-	repo text check(typeof(repo) = 'text' and length(repo) > 0),
+	-- Renamed from 'identifier' to 'ident', used as PK.
+	ident text primary key,
+	repo_id text check(repo_id is null or typeof(repo_id) = 'text'),
+	repo_name text check(repo_name is null or typeof(repo_name) = 'text'),
+	-- list of strings.
 	title json check(
 		typeof(title) = 'text'
 		and json_valid(title)
 		and json_type(title) = 'array'),
+	-- flat list of pairs [id, name, id, name...].
 	author json check(
 		typeof(author) = 'text'
 		and json_valid(author)
 		and json_type(author) = 'array'),
+	-- flat list of pairs [id, name, id, name...].
 	editor json check(
 		typeof(editor) = 'text'
 		and json_valid(editor)
@@ -252,10 +257,19 @@ create table if not exists documents_search(
 	hand text check(hand is null or typeof(hand) = 'text'),
 	summary text check(summary is null or typeof(summary) = 'text'),
 	logical text check(logical is null or typeof(logical) = 'text'),
-	-- The corresponding document in the internal XML representation.
+	-- matrix: list of lists [[lang_id, lang_name, script_id, script_name...], ...].
+	lang json check(
+		typeof(lang) = 'text'
+		and json_valid(lang)
+		and json_type(lang) = 'array'),
+	-- matrix: list of lists [[script_id, script_name, lang_id, lang_name...], ...].
+	script json check(
+		typeof(script) = 'text'
+		and json_valid(script)
+		and json_type(script) = 'array'),
 	source xml check(typeof(source) = 'text' and length(source) > 0),
-	foreign key(identifier) references files(name),
-	foreign key(repo) references repos(repo)
+	foreign key(ident) references files(name),
+	foreign key(repo_id) references repos(repo)
 );
 
 -- Inverted index for the catalog display. We have exactly one row for each text

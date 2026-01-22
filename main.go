@@ -23,16 +23,32 @@ const (
 )
 
 type Document struct {
-	Identifier string
-	Logical    string
-	Title      []string
+	Ident    string
+	Logical  string
+	Title    []string
+	Summary  string
+	RepoID   string
+	RepoName string
+	Hand     string
+	Author   []string
+	Editor   []string
+	Lang     [][]string
+	Script   [][]string
 }
 
 type SearchResult struct {
-	Identifier string   `json:"identifier"`
-	Logical    string   `json:"logical"`
-	Title      []string `json:"title"`
-	Internal   string   `json:"internal"`
+	Ident    string     `json:"ident"`
+	Logical  string     `json:"logical"`
+	Title    []string   `json:"title"`
+	Summary  string     `json:"summary"`
+	RepoID   string     `json:"repo_id"`
+	RepoName string     `json:"repo_name"`
+	Hand     string     `json:"hand"`
+	Author   []string   `json:"author"`
+	Editor   []string   `json:"editor"`
+	Lang     [][]string `json:"lang"`
+	Script   [][]string `json:"script"`
+	Source   string     `json:"source"`
 }
 
 type SearchResponse struct {
@@ -219,7 +235,10 @@ func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query("select identifier, logical, title from documents_search")
+	rows, err := tx.Query(`select
+		ident, logical, title, summary, repo_id, repo_name, hand,
+		author, editor, lang, script
+		from documents_search`)
 	if err != nil {
 		return nil, err
 	}
@@ -246,15 +265,37 @@ func scanRows(rows *sql.Rows, count int) ([]Document, error) {
 }
 
 func scanOne(rows *sql.Rows) (Document, error) {
-	var id, logical, titleJson string
-	if err := rows.Scan(&id, &logical, &titleJson); err != nil {
+	var ident, logStr, titleJson, sum, rid, rname, hand, authJson, edJson, langJson, scrJson string
+	err := rows.Scan(
+		&ident, &logStr, &titleJson, &sum, &rid, &rname, &hand,
+		&authJson, &edJson, &langJson, &scrJson,
+	)
+	if err != nil {
 		return Document{}, err
 	}
-	var titles []string
-	if err := json.Unmarshal([]byte(titleJson), &titles); err != nil {
-		titles = []string{}
+	return Document{
+		Ident: ident, Logical: logStr,
+		Title: parseList(titleJson), Summary: sum,
+		RepoID: rid, RepoName: rname, Hand: hand,
+		Author: parseList(authJson), Editor: parseList(edJson),
+		Lang: parseMatrix(langJson), Script: parseMatrix(scrJson),
+	}, nil
+}
+
+func parseList(jsonStr string) []string {
+	var list []string
+	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
+		return []string{}
 	}
-	return Document{Identifier: id, Logical: logical, Title: titles}, nil
+	return list
+}
+
+func parseMatrix(jsonStr string) [][]string {
+	var mat [][]string
+	if err := json.Unmarshal([]byte(jsonStr), &mat); err != nil {
+		return [][]string{}
+	}
+	return mat
 }
 
 func filterDocs(q string) []Document {
@@ -270,32 +311,56 @@ func filterDocs(q string) []Document {
 	return docs
 }
 
-func docMatches(doc Document, q string) bool {
-	if strings.Contains(doc.Identifier, q) {
+func docMatches(d Document, q string) bool {
+	if strings.Contains(d.Ident, q) || strings.Contains(d.Logical, q) {
 		return true
 	}
-	if strings.Contains(doc.Logical, q) {
+	if strings.Contains(d.Summary, q) || strings.Contains(d.RepoID, q) {
 		return true
 	}
-	for _, t := range doc.Title {
-		if strings.Contains(t, q) {
+	if strings.Contains(d.RepoName, q) || strings.Contains(d.Hand, q) {
+		return true
+	}
+	if listMatches(d.Title, q) || listMatches(d.Author, q) || listMatches(d.Editor, q) {
+		return true
+	}
+	if matrixMatches(d.Lang, q) || matrixMatches(d.Script, q) {
+		return true
+	}
+	return false
+}
+
+func listMatches(list []string, q string) bool {
+	for _, item := range list {
+		if strings.Contains(item, q) {
 			return true
 		}
 	}
 	return false
 }
 
+func matrixMatches(mat [][]string, q string) bool {
+	for _, row := range mat {
+		for _, item := range row {
+			if strings.Contains(item, q) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func enrichMatches(tx *sql.Tx, matches []SearchResult) {
-	stmt, err := tx.Prepare("select internal from documents_search where identifier = ?")
+	stmt, err := tx.Prepare("select source from documents_search where ident = ?")
 	if err != nil {
 		log.Printf("DB prepare error: %v", err)
 		return
 	}
 	defer stmt.Close()
 	for i := range matches {
-		var internal string
-		if err := stmt.QueryRow(matches[i].Identifier).Scan(&internal); err == nil {
-			matches[i].Internal = internal
+		var src string
+		if err := stmt.QueryRow(matches[i].Ident).Scan(&src); err == nil {
+			matches[i].Source = src
 		}
 	}
 }
@@ -311,15 +376,39 @@ func sendResponse(w http.ResponseWriter, count, off, lim int, matches []SearchRe
 
 func matchDocument(doc Document, q string) SearchResult {
 	res := SearchResult{
-		Identifier: doc.Identifier,
-		Logical:    doc.Logical,
-		Title:      make([]string, len(doc.Title)),
+		Ident: doc.Ident, Logical: doc.Logical,
+		Title: cloneList(doc.Title), Summary: doc.Summary,
+		RepoID: doc.RepoID, RepoName: doc.RepoName, Hand: doc.Hand,
+		Author: cloneList(doc.Author), Editor: cloneList(doc.Editor),
+		Lang: cloneMatrix(doc.Lang), Script: cloneMatrix(doc.Script),
 	}
-	copy(res.Title, doc.Title)
 	processField(&res.Logical, doc.Logical, q)
-	processTitles(res.Title, doc.Title, q)
-	processField(&res.Identifier, doc.Identifier, q)
+	processField(&res.Ident, doc.Ident, q)
+	processField(&res.Summary, doc.Summary, q)
+	processField(&res.RepoID, doc.RepoID, q)
+	processField(&res.RepoName, doc.RepoName, q)
+	processField(&res.Hand, doc.Hand, q)
+	processStringList(res.Title, doc.Title, q)
+	processStringList(res.Author, doc.Author, q)
+	processStringList(res.Editor, doc.Editor, q)
+	processStringMatrix(res.Lang, doc.Lang, q)
+	processStringMatrix(res.Script, doc.Script, q)
 	return res
+}
+
+func cloneList(src []string) []string {
+	dst := make([]string, len(src))
+	copy(dst, src)
+	return dst
+}
+
+func cloneMatrix(src [][]string) [][]string {
+	dst := make([][]string, len(src))
+	for i, row := range src {
+		dst[i] = make([]string, len(row))
+		copy(dst[i], row)
+	}
+	return dst
 }
 
 func processField(target *string, source, q string) bool {
@@ -331,11 +420,23 @@ func processField(target *string, source, q string) bool {
 	return false
 }
 
-func processTitles(targets []string, sources []string, q string) bool {
+func processStringList(targets []string, sources []string, q string) bool {
 	matched := false
-	for i, title := range sources {
-		if processField(&targets[i], title, q) {
+	for i, item := range sources {
+		if processField(&targets[i], item, q) {
 			matched = true
+		}
+	}
+	return matched
+}
+
+func processStringMatrix(targets [][]string, sources [][]string, q string) bool {
+	matched := false
+	for i, row := range sources {
+		for j, item := range row {
+			if processField(&targets[i][j], item, q) {
+				matched = true
+			}
 		}
 	}
 	return matched
