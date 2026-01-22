@@ -265,10 +265,24 @@ class Highlighter:
 		self.cursor += len(char)
 
 	def on_skipped_node(self, node):
+		# If a skipped node (like <display>) is inside a match,
+		# we penetrate it to wrap only the leaf nodes (Strings).
 		if self._is_inside_match():
+			self._highlight_leaves(node)
+
+	def _highlight_leaves(self, node):
+		# We highlight only leaves to avoid placing a block-type element (paragraph,
+		# verse, division, etc.) inside a <match> element, because the <match>
+		# element is converted to a <span> element (thus inline) during HTML conversion.
+		if isinstance(node, tree.String):
 			match_node = tree.Tag("match")
 			node.replace_with(match_node)
 			match_node.append(node)
+		elif isinstance(node, tree.Tag):
+			if node.name == "search":
+				return
+			for child in list(node):
+				self._highlight_leaves(child)
 
 	def on_text(self, node):
 		normalized = translate_string(node)
