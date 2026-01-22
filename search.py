@@ -358,6 +358,9 @@ def prepare_search_data(doc):
 			data[field] = extract_text(nodes[0])
 
 	data["internal"] = doc.xml()
+	# XXX should really have two fields: one for the external mapping with
+	# the db, another for the normalized identifier.
+	data["identifier"] = data["identifier"].strip() # trim '\n'
 	return data
 
 def add_document(file):
