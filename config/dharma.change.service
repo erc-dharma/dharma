@@ -8,7 +8,7 @@ Group=michael
 WorkingDirectory=/home/michael/dharma
 Environment="PYTHONPATH=/home/michael:$PYTHONPATH"
 ExecStart=/usr/bin/python3 change.py
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

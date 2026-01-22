@@ -7,7 +7,7 @@ User=michael
 Group=michael
 WorkingDirectory=/home/michael/dharma
 ExecStart=/home/michael/dharma/search
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
