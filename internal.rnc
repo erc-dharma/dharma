@@ -20,6 +20,11 @@
 start = document
 
 document = element document {
+	element identifier { text },
+	element repository { name, identifier? }*,
+	element path { text },
+	element commit { hash, date }?,
+	element last-modified-commit { hash, date }?,
 	# These indicate which languages and scripts are used in the edition.
 	languages?,
 	scripts?,
@@ -41,6 +46,9 @@ document = element document {
 	commentary?,
 	bibliography?
 }
+
+hash = element hash { text }
+date = element date { text }
 
 # Source languages given in the edition division.
 languages = element languages {
