@@ -55,7 +55,7 @@ install: install-systemd install-nginx
 
 .PHONY: install-systemd install-nginx install
 
-start:
+start: $(binary)
 	for service in $(services); do \
 		sudo systemctl reload-or-restart $$service ; \
 	done
