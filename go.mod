@@ -1,4 +1,4 @@
-module search
+module dharma
 
 go 1.25.6
 

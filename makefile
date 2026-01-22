@@ -10,10 +10,12 @@ generated_parsers = $(patsubst %.g,%.py,$(wildcard *.g))
 generated = $(generated_tei) $(generated_views) $(generated_parsers)
 generated += static/base.css
 
-all: $(generated)
+binary = dharma
+
+all: $(generated) $(binary)
 
 clean:
-	rm -f $(generated)
+	rm -f $(generated) $(binary)
 
 forever:
 	@$(MAKE) || true
@@ -112,6 +114,9 @@ missing-git-names:
 	done
 
 .PHONY: update-repos update-db update-texts deploy-schemas missing-git-names
+
+$(binary): $(wildcard *.go)
+	go build
 
 %.py: %.g
 	python3 -m pegen -q $^ -o $@
