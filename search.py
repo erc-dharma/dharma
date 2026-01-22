@@ -1,6 +1,3 @@
-import sys
-import uuid
-import json
 import unicodedata
 import requests
 import io
@@ -405,7 +402,7 @@ def add_document(file):
 	for field, config in SEARCH_CONFIG.items():
 		if config["type"] in ["list", "matrix"]:
 			val = search_data.get(field)
-			search_data[field] = json.dumps(val if val else [])
+			search_data[field] = common.to_json(val if val else [])
 
 	db = common.db("texts")
 	db.execute("""
