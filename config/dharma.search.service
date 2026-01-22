@@ -1,0 +1,13 @@
+[Unit]
+Description=DHARMA Search Server
+After=network.target
+
+[Service]
+User=michael
+Group=michael
+WorkingDirectory=/home/michael/dharma
+ExecStart=/home/michael/dharma/search
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
