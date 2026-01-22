@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -44,12 +45,14 @@ var (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Usage: search <db_path>")
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatalf("Failed to get executable path: %v", err)
 	}
-	dbPath := os.Args[1]
+	exeDir := filepath.Dir(exePath)
+	dbPath := filepath.Join(exeDir, "dbs", "texts.sqlite")
 	if err := initDB(dbPath); err != nil {
-		log.Fatalf("Failed to open DB: %v", err)
+		log.Fatalf("Failed to open DB at %s: %v", dbPath, err)
 	}
 	http.HandleFunc("/search", handleSearch)
 	log.Println("Listening on :8026...")
