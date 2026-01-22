@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -34,6 +35,8 @@ type SearchResult struct {
 
 type SearchResponse struct {
 	Count   int            `json:"count"`
+	Offset  int            `json:"offset"`
+	Limit   int            `json:"limit"`
 	Matches []SearchResult `json:"matches"`
 }
 
@@ -45,18 +48,25 @@ var (
 )
 
 func main() {
-	exePath, err := os.Executable()
+	dbPath, err := getDBPath()
 	if err != nil {
-		log.Fatalf("Failed to get executable path: %v", err)
+		log.Fatalf("Failed to determine DB path: %v", err)
 	}
-	exeDir := filepath.Dir(exePath)
-	dbPath := filepath.Join(exeDir, "dbs", "texts.sqlite")
 	if err := initDB(dbPath); err != nil {
-		log.Fatalf("Failed to open DB at %s: %v", dbPath, err)
+		log.Fatalf("Failed to open DB: %v", err)
 	}
 	http.HandleFunc("/search", handleSearch)
 	log.Println("Listening on :8026...")
 	log.Fatal(http.ListenAndServe(":8026", nil))
+}
+
+func getDBPath() (string, error) {
+	ex, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	exPath := filepath.Dir(ex)
+	return filepath.Join(exPath, "dbs", "texts.sqlite"), nil
 }
 
 func initDB(path string) error {
@@ -72,9 +82,9 @@ func initDB(path string) error {
 func handleSearch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
-	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	query, offset, limit := parseRequest(r)
 	if query == "" {
-		sendResponse(w, []SearchResult{})
+		sendResponse(w, 0, offset, limit, []SearchResult{})
 		return
 	}
 	tx, err := db.Begin()
@@ -88,9 +98,51 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Sync error", 500)
 		return
 	}
-	matches := searchCorpus(query)
-	enrichMatches(tx, matches)
-	sendResponse(w, matches)
+	performSearch(w, tx, query, offset, limit)
+}
+
+func parseRequest(r *http.Request) (string, int, int) {
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	return q, off, lim
+}
+
+func performSearch(w http.ResponseWriter, tx *sql.Tx, query string, offset, limit int) {
+	// Pass 1: Filter documents (lightweight check)
+	matchingDocs := searchCorpus(query)
+	total := len(matchingDocs)
+	// Pagination on raw documents
+	pageDocs := paginateDocs(matchingDocs, offset, limit)
+	// Pass 2: Highlighting (expensive operation) on subset only
+	results := generateResults(pageDocs, query)
+	enrichMatches(tx, results)
+	sendResponse(w, total, offset, limit, results)
+}
+
+func paginateDocs(docs []Document, offset, limit int) []Document {
+	if offset < 0 {
+		offset = 0
+	}
+	if offset >= len(docs) {
+		return []Document{}
+	}
+	end := len(docs)
+	if limit > 0 {
+		end = offset + limit
+		if end > len(docs) {
+			end = len(docs)
+		}
+	}
+	return docs[offset:end]
+}
+
+func generateResults(docs []Document, query string) []SearchResult {
+	results := make([]SearchResult, 0, len(docs))
+	for _, doc := range docs {
+		results = append(results, matchDocument(doc, query))
+	}
+	return results
 }
 
 func syncCorpus(tx *sql.Tx) error {
@@ -162,17 +214,32 @@ func scanOne(rows *sql.Rows) (Document, error) {
 	return Document{Identifier: id, Logical: logical, Title: titles}, nil
 }
 
-func searchCorpus(query string) []SearchResult {
+func searchCorpus(query string) []Document {
 	mu.RLock()
 	snapshot := corpus
 	mu.RUnlock()
-	var matches []SearchResult
+	var docs []Document
 	for _, doc := range snapshot {
-		if res, ok := matchDocument(doc, query); ok {
-			matches = append(matches, res)
+		if docMatches(doc, query) {
+			docs = append(docs, doc)
 		}
 	}
-	return matches
+	return docs
+}
+
+func docMatches(doc Document, query string) bool {
+	if strings.Contains(doc.Identifier, query) {
+		return true
+	}
+	if strings.Contains(doc.Logical, query) {
+		return true
+	}
+	for _, t := range doc.Title {
+		if strings.Contains(t, query) {
+			return true
+		}
+	}
+	return false
 }
 
 func enrichMatches(tx *sql.Tx, matches []SearchResult) {
@@ -191,9 +258,11 @@ func enrichMatches(tx *sql.Tx, matches []SearchResult) {
 	}
 }
 
-func sendResponse(w http.ResponseWriter, matches []SearchResult) {
+func sendResponse(w http.ResponseWriter, count, offset, limit int, matches []SearchResult) {
 	response := SearchResponse{
-		Count:   len(matches),
+		Count:   count,
+		Offset:  offset,
+		Limit:   limit,
 		Matches: matches,
 	}
 	enc := json.NewEncoder(w)
@@ -203,24 +272,17 @@ func sendResponse(w http.ResponseWriter, matches []SearchResult) {
 	}
 }
 
-func matchDocument(doc Document, query string) (SearchResult, bool) {
+func matchDocument(doc Document, query string) SearchResult {
 	res := SearchResult{
 		Identifier: doc.Identifier,
 		Logical:    doc.Logical,
 		Title:      make([]string, len(doc.Title)),
 	}
 	copy(res.Title, doc.Title)
-	matched := false
-	if processField(&res.Logical, doc.Logical, query) {
-		matched = true
-	}
-	if processTitles(res.Title, doc.Title, query) {
-		matched = true
-	}
-	if processField(&res.Identifier, doc.Identifier, query) {
-		matched = true
-	}
-	return res, matched
+	processField(&res.Logical, doc.Logical, query)
+	processTitles(res.Title, doc.Title, query)
+	processField(&res.Identifier, doc.Identifier, query)
+	return res
 }
 
 func processField(target *string, source, query string) bool {
