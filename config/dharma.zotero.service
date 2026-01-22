@@ -9,8 +9,7 @@ WorkingDirectory=/home/michael/dharma
 Environment="PYTHONPATH=/home/michael:$PYTHONPATH"
 
 ExecStart=/usr/bin/python3 zotero.py
-Restart=always
-RestartSec=5
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
