@@ -224,7 +224,7 @@ class SearchableDocument:
 @common.transaction("texts")
 def main():
 	import sys
-	from dharma import tei, tree
+	from dharma import ingest, tree
 	doc = tree.parse(sys.argv[1])
 	ed = doc.first("/document/edition/logical")
 	text = extract_text(ed)

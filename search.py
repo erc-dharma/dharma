@@ -4,7 +4,7 @@ import json
 import unicodedata
 import requests
 import io
-from dharma import common, tei, tree, patch, internal2html
+from dharma import common, ingest, tree, enrich, render
 
 # Unicode Private Use Area characters for search markers
 MARKER_START = "\uE000"
@@ -356,7 +356,7 @@ def process_single_match(item):
 	try:
 		doc = tree.parse(io.StringIO(xml_str))
 		highlight_document(doc, item)
-		return internal2html.process(doc)
+		return render.process(doc)
 	except Exception as e:
 		print(f"Error processing match {item.get('ident')}: {e}")
 		return None
@@ -396,12 +396,12 @@ def prepare_search_data(doc):
 
 def add_document(file):
 	try:
-		doc = tei.process_file(file).to_internal()
+		doc = ingest.process_file(file).to_internal()
 	except tree.Error:
 		doc = tree.Tree()
 		doc.append(tree.Tag("document"))
-	data = patch.fetch_file_data(file.name)
-	patch.add_file_info(doc, data)
+	data = enrich.fetch_file_data(file.name)
+	enrich.add_file_info(doc, data)
 	search_data = prepare_search_data(doc)
 
 	for field, config in SEARCH_CONFIG.items():

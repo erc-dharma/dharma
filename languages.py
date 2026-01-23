@@ -579,12 +579,12 @@ def cmd_update_db():
 @common.transaction("texts")
 def cmd_print_stuff():
 	import os, sys
-	from dharma import tei, common, texts, patch
+	from dharma import ingest, common, texts, enrich
 	path = os.path.abspath(sys.argv[1])
 	f = texts.File("/", path)
-	t = tei.process_file(f).serialize()
-	patch.process(t)
-	patch.make_pretty_printable(t)
+	t = ingest.process_file(f).serialize()
+	enrich.process(t)
+	enrich.make_pretty_printable(t)
 	root = t.first("/document")
 	assert root
 	for s in root.strings():

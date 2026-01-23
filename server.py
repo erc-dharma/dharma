@@ -2,11 +2,10 @@ import os, unicodedata, datetime, html, urllib, urllib.parse, ntpath, io
 import unicodedata
 import flask, werkzeug.security # pip install flask
 from bs4 import BeautifulSoup # pip install bs4
-import requests # pip install requests
 
-from dharma import common, change, ngrams, catalog, validate, tei, tree
-from dharma import biblio, texts, editorial, prosody, internal2html, languages
-from dharma import patch, search
+from dharma import common, change, ngrams, catalog, validate, ingest, tree
+from dharma import biblio, texts, editorial, prosody, render, languages
+from dharma import enrich, search
 
 # We don't use the name "templates" for the template folder because we also
 # put other stuff in the same directory, not just templates.
@@ -387,7 +386,7 @@ def display_text(text):
 @common.transaction("texts")
 def display_inscription(text):
 	db = common.db("texts")
-	data = patch.fetch_file_data(text)
+	data = enrich.fetch_file_data(text)
 	if not data:
 		return flask.abort(404)
 	file = db.load_file(text)
@@ -403,7 +402,7 @@ def render_inscription(file: texts.File, data: dict):
 		# inscriptions; in particular, should display file info.
 		data["highlighted_xml"] = tree.html_format(file.text)
 		return flask.render_template("invalid_inscription.tpl", **data)
-	data["doc"] = tei.process_tree(t).to_html(data=data)
+	data["doc"] = ingest.process_tree(t).to_html(data=data)
 	data["highlighted_xml"] = tree.html_format(t)
 	return flask.render_template("inscription.tpl", **data)
 
@@ -500,7 +499,7 @@ def display_biblio_page(page):
 		order by sort_key limit ? offset ?""",
 		(BIBLIO_PER_PAGE, (page - 1) * BIBLIO_PER_PAGE)):
 		entry = biblio.format_entry(entry)
-		entries.append(internal2html.process_partial(entry))
+		entries.append(render.process_partial(entry))
 	first_entry = (page - 1) * BIBLIO_PER_PAGE + 1
 	if first_entry > entries_nr:
 		first_entry = 0
