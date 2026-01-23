@@ -1,7 +1,7 @@
 % extends "base.tpl"
 
 % block title
-Search
+Texts
 % endblock
 
 % block body
@@ -17,14 +17,35 @@ Search
    % endif
    </li>
    <li>
-   <input type="submit" value="Search">
+<label for="sort-select">Sort by:</label>
+<select name="sort" id="sort-select">
+% for k, v in (("title", "Title"), ("ident", "Identifier")):
+   % if k == sort:
+      <option value="{{k}}" selected>{{v}}</option>
+   % else:
+      <option value="{{k}}">{{v}}</option>
+   % endif
+% endfor
+</select>
+   </li>
+   <li>
+<input type="submit" value="Search">
    </li>
 </ul>
 </form>
 
-% if query
+<p>sort:{{sort}}</p>
 
-<p>{{match_count}} matching.</p>
+<p>Documents
+{{first_entry}}{{"\N{en dash}"}}{{last_entry}} of {{match_count}}
+% if query:
+matching.
+% else:
+total.
+% endif
+</p>
+
+% if query
 
 <div class="catalog-list">
 % for doc in matches:

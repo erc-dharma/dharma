@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"log"
@@ -13,6 +14,9 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+
+	"golang.org/x/text/collate"
+	"golang.org/x/text/language"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -52,10 +56,12 @@ type SearchResult struct {
 }
 
 type SearchResponse struct {
-	Count   int            `json:"count"`
-	Offset  int            `json:"offset"`
-	Limit   int            `json:"limit"`
-	Matches []SearchResult `json:"matches"`
+	Count  int    `json:"count"`
+	Offset int    `json:"offset"`
+	Limit  int    `json:"limit"`
+	Sort   string `json:"sort"`
+	// Matches est interface{} pour accepter []SearchResult OU []map[string]interface{}
+	Matches interface{} `json:"matches"`
 }
 
 var (
@@ -63,7 +69,12 @@ var (
 	lastDataVersion int
 	mu              sync.RWMutex
 	db              *sql.DB
+	titleCollator   *collate.Collator
 )
+
+func init() {
+	titleCollator = collate.New(language.Make("en-u-ka-shifted"))
+}
 
 func main() {
 	dbPath, err := getDBPath()
@@ -131,12 +142,12 @@ func restartSelf() {
 
 func handleSearch(w http.ResponseWriter, r *http.Request) {
 	setupHeaders(w)
-	q, off, lim := parseRequest(r)
+	q, off, lim, sortBy, fields := parseRequest(r)
 	if q == "" {
-		sendResponse(w, 0, off, lim, []SearchResult{})
+		sendResponse(w, 0, off, lim, sortBy, fields, []SearchResult{})
 		return
 	}
-	processRequest(w, q, off, lim)
+	processRequest(w, q, off, lim, sortBy, fields)
 }
 
 func setupHeaders(w http.ResponseWriter) {
@@ -144,14 +155,31 @@ func setupHeaders(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func parseRequest(r *http.Request) (string, int, int) {
+func parseRequest(r *http.Request) (string, int, int, string, []string) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 	lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	return q, off, lim
+	sortBy := r.URL.Query().Get("sort")
+	if sortBy == "" {
+		sortBy = "title"
+	}
+
+	var fields []string
+	fParam := r.URL.Query().Get("fields")
+	if fParam != "" {
+		parts := strings.Split(fParam, ",")
+		for _, p := range parts {
+			trim := strings.TrimSpace(p)
+			if trim != "" {
+				fields = append(fields, trim)
+			}
+		}
+	}
+
+	return q, off, lim, sortBy, fields
 }
 
-func processRequest(w http.ResponseWriter, q string, off, lim int) {
+func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string) {
 	tx, err := db.Begin()
 	if err != nil {
 		http.Error(w, "DB error", 500)
@@ -163,16 +191,55 @@ func processRequest(w http.ResponseWriter, q string, off, lim int) {
 		http.Error(w, "Sync error", 500)
 		return
 	}
-	performSearch(w, tx, q, off, lim)
+	performSearch(w, tx, q, off, lim, sortBy, fields)
 }
 
-func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int) {
+func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string) {
 	allDocs := filterDocs(q)
+	sortDocs(allDocs, sortBy)
 	total := len(allDocs)
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, q)
-	enrichMatches(tx, results)
-	sendResponse(w, total, off, lim, results)
+	// On passe 'fields' pour savoir si on doit récupérer le champ 'source' en DB
+	enrichMatches(tx, results, fields)
+	sendResponse(w, total, off, lim, sortBy, fields, results)
+}
+
+func sortDocs(docs []Document, sortBy string) {
+	if sortBy == "ident" {
+		return
+	}
+	sort.Slice(docs, func(i, j int) bool {
+		return compareDocs(docs[i], docs[j], sortBy)
+	})
+}
+
+// This is a replacement for titleCollator.CompareString(), because this
+// function is broken. See https://github.com/golang/go/issues/68166. The fix
+// just follows
+// https://go-review.googlesource.com/c/text/+/638717/5/collate/collate.go.
+func myCompareString(c *collate.Collator, a, b string) int {
+	var buf collate.Buffer
+	kA := c.KeyFromString(&buf, a)
+	kB := c.KeyFromString(&buf, b)
+	ret := bytes.Compare(kA, kB)
+	buf.Reset()
+	return ret
+}
+
+func compareDocs(d1, d2 Document, sortBy string) bool {
+	if sortBy == "title" {
+		hasT1 := len(d1.Title) > 0
+		hasT2 := len(d2.Title) > 0
+		if hasT1 && hasT2 {
+			return myCompareString(titleCollator, d1.Title[0], d2.Title[0]) < 0
+		}
+		if !hasT1 && !hasT2 {
+			return d1.Ident < d2.Ident
+		}
+		return hasT1
+	}
+	return d1.Ident < d2.Ident
 }
 
 func paginateDocs(docs []Document, off, lim int) []Document {
@@ -238,7 +305,7 @@ func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 	rows, err := tx.Query(`select
 		ident, logical, title, summary, repo_id, repo_name, hand,
 		author, editor, lang, script
-		from documents_search`)
+		from documents_search order by ident`)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +417,25 @@ func matrixMatches(mat [][]string, q string) bool {
 	return false
 }
 
-func enrichMatches(tx *sql.Tx, matches []SearchResult) {
+// enrichMatches récupère le champ 'source' (XML) en base de données.
+// Optimisation : Si 'fields' est défini et ne contient pas "source", on saute cette étape.
+func enrichMatches(tx *sql.Tx, matches []SearchResult, fields []string) {
+	// Vérifier si "source" est requis
+	fetchSource := true
+	if len(fields) > 0 {
+		fetchSource = false
+		for _, f := range fields {
+			if f == "source" {
+				fetchSource = true
+				break
+			}
+		}
+	}
+
+	if !fetchSource {
+		return
+	}
+
 	stmt, err := tx.Prepare("select source from documents_search where ident = ?")
 	if err != nil {
 		log.Printf("DB prepare error: %v", err)
@@ -365,8 +450,53 @@ func enrichMatches(tx *sql.Tx, matches []SearchResult) {
 	}
 }
 
-func sendResponse(w http.ResponseWriter, count, off, lim int, matches []SearchResult) {
-	resp := SearchResponse{Count: count, Offset: off, Limit: lim, Matches: matches}
+func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult) {
+	var finalMatches interface{} = matches
+
+	// Si des champs spécifiques sont demandés, on transforme en map pour ne renvoyer que ceux-là
+	if len(fields) > 0 {
+		filtered := make([]map[string]interface{}, len(matches))
+		for i, m := range matches {
+			filtered[i] = make(map[string]interface{})
+			for _, f := range fields {
+				switch f {
+				case "ident":
+					filtered[i]["ident"] = m.Ident
+				case "logical":
+					filtered[i]["logical"] = m.Logical
+				case "title":
+					filtered[i]["title"] = m.Title
+				case "summary":
+					filtered[i]["summary"] = m.Summary
+				case "repo_id":
+					filtered[i]["repo_id"] = m.RepoID
+				case "repo_name":
+					filtered[i]["repo_name"] = m.RepoName
+				case "hand":
+					filtered[i]["hand"] = m.Hand
+				case "author":
+					filtered[i]["author"] = m.Author
+				case "editor":
+					filtered[i]["editor"] = m.Editor
+				case "lang":
+					filtered[i]["lang"] = m.Lang
+				case "script":
+					filtered[i]["script"] = m.Script
+				case "source":
+					filtered[i]["source"] = m.Source
+				}
+			}
+		}
+		finalMatches = filtered
+	}
+
+	resp := SearchResponse{
+		Count:   count,
+		Offset:  off,
+		Limit:   lim,
+		Sort:    sortBy,
+		Matches: finalMatches,
+	}
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(resp); err != nil {

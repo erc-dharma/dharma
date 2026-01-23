@@ -1,3 +1,6 @@
+import sys
+import uuid
+import json
 import unicodedata
 import requests
 import io
@@ -322,10 +325,11 @@ SEARCH_CONFIG = {
 
 # --- Service & DB Integration ---
 
-def query_search_service(query, offset=0, limit=20):
+def query_search_service(query, offset=0, limit=20, sort="title"):
+	# Normalize query to NFC to match Go index
 	norm_query = unicodedata.normalize('NFC', query)
 	try:
-		params = {"q": norm_query, "offset": offset, "limit": limit}
+		params = {"q": norm_query, "offset": offset, "limit": limit, "sort": sort}
 		resp = requests.get(GO_SERVER_URL, params=params)
 		resp.raise_for_status()
 		data = resp.json()
@@ -335,7 +339,8 @@ def query_search_service(query, offset=0, limit=20):
 	return {
 		"query": query,
 		"match_count": data.get("count", 0),
-		"matches": processed_matches
+		"matches": processed_matches,
+		"sort": data.get("sort", sort)
 	}
 
 def process_matches(raw_matches):

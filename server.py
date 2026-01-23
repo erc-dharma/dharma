@@ -565,6 +565,7 @@ def handle_github():
 @app.get("/search")
 def render_search_page():
 	query = flask.request.args.get("q", "").strip()
+	sort = flask.request.args.get("sort", "title")
 	page = flask.request.args.get("p", 1, type=int)
 	if page < 1:
 		page = 1
@@ -572,15 +573,24 @@ def render_search_page():
 		return flask.render_template("search.tpl")
 	offset = (page - 1) * SEARCH_PER_PAGE
 	try:
-		context = search.query_search_service(query, offset, SEARCH_PER_PAGE)
+		print(repr(sort))
+		context = search.query_search_service(query, offset, SEARCH_PER_PAGE, sort)
 	except Exception as e:
 		return flask.render_template("search.tpl", error=f"Search error: {e}")
 	count = context.get("match_count", 0)
 	pages_nr = (count + SEARCH_PER_PAGE - 1) // SEARCH_PER_PAGE
+	first_entry = (page - 1) * SEARCH_PER_PAGE + 1
+	if first_entry > count:
+		first_entry = 0
+	last_entry = page * SEARCH_PER_PAGE
+	if last_entry > count:
+		last_entry = count
 	context.update({
 		"page": page,
 		"pages_nr": pages_nr,
-		"per_page": SEARCH_PER_PAGE
+		"per_page": SEARCH_PER_PAGE,
+		"first_entry": first_entry,
+		"last_entry": last_entry,
 	})
 	return flask.render_template("search.tpl", **context)
 
