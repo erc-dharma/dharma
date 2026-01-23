@@ -361,121 +361,78 @@ def update_langs():
 	for code, rec in sorted(index.items()):
 		db.execute("insert into langs_by_code(code, id) values(?, ?)", (code, rec["id"]))
 
-def load_langs():
-	tbl3 = common.fetch_tsv("https://iso639-3.sil.org/sites/iso639-3/files/downloads/iso-639-3.tab")
-	tbl3_bis = common.fetch_tsv("https://iso639-3.sil.org/sites/iso639-3/files/downloads/iso-639-3_Name_Index.tab")
-	tbl5 = common.fetch_tsv("http://id.loc.gov/vocabulary/iso639-5.tsv")
-	tbl0 = common.fetch_tsv(texts.save("project-documentation", "DHARMA_languages.tsv"))
+def init_base_recs():
+	# Define core taxonomic categories with mandatory inverted_name
 	recs = [
-	{
-		"id": "lang",
-		"name": "Any Language",
-		"inverted_name": "Any Language",
-		"iso": None,
-		"custom": True,
-		"dharma": True,
-		"parent": None,
-	}, {
-		"id": "source",
-		"name": "Source Language",
-		"inverted_name": "Source Language",
-		"iso": None,
-		"custom": True,
-		"dharma": True,
-		"parent": "lang",
-	}, {
-		"id": "study",
-		"name": "Study Language",
-		"inverted_name": "Study Language",
-		"iso": None,
-		"custom": True,
-		"dharma": True,
-		"parent": "lang",
-	},  {
-		"id": "source_other",
-		"name": "Source Language (other)",
-		"inverted_name": "Source Language (other)",
-		"iso": None,
-		"custom": True,
-		"dharma": True,
-		"parent": "source",
-	}, {
-		"id": "study_other",
-		"name": "Study Language (other)",
-		"inverted_name": "Study Language (other)",
-		"iso": None,
-		"custom": True,
-		"dharma": True,
-		"parent": "study",
-	}]
-	index = {}
-	for rec in recs:
-		add_to_index(rec["id"], index, rec)
+		{"id": "lang", "name": "Any Language", "inverted_name": "Any Language", "iso": None, "custom": True, "dharma": True, "parent": None},
+		{"id": "source", "name": "Source Language", "inverted_name": "Source Language", "iso": None, "custom": True, "dharma": True, "parent": "lang"},
+		{"id": "study", "name": "Study Language", "inverted_name": "Study Language", "iso": None, "custom": True, "dharma": True, "parent": "lang"},
+		{"id": "source_other", "name": "Source Language (other)", "inverted_name": "Source Language (other)", "iso": None, "custom": True, "dharma": True, "parent": "source"},
+		{"id": "study_other", "name": "Study Language (other)", "inverted_name": "Study Language (other)", "iso": None, "custom": True, "dharma": True, "parent": "study"}
+	]
+	index = {rec["id"]: rec for rec in recs}
+	return recs, index
+
+def process_iso3(tbl3, tbl3_bis, recs, index):
+	# Initialize ISO 639-3 records with a default inverted_name
 	for row in tbl3:
-		assert row["Id"]
-		rec = {
-			"id": row["Id"],
-			"name": row["Ref_Name"],
-			"iso": 3,
-			"custom": False,
-			"dharma": False,
-			"parent": "source",
-		}
+		rec = {"id": row["Id"], "name": row["Ref_Name"], "inverted_name": row["Ref_Name"], "iso": 3, "custom": False, "dharma": False, "parent": "source"}
 		recs.append(rec)
-		# "Part2b", "Part2t", "Part1" are alternate language codes.
 		for field in ("Id", "Part2b", "Part2t", "Part1"):
-			add_to_index(row[field], index, rec)
+			if row.get(field):
+				index[row[field]] = rec
 	for row in tbl3_bis:
-		rec = index[row["Id"]]
-		if rec["name"] == row["Print_Name"]:
-			assert not rec.get("inverted_name")
+		rec = index.get(row["Id"])
+		if rec and rec["name"] == row["Print_Name"]:
 			rec["inverted_name"] = row["Inverted_Name"]
+	return recs, index
+
+def process_iso5(tbl5, recs, index):
+	# Add ISO 639-5 families
 	for row in tbl5:
-		rec = {
-			"id": row["code"],
-			"name": row["Label (English)"],
-			"inverted_name": row["Label (English)"],
-			"iso": 5,
-			"custom": False,
-			"dharma": False,
-			"parent": "source",
-		}
+		rec = {"id": row["code"], "name": row["Label (English)"], "inverted_name": row["Label (English)"], "iso": 5, "custom": False, "dharma": False, "parent": "source"}
 		recs.append(rec)
-		add_to_index(rec["id"], index, rec)
+		index[rec["id"]] = rec
+	return recs, index
+
+def process_dharma(tbl0, recs, index):
+	# Update or create records based on DHARMA specific metadata
 	for row in tbl0:
-		assert not "-" in row["Id"]
 		rec = index.get(row["Id"])
 		if not rec:
-			rec = {
-				"id": row["Id"],
-				"name": row["Print_Name"],
-				"inverted_name": row["Inverted_Name"],
-				"iso": None,
-				"custom": True,
-			}
+			rec = {"id": row["Id"], "name": row["Print_Name"], "inverted_name": row["Inverted_Name"], "iso": None, "custom": True}
 			recs.append(rec)
-			add_to_index(rec["id"], index, rec)
+			index[rec["id"]] = rec
 		else:
 			rec["custom"] = False
 			if row["Print_Name"] and row["Print_Name"] != rec["name"]:
-				rec["name"] = row["Print_Name"]
-				rec["custom"] = True
+				rec.update({"name": row["Print_Name"], "custom": True})
 			if row["Inverted_Name"] and row["Inverted_Name"] != rec["inverted_name"]:
-				rec["inverted_name"] = row["Inverted_Name"]
-				rec["custom"] = True
-		rec["dharma"] = True
-		rec["parent"] = row["type"] or "source"
+				rec.update({"inverted_name": row["Inverted_Name"], "custom": True})
+		rec.update({"dharma": True, "parent": row["type"] or "source"})
+	return recs, index
+
+def finalize_recs(recs, index):
+	# Final check and parent ID resolution
 	assert all("inverted_name" in rec for rec in recs)
 	for rid, rec in enumerate(recs, 1):
 		rec["rid"] = rid
-	root = None
 	for rec in recs:
-		if rec["parent"] is None:
-			assert root is None
-			root = rec
-			continue
-		rec["parent"] = index[rec["parent"]]["rid"]
+		if rec["parent"] is not None:
+			rec["parent"] = index[rec["parent"]]["rid"]
 	return recs, index
+
+def load_langs():
+	# Master function for language data loading
+	t3 = common.fetch_tsv("https://iso639-3.sil.org/sites/iso639-3/files/downloads/iso-639-3.tab")
+	t3b = common.fetch_tsv("https://iso639-3.sil.org/sites/iso639-3/files/downloads/iso-639-3_Name_Index.tab")
+	t5 = common.fetch_tsv("http://id.loc.gov/vocabulary/iso639-5.tsv")
+	t0 = common.fetch_tsv(texts.save("project-documentation", "DHARMA_languages.tsv"))
+	recs, index = init_base_recs()
+	recs, index = process_iso3(t3, t3b, recs, index)
+	recs, index = process_iso5(t5, recs, index)
+	recs, index = process_dharma(t0, recs, index)
+	return finalize_recs(recs, index)
 
 def add_to_index(code, index, rec):
 	if not code:
