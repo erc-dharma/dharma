@@ -1,6 +1,3 @@
-import sys
-import uuid
-import json
 import unicodedata
 import requests
 import io
@@ -403,12 +400,10 @@ def add_document(file):
 	data = enrich.fetch_file_data(file.name)
 	enrich.add_file_info(doc, data)
 	search_data = prepare_search_data(doc)
-
 	for field, config in SEARCH_CONFIG.items():
 		if config["type"] in ["list", "matrix"]:
-			val = search_data.get(field)
-			search_data[field] = common.to_json(val if val else [])
-
+			val = search_data.get(field) or []
+			search_data[field] = val
 	db = common.db("texts")
 	db.execute("""
 	insert or replace

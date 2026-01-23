@@ -48,12 +48,32 @@ total.
 <div class="catalog-list">
 % for doc in matches:
 <div class="catalog-card">
-	<p>{{doc.identifier.html() | safe }}</p>
-% for title in doc.titles
-	<p>{{title.html() | safe}}</p>
-% endfor
+   <div class="catalog-card-heading">
+      <a href="{{url_for("display_text", text=doc.identifier.text())}}">
+   % if doc.authors:
+	% for author in doc.authors:
+		{{author.html() | safe}}{{": " if loop.last else ", "}}
+	% endfor
+   % endif
+   % if doc.titles:
+	{{doc.titles[0].html() | safe}}
+   % else:
+      <i>Untitled</i>
+   % endif
+      </a>
+   </div>
+   <p>
+   </p>
+   % if doc.summary:
+   {{doc.summary.html() | safe}}
+   % endif
+   <p>
+      Repository: {{"repo_title"}} (<span class="repo-id">{{"repo id"}}</span>).
+   </p>
+   <p><span class="text-id">{{doc.identifier.html() | safe}}</span>.</p>
 </div>
 % endfor
+</div>
 
 <div class="pagination">
 % if page > 1:
