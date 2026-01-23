@@ -34,8 +34,6 @@ Texts
 </ul>
 </form>
 
-<p>sort:{{sort}}</p>
-
 <p>Documents
 {{first_entry}}{{"\N{en dash}"}}{{last_entry}} of {{match_count}}
 % if query:
@@ -59,13 +57,13 @@ total.
 
 <div class="pagination">
 % if page > 1:
-   <a href="{{url_for('render_search_page', q=query, p=page - 1)}}">← Previous</a>
+   <a href="{{url_for('render_search_page', q=query, p=page - 1, sort=sort)}}">← Previous</a>
 % else:
    ← Previous
 % endif
    |
 % if page < pages_nr:
-   <a href="{{url_for('render_search_page', q=query, p=page + 1)}}">Next →</a>
+   <a href="{{url_for('render_search_page', q=query, p=page + 1, sort=sort)}}">Next →</a>
 % else:
    Next →
 % endif
