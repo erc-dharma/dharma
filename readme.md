@@ -47,14 +47,15 @@ This will clone all DHARMA repositories and create the database.
 
 ##  Entry points
 
-There are four main programs. On our server, they run concurrently and are
+There are five main programs. On our server, they run concurrently and are
 managed by `systemd`, but they can also be run manually, independently of
 each other.
 
 Firstly, we have a server program. It is used for read-only operations: display,
 search, etc. It never writes to a database. The code's entry point is in
-`server.py`. The server is thread-safe (or is supposed to be). It is possible to
-run several server processes simultaneously, if the backend supports it.
+`server.py`. We do not use threads for concurrency, thus thread safety is not
+tested. It is possible to run several server processes simultaneously, if the
+backend supports it.
 
 Secondly, we have an update program. It is used for updating databases when
 people push to git repositories or modify our Zotero bibliography. This is the
@@ -66,11 +67,15 @@ Thirdly, we have a WebSocket client that is hooked to Zotero and that notifies
 the update process whenever someone modifies the project's bibliography. The
 code is in `zotero.py`.
 
-Finally, we have a program for accessing zotero.org. The code is in
+Fourthly, we have a program for accessing zotero.org. The code is in
 `zotero_proxy.py`. This is a server that is queried by XSLT files when they try
 to access the bibliography. They make a lot of calls to the Zotero API, and
 Zotero servers are often overloaded, thus we use a proxy that repeats API calls
 on error, to prevent our builds from failing all the time.
+
+Finally, we have a search server, written in Go. The code is in the `*.go` files
+in this directory. This server is not meant to be accessible from the internet.
+It is used internally, by the Python server in `server.py`.
 
 ## Configuration
 
