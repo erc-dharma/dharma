@@ -43,7 +43,7 @@ total.
 % endif
 </p>
 
-% if query
+% if matches
 
 <div class="catalog-list">
 % for doc in matches:

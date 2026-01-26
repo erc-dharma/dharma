@@ -568,8 +568,6 @@ def render_search_page():
 	page = flask.request.args.get("p", 1, type=int)
 	if page < 1:
 		page = 1
-	if not query:
-		return flask.render_template("search.tpl")
 	offset = (page - 1) * SEARCH_PER_PAGE
 	try:
 		context = search.query_search_service(query, offset, SEARCH_PER_PAGE, sort)

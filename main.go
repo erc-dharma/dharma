@@ -12,7 +12,7 @@ API Endpoint:
 Query Parameters:
   - q (string): The search query term.
   - offset (int): The starting index for pagination (default: 0).
-  - limit (int): The maximum number of results to return.
+  - limit (int): The maximum number of results to return (default: 20).
   - sort (string): The sorting criteria.
       Values: "title" (default, uses linguistic collation) or "ident" (sort by ID).
   - fields (string): A comma-separated list of fields to include in the JSON response.
@@ -172,11 +172,9 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	setupHeaders(w)
 	// Retrieve parameters including the 'pretty' boolean flag
 	q, off, lim, sortBy, fields, pretty := parseRequest(r)
-	if q == "" {
-		// Pass 'q' (empty) and 'pretty' to sendResponse so they appear in the JSON
-		sendResponse(w, 0, off, lim, sortBy, fields, []SearchResult{}, q, pretty)
-		return
-	}
+
+	// We no longer block empty queries. We process them.
+	// Filter logic handles the "match all" behavior for empty q.
 	processRequest(w, q, off, lim, sortBy, fields, pretty)
 }
 
@@ -189,7 +187,13 @@ func setupHeaders(w http.ResponseWriter) {
 func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+
+	// MODIFICATION: Default limit to 20 if not specified (or if 0)
 	lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if lim <= 0 {
+		lim = 20
+	}
+
 	sortBy := r.URL.Query().Get("sort")
 	if sortBy == "" {
 		sortBy = "title"
@@ -410,6 +414,16 @@ func filterDocs(q string) []Document {
 	mu.RLock()
 	snap := corpus
 	mu.RUnlock()
+
+	// MODIFICATION: Optimisation pour la requête vide.
+	// Si q est vide, on retourne tout le corpus.
+	// paginateDocs se chargera de découper selon offset/limit.
+	if q == "" {
+		docs := make([]Document, len(snap))
+		copy(docs, snap)
+		return docs
+	}
+
 	var docs []Document
 	for _, doc := range snap {
 		if docMatches(doc, q) {
@@ -561,6 +575,12 @@ func matchDocument(doc Document, q string) SearchResult {
 		Author: cloneList(doc.Author), Editor: cloneList(doc.Editor),
 		Lang: cloneMatrix(doc.Lang), Script: cloneMatrix(doc.Script),
 	}
+
+	// MODIFICATION: Si q est vide, on retourne l'objet tel quel sans surlignage.
+	if q == "" {
+		return res
+	}
+
 	processField(&res.Logical, doc.Logical, q)
 	processField(&res.Ident, doc.Ident, q)
 	processField(&res.Summary, doc.Summary, q)
