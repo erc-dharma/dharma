@@ -62,13 +62,29 @@ total.
    % endif
       </a>
    </div>
-   <p>
+   % if doc.edition_languages:
+   <p>{{numberize("Language", len(doc.edition_languages))}}:
+% for (lang_ident, lang_name), scripts in doc.edition_languages:
+	{{lang_name.html() | safe}}
+	(<a href="/languages/{{lang_ident.text()}}" class="monospace">{{lang_ident.html() | safe}}</a>)
+	{%- if scripts %}
+	[
+	{%- for script_ident, script_name in scripts -%}
+		{{script_name.html() | safe}}
+		(<a href="/scripts/{{script_ident.text()}}" class="monospace">{{script_ident.html() | safe}}</a>)
+		{%- if not loop.last %}, {% endif -%}
+	{%- endfor -%}
+	]
+	{%- endif -%}
+	{%- if loop.index < loop.length %},{% else %}.{% endif -%}
+% endfor
    </p>
+   % endif
    % if doc.summary:
    {{doc.summary.html() | safe}}
    % endif
    <p>
-      Repository: {{"repo_title"}} (<span class="repo-id">{{"repo id"}}</span>).
+      Repository: {{doc.repository.name.html() | safe}} (<span class="repo-id">{{doc.repository.identifier.html() | safe}}</span>).
    </p>
    <p><span class="text-id">{{doc.identifier.html() | safe}}</span>.</p>
 </div>

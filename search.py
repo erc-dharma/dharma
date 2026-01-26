@@ -284,19 +284,19 @@ SEARCH_CONFIG = {
 		"highlight": "/document/summary"
 	},
 	"repo_id": {
-		"extractor": get_repo_id,
+		"extractor": extract_one_text("/document/repository/identifier"),
 		"type": "string",
-		"highlight": None
+		"highlight": "/document/repository/identifier"
 	},
 	"repo_name": {
-		"extractor": get_repo_name,
+		"extractor": extract_one_text("/document/repository/name"),
 		"type": "string",
-		"highlight": "/document/repository"
+		"highlight": "/document/repository/name"
 	},
 	"hand": {
-		"extractor": extract_one_text("/document/handDesc"),
+		"extractor": extract_one_text("/document/hand"),
 		"type": "string",
-		"highlight": "/document/handDesc"
+		"highlight": "/document/hand"
 	},
 	"author": {
 		"extractor": get_flat_people("/document/author"),
@@ -311,12 +311,14 @@ SEARCH_CONFIG = {
 	"lang": {
 		"extractor": get_flat_matrix("/document/languages/language", "script"),
 		"type": "matrix",
-		"highlight": None
+		"highlight": "/document/languages/language",
+		"child": "script"
 	},
 	"script": {
 		"extractor": get_flat_matrix("/document/scripts/script", "language"),
 		"type": "matrix",
-		"highlight": None
+		"highlight": "/document/scripts/script",
+		"child": "language"
 	}
 }
 
@@ -365,6 +367,8 @@ def highlight_document(doc, item_data):
 
 		if config["type"] == "list" and isinstance(marked_data, list):
 			apply_list_highlight(nodes, marked_data)
+		elif config["type"] == "matrix" and isinstance(marked_data, list):
+			apply_matrix_highlight(nodes, marked_data, config.get("child"))
 		else:
 			apply_string_highlight(nodes, marked_data)
 
@@ -374,6 +378,39 @@ def apply_list_highlight(nodes, marked_list):
 			if i < len(nodes):
 				hl = Highlighter(content)
 				hl.highlight(nodes[i])
+
+def apply_matrix_highlight(nodes, matrix, child_tag):
+	# Traverse XML nodes (parents) and data rows in parallel
+	for node, row in zip(nodes, matrix):
+		# Row structure from get_flat_matrix:
+		# [ParentID, ParentName, Child1ID, Child1Name, Child2ID, Child2Name, ...]
+
+		# 1. Parent Identifier (col 0)
+		if len(row) > 0:
+			targets = node.find("identifier")
+			if targets: apply_string_highlight(targets, row[0])
+
+		# 2. Parent Name (col 1)
+		if len(row) > 1:
+			targets = node.find("name")
+			if targets: apply_string_highlight(targets, row[1])
+
+		# 3. Children (starting col 2)
+		if child_tag:
+			children = node.find(child_tag)
+			col = 2
+			for child in children:
+				# Child Identifier
+				if col < len(row):
+					targets = child.find("identifier")
+					if targets: apply_string_highlight(targets, row[col])
+				col += 1
+
+				# Child Name
+				if col < len(row):
+					targets = child.find("name")
+					if targets: apply_string_highlight(targets, row[col])
+				col += 1
 
 def apply_string_highlight(nodes, marked_string):
 	if MARKER_START in marked_string:
