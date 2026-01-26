@@ -62,6 +62,17 @@ total.
    % endif
       </a>
    </div>
+
+% if doc.editors:
+<p>
+{{numberize("Author", (doc.editors | length))}} of digital edition:
+% for editor_ident, editor_name in doc.editors:
+   {{editor_name.html() | safe}}{% if editor_ident %}
+   (<a href="/people/{{editor_ident.text()}}" class="monospace">{{editor_ident.html() | safe}}</a>){% endif %}{% if loop.index < loop.length %},{% else %}.{% endif %}
+% endfor
+</p>
+% endif
+
    % if doc.edition_languages:
    <p>{{numberize("Language", len(doc.edition_languages))}}:
 % for (lang_ident, lang_name), scripts in doc.edition_languages:

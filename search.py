@@ -300,12 +300,12 @@ SEARCH_CONFIG = {
 	},
 	"author": {
 		"extractor": get_flat_people("/document/author"),
-		"type": "list",
+		"type": "people",  # Changed from "list" to "people" to handle sub-fields
 		"highlight": "/document/author"
 	},
 	"editor": {
 		"extractor": get_flat_people("/document/editor"),
-		"type": "list",
+		"type": "people",  # Changed from "list" to "people"
 		"highlight": "/document/editor"
 	},
 	"lang": {
@@ -369,6 +369,8 @@ def highlight_document(doc, item_data):
 			apply_list_highlight(nodes, marked_data)
 		elif config["type"] == "matrix" and isinstance(marked_data, list):
 			apply_matrix_highlight(nodes, marked_data, config.get("child"))
+		elif config["type"] == "people" and isinstance(marked_data, list):
+			apply_people_highlight(nodes, marked_data)
 		else:
 			apply_string_highlight(nodes, marked_data)
 
@@ -378,6 +380,24 @@ def apply_list_highlight(nodes, marked_list):
 			if i < len(nodes):
 				hl = Highlighter(content)
 				hl.highlight(nodes[i])
+
+def apply_people_highlight(nodes, flat_list):
+	# The flat_list for people is [id, name, id, name, ...]
+	# nodes corresponds to <author> or <editor> elements
+	for i, node in enumerate(nodes):
+		# Indices in the flat list for this node
+		id_idx = 2 * i
+		name_idx = 2 * i + 1
+
+		# Highlight identifier
+		if id_idx < len(flat_list):
+			targets = node.find("identifier")
+			if targets: apply_string_highlight(targets, flat_list[id_idx])
+
+		# Highlight name
+		if name_idx < len(flat_list):
+			targets = node.find("name")
+			if targets: apply_string_highlight(targets, flat_list[name_idx])
 
 def apply_matrix_highlight(nodes, matrix, child_tag):
 	# Traverse XML nodes (parents) and data rows in parallel
@@ -435,7 +455,7 @@ def add_document(file):
 	enrich.add_file_info(doc, data)
 	search_data = prepare_search_data(doc)
 	for field, config in SEARCH_CONFIG.items():
-		if config["type"] in ["list", "matrix"]:
+		if config["type"] in ["list", "matrix", "people"]:
 			val = search_data.get(field) or []
 			search_data[field] = val
 	db = common.db("texts")
