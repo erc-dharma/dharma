@@ -415,7 +415,7 @@ class HTMLDocument:
 		self.editors = []
 		self.edition_languages = []
 		self.body = None
-		self.repository = None # paired
+		self.repository = paired(identifier="", name="")
 		self.identifier = None
 		self.commit = None
 		self.last_modified_commit = None

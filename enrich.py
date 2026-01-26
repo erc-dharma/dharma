@@ -47,13 +47,13 @@ https://hackage-content.haskell.org/package/pandoc-types-1.23.1.1/docs/Text-Pand
 """
 
 import re, sys
-from dharma import tree, common, languages, query_bits
+from dharma import tree, common, languages
 
 def fix_search(t: tree.Tree):
+	import search
 	for node in t.find(".//search"):
 		assert isinstance(node, tree.Tag)
-		segs = query_bits.extract_text(node)
-		text = "".join(str(s) for s in segs)
+		text = search.extract_text(node)
 		node.clear()
 		node.append(text)
 
