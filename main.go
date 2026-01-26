@@ -185,7 +185,7 @@ func setupHeaders(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-// MODIFICATION: Returns an additional boolean for pretty printing
+// Returns an additional boolean for pretty printing
 func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
@@ -207,7 +207,7 @@ func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
 		}
 	}
 
-	// MODIFICATION: Parse the 'pretty' parameter
+	// Parse the 'pretty' parameter
 	pretty := false
 	pParam := strings.ToLower(r.URL.Query().Get("pretty"))
 	if pParam == "true" || pParam == "1" || pParam == "yes" {
@@ -217,7 +217,6 @@ func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
 	return q, off, lim, sortBy, fields, pretty
 }
 
-// MODIFICATION: Signature update to include 'pretty'
 func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string, pretty bool) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -234,15 +233,15 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 	performSearch(w, tx, q, off, lim, sortBy, fields, pretty)
 }
 
-// MODIFICATION: Signature update to include 'pretty'
 func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool) {
 	allDocs := filterDocs(q)
 	sortDocs(allDocs, sortBy)
 	total := len(allDocs)
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, q)
-	// Pass 'fields' to determine if we need to fetch the 'source' field from DB
-	enrichMatches(tx, results, fields)
+	// Pass 'fields' to determine if we need to fetch the 'source' field from DB.
+	// Pass 'pageDocs' (clean documents) to allow retrieving source by clean Ident.
+	enrichMatches(tx, results, pageDocs, fields)
 	// Pass 'pretty' flag
 	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty)
 }
@@ -461,7 +460,8 @@ func matrixMatches(mat [][]string, q string) bool {
 
 // enrichMatches retrieves the 'source' (XML) field from the database.
 // Optimization: If 'fields' is defined and does not contain "source", skip this step.
-func enrichMatches(tx *sql.Tx, matches []SearchResult, fields []string) {
+// We pass docs []Document to access the clean Ident, as matches[] may contain highlights.
+func enrichMatches(tx *sql.Tx, matches []SearchResult, docs []Document, fields []string) {
 	// Check if "source" is required
 	fetchSource := true
 	if len(fields) > 0 {
@@ -486,13 +486,14 @@ func enrichMatches(tx *sql.Tx, matches []SearchResult, fields []string) {
 	defer stmt.Close()
 	for i := range matches {
 		var src string
-		if err := stmt.QueryRow(matches[i].Ident).Scan(&src); err == nil {
+		// Use docs[i].Ident (clean) instead of matches[i].Ident (potentially highlighted)
+		if err := stmt.QueryRow(docs[i].Ident).Scan(&src); err == nil {
 			matches[i].Source = src
 		}
 	}
 }
 
-// MODIFICATION: Updated signature and logic (pretty print)
+// Updated signature and logic (pretty print)
 func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool) {
 	var finalMatches interface{} = matches
 
@@ -544,7 +545,7 @@ func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fie
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	if pretty {
-		// MODIFICATION: Enable indentation if requested
+		// Enable indentation if requested
 		enc.SetIndent("", "  ")
 	}
 	if err := enc.Encode(resp); err != nil {
