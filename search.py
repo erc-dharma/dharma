@@ -1,3 +1,4 @@
+import sys
 import unicodedata
 import requests
 import io
@@ -5,28 +6,59 @@ from dharma import common, ingest, tree, enrich, render
 
 # Unicode Private Use Area characters for search markers
 MARKER_START = "\uE000"
-MARKER_END   = "\uE001"
+MARKER_END = "\uE001"
 GO_SERVER_URL = "http://localhost:8026/search"
+# Definitions based on internal.rnc (excluding 'head')
+BLOCK_TAGS = {"para", "verse", "quote", "dlist", "elist"}
+# Structural parents allowed for a snippet root
+VALID_PARENTS = {"div", "logical", "hand"}
+
+def translate_char(c):
+	match c:
+		case "'":
+			return "’"
+		case "œ":
+			return "oe"
+		case "æ":
+			return "ae"
+		case "đ":
+			return "d"
+		case _:
+			return c
 
 def translate_string(s):
 	# Normalize strings to NFC to ensure index alignment with Go.
 	tmp = []
 	for c in s.data:
-		if c == "'":
-			c = "’"
+		c = translate_char(c)
 		tmp.append(c)
 	return unicodedata.normalize('NFC', "".join(tmp))
 
-# --- Core Logic: Structure Walker & Text Extraction ---
+@render.handler("match")
+def render_match(renderer, node):
+	renderer.push(tree.Tag("mark"))
+	renderer.dispatch_children(node)
+	renderer.join()
+
+@render.handler("omission")
+def render_omission(renderer, node):
+	# CSS should handle visibility toggle
+	renderer.push(tree.Tag("span", class_="omission", onclick="this.classList.toggle('visible')"))
+	renderer.push(tree.Tag("span", class_="omission-marker"))
+	renderer.append("[...]")
+	renderer.join()
+	renderer.push(tree.Tag("span", class_="omission-content"))
+	renderer.dispatch_children(node)
+	renderer.join()
+	renderer.join()
 
 class InternalWalker:
+
 	def __init__(self, handler):
 		self.handler = handler
 
 	def walk(self, root):
 		self._walk_node(root)
-		# Virtual newline handling delegated to block elements
-		pass
 
 	def _walk_node(self, node):
 		match node:
@@ -34,45 +66,55 @@ class InternalWalker:
 				self.handler.on_text(node)
 			case tree.Tag():
 				self._walk_tag(node)
-			case _:
-				pass
 
 	def _walk_tag(self, root):
 		children = list(root)
-		match root.name:
-			case "logical" | "title" | "span" | "search" | "link" | "identifier":
-				for node in children: self._walk_node(node)
-			case "para":
-				for node in children: self._walk_node(node)
-				self.handler.on_virtual("\n")
-			case "split":
-				search_node = root.first("search")
-				if search_node: self._walk_node(search_node)
-			case "verse":
-				self._handle_verse(root)
-			case "div":
-				if common.to_boolean(root["phantom"]):
-					self.handler.on_skipped_node(root)
-				else:
-					head = root.first("stuck-child::head")
-					for node in children:
-						if node is head: continue
-						self._walk_node(node)
-					self.handler.on_virtual("\n")
-			case "elist":
-				self._handle_elist(root)
-			case "dlist":
-				self._handle_dlist(root)
-			case "quote":
-				source = root.first("stuck-child::source")
-				self.handler.on_virtual("\t")
-				for node in children:
-					if node is source: continue
-					self._walk_node(node)
-			case "npage" | "nline" | "ncell" | "display" | "note":
-				self.handler.on_skipped_node(root)
-			case _:
-				for node in children: self._walk_node(node)
+		if root.name in ["logical", "title", "span", "search", "link", "identifier", "omission"]:
+			for node in children: self._walk_node(node)
+		elif root.name == "para":
+			self._handle_para(children)
+		elif root.name == "split":
+			self._handle_split(root)
+		elif root.name == "verse":
+			self._handle_verse(root)
+		elif root.name == "div":
+			self._handle_div(root, children)
+		elif root.name in ["elist", "dlist", "quote"]:
+			self._handle_complex_blocks(root, children)
+		elif root.name in ["npage", "nline", "ncell", "display", "note"]:
+			self.handler.on_skipped_node(root)
+		else:
+			for node in children: self._walk_node(node)
+
+	def _handle_para(self, children):
+		for node in children: self._walk_node(node)
+		self.handler.on_virtual("\n")
+
+	def _handle_split(self, root):
+		search_node = root.first("search")
+		if search_node: self._walk_node(search_node)
+
+	def _handle_div(self, root, children):
+		if common.to_boolean(root["phantom"]):
+			self.handler.on_skipped_node(root)
+			return
+		head = root.first("stuck-child::head")
+		for node in children:
+			if node is head: continue
+			self._walk_node(node)
+		self.handler.on_virtual("\n")
+
+	def _handle_complex_blocks(self, root, children):
+		if root.name == "elist":
+			self._handle_elist(root)
+		elif root.name == "dlist":
+			self._handle_dlist(root)
+		elif root.name == "quote":
+			source = root.first("stuck-child::source")
+			self.handler.on_virtual("\t")
+			for node in children:
+				if node is source: continue
+				self._walk_node(node)
 
 	def _handle_verse(self, root):
 		first = True
@@ -111,13 +153,12 @@ def generate_list_labels(node):
 		case _: raise Exception(f"bad value: {node!r}")
 
 class TextExtractor:
+
 	def __init__(self): self.buf = []
 	def on_text(self, node): self.buf.append(translate_string(node))
 	def on_virtual(self, char): self.buf.append(char)
 	def on_skipped_node(self, node): pass
 	def get_result(self):
-		# Only strip trailing whitespace/newlines to preserve start offsets
-		# for accurate highlighting if XML has indentation.
 		return "".join(str(s) for s in self.buf).rstrip()
 
 def extract_text(root: tree.Node):
@@ -126,9 +167,8 @@ def extract_text(root: tree.Node):
 	walker.walk(root)
 	return handler.get_result()
 
-# --- Highlighting Logic ---
-
 class Highlighter:
+
 	def __init__(self, marked_stream):
 		self.hit_ranges = self._extract_hit_ranges(marked_stream)
 		self.cursor = 0
@@ -172,10 +212,13 @@ class Highlighter:
 		mask = self._compute_mask(length)
 		self.cursor += length
 		if not any(mask): return
+		self._apply_mask(node, normalized, mask)
+
+	def _apply_mask(self, node, text, mask):
 		new_nodes = []
 		buffer = []
 		is_highlighting = mask[0] if mask else False
-		for i, char in enumerate(normalized):
+		for i, char in enumerate(text):
 			if mask[i] != is_highlighting:
 				self._flush_buffer(new_nodes, buffer, is_highlighting)
 				is_highlighting = mask[i]
@@ -210,7 +253,167 @@ class Highlighter:
 			nodes.append(match_node)
 		else: nodes.append(tree.String(content))
 
-# --- Specific Extractors ---
+class SnippetGenerator:
+
+	def __init__(self, doc, context_chars=60):
+		self.doc = doc
+		self.context_chars = context_chars
+		self.seen_blocks = set()
+
+	def generate(self):
+		roots = self._get_roots()
+		if not roots: return
+		blocks = []
+		for root in roots:
+			self._collect_blocks_from_root(root, blocks)
+		for block in blocks:
+			block["snippet"] = "true"
+			pruner = BlockPruner(block, self.context_chars)
+			pruner.prune()
+
+	def _get_roots(self):
+		roots = []
+		roots.extend(self.doc.find("/document/edition/logical"))
+		roots.extend(self.doc.find("/document/hand"))
+		return roots
+
+	def _collect_blocks_from_root(self, root, blocks):
+		matches = []
+		self._collect_matches(root, matches)
+		for m in matches:
+			eligible = self._find_eligible_block(m)
+			if eligible and id(eligible) not in self.seen_blocks:
+				self.seen_blocks.add(id(eligible))
+				blocks.append(eligible)
+
+	def _collect_matches(self, n, matches_list):
+		if isinstance(n, tree.Tag):
+			if n.name == "match":
+				matches_list.append(n)
+			for child in list(n):
+				self._collect_matches(child, matches_list)
+
+	def _find_eligible_block(self, node):
+		curr = node
+		while curr:
+			if curr.name in BLOCK_TAGS:
+				parent = curr.parent
+				if parent and parent.name in VALID_PARENTS:
+					return curr
+			curr = curr.parent
+		return None
+
+class BlockPruner:
+
+	def __init__(self, block, context_chars):
+		self.block = block
+		self.context_chars = context_chars
+		self.cursor = 0
+		self.match_ranges = []
+		self.mask = []
+
+	def prune(self):
+		total_len = self._scan_matches(self.block, 0)
+		self._build_mask(total_len)
+		if total_len < (self.context_chars * 3): return
+		self.cursor = 0
+		self._transform_children(self.block)
+
+	def _scan_matches(self, node, offset):
+		length = 0
+		if isinstance(node, tree.String):
+			return len(str(node))
+		elif isinstance(node, tree.Tag):
+			if node.name == "match":
+				inner_len = 0
+				for c in node:
+					inner_len += self._scan_matches(c, offset + length + inner_len)
+				self.match_ranges.append((offset + length, offset + length + inner_len))
+				return inner_len
+			for c in node:
+				length += self._scan_matches(c, offset + length)
+			return length
+		return 0
+
+	def _build_mask(self, total_len):
+		self.mask = [False] * total_len
+		for start, end in self.match_ranges:
+			k_start = max(0, start - self.context_chars)
+			k_end = min(total_len, end + self.context_chars)
+			for i in range(k_start, k_end):
+				self.mask[i] = True
+
+	def _transform_children(self, parent):
+		new_children = []
+		for child in list(parent):
+			res = self._transform_node(child)
+			for r in res:
+				if self._is_omission(r) and new_children and self._is_omission(new_children[-1]):
+					for sub in list(r): new_children[-1].append(sub)
+				else:
+					new_children.append(r)
+		parent.clear()
+		for c in new_children: parent.append(c)
+
+	def _is_omission(self, node):
+		return isinstance(node, tree.Tag) and node.name == "omission"
+
+	def _transform_node(self, node):
+		if isinstance(node, tree.String):
+			return self._transform_string(node)
+		elif isinstance(node, tree.Tag):
+			return self._transform_tag(node)
+		return [node]
+
+	def _transform_string(self, node):
+		text = str(node)
+		length = len(text)
+		node_start = self.cursor
+		self.cursor += length
+		node_mask = self.mask[node_start : node_start + length]
+		if all(node_mask): return [node]
+		if not any(node_mask):
+			om = tree.Tag("omission")
+			om.append(node)
+			return [om]
+		return self._split_string_node(text, node_mask)
+
+	def _split_string_node(self, text, node_mask):
+		result_nodes = []
+		current_segment = []
+		keeping = node_mask[0]
+		for i, char in enumerate(text):
+			if node_mask[i] == keeping:
+				current_segment.append(char)
+			else:
+				self._flush_segment(result_nodes, current_segment, keeping)
+				current_segment = [char]
+				keeping = not keeping
+		self._flush_segment(result_nodes, current_segment, keeping)
+		return result_nodes
+
+	def _flush_segment(self, nodes, segment, keeping):
+		if not segment: return
+		s_node = tree.String("".join(segment))
+		if keeping:
+			nodes.append(s_node)
+		else:
+			om = tree.Tag("omission")
+			om.append(s_node)
+			nodes.append(om)
+
+	def _transform_tag(self, node):
+		if node.name == "match":
+			self._advance_cursor_recursive(node)
+			return [node]
+		self._transform_children(node)
+		return [node]
+
+	def _advance_cursor_recursive(self, node):
+		if isinstance(node, tree.String):
+			self.cursor += len(str(node))
+		elif isinstance(node, tree.Tag):
+			for child in node: self._advance_cursor_recursive(child)
 
 def extract_one_text(xpath):
 	def extractor(doc):
@@ -260,8 +463,6 @@ def get_flat_matrix(parent_xpath, child_tag):
 		return matrix
 	return extractor
 
-# --- Configuration ---
-
 SEARCH_CONFIG = {
 	"ident": {
 		"extractor": extract_one_text("/document/identifier"),
@@ -300,12 +501,12 @@ SEARCH_CONFIG = {
 	},
 	"author": {
 		"extractor": get_flat_people("/document/author"),
-		"type": "people",  # Changed from "list" to "people" to handle sub-fields
+		"type": "people",
 		"highlight": "/document/author"
 	},
 	"editor": {
 		"extractor": get_flat_people("/document/editor"),
-		"type": "people",  # Changed from "list" to "people"
+		"type": "people",
 		"highlight": "/document/editor"
 	},
 	"lang": {
@@ -322,10 +523,7 @@ SEARCH_CONFIG = {
 	}
 }
 
-# --- Service & DB Integration ---
-
 def query_search_service(query, offset=0, limit=20, sort="title"):
-	# Normalize query to NFC to match Go index
 	norm_query = unicodedata.normalize('NFC', query)
 	params = {"q": norm_query, "offset": offset, "limit": limit, "sort": sort}
 	resp = requests.get(GO_SERVER_URL, params=params)
@@ -350,12 +548,19 @@ def process_single_match(item):
 	xml_str = item.get("source", "")
 	if not xml_str: return None
 	try:
-		doc = tree.parse(io.StringIO(xml_str))
-		highlight_document(doc, item)
-		return render.process(doc)
+		return _create_result_dict(item, xml_str)
 	except Exception as e:
 		print(f"Error processing match {item.get('ident')}: {e}")
 		return None
+
+def _create_result_dict(item, xml_str):
+	doc = tree.parse(io.StringIO(xml_str))
+	highlight_document(doc, item)
+	SnippetGenerator(doc).generate()
+	return {
+		"ident": item.get("ident"),
+		"xml": doc.xml()
+	}
 
 def highlight_document(doc, item_data):
 	for field, config in SEARCH_CONFIG.items():
@@ -364,15 +569,17 @@ def highlight_document(doc, item_data):
 		marked_data = item_data.get(field)
 		nodes = doc.find(xpath)
 		if not marked_data or not nodes: continue
+		_dispatch_highlight(nodes, marked_data, config)
 
-		if config["type"] == "list" and isinstance(marked_data, list):
-			apply_list_highlight(nodes, marked_data)
-		elif config["type"] == "matrix" and isinstance(marked_data, list):
-			apply_matrix_highlight(nodes, marked_data, config.get("child"))
-		elif config["type"] == "people" and isinstance(marked_data, list):
-			apply_people_highlight(nodes, marked_data)
-		else:
-			apply_string_highlight(nodes, marked_data)
+def _dispatch_highlight(nodes, marked_data, config):
+	if config["type"] == "list" and isinstance(marked_data, list):
+		apply_list_highlight(nodes, marked_data)
+	elif config["type"] == "matrix" and isinstance(marked_data, list):
+		apply_matrix_highlight(nodes, marked_data, config.get("child"))
+	elif config["type"] == "people" and isinstance(marked_data, list):
+		apply_people_highlight(nodes, marked_data)
+	else:
+		apply_string_highlight(nodes, marked_data)
 
 def apply_list_highlight(nodes, marked_list):
 	for i, content in enumerate(marked_list):
@@ -382,105 +589,71 @@ def apply_list_highlight(nodes, marked_list):
 				hl.highlight(nodes[i])
 
 def apply_people_highlight(nodes, flat_list):
-	# The flat_list for people is [id, name, id, name, ...]
-	# nodes corresponds to <author> or <editor> elements
 	for i, node in enumerate(nodes):
-		# Indices in the flat list for this node
 		id_idx = 2 * i
 		name_idx = 2 * i + 1
-
-		# Highlight identifier
 		if id_idx < len(flat_list):
 			targets = node.find("identifier")
 			if targets: apply_string_highlight(targets, flat_list[id_idx])
-
-		# Highlight name
 		if name_idx < len(flat_list):
 			targets = node.find("name")
 			if targets: apply_string_highlight(targets, flat_list[name_idx])
 
 def apply_matrix_highlight(nodes, matrix, child_tag):
-	# Traverse XML nodes (parents) and data rows in parallel
 	for node, row in zip(nodes, matrix):
-		# Row structure from get_flat_matrix:
-		# [ParentID, ParentName, Child1ID, Child1Name, Child2ID, Child2Name, ...]
-
-		# 1. Parent Identifier (col 0)
 		if len(row) > 0:
 			targets = node.find("identifier")
 			if targets: apply_string_highlight(targets, row[0])
-
-		# 2. Parent Name (col 1)
 		if len(row) > 1:
 			targets = node.find("name")
 			if targets: apply_string_highlight(targets, row[1])
-
-		# 3. Children (starting col 2)
 		if child_tag:
-			children = node.find(child_tag)
-			col = 2
-			for child in children:
-				# Child Identifier
-				if col < len(row):
-					targets = child.find("identifier")
-					if targets: apply_string_highlight(targets, row[col])
-				col += 1
+			_apply_matrix_child_highlight(node, row, child_tag)
 
-				# Child Name
-				if col < len(row):
-					targets = child.find("name")
-					if targets: apply_string_highlight(targets, row[col])
-				col += 1
+def _apply_matrix_child_highlight(node, row, child_tag):
+	children = node.find(child_tag)
+	col = 2
+	for child in children:
+		if col < len(row):
+			targets = child.find("identifier")
+			if targets: apply_string_highlight(targets, row[col])
+		col += 1
+		if col < len(row):
+			targets = child.find("name")
+			if targets: apply_string_highlight(targets, row[col])
+		col += 1
 
 def apply_string_highlight(nodes, marked_string):
 	if MARKER_START in marked_string:
 		hl = Highlighter(marked_string)
 		hl.highlight(nodes[0])
 
-def prepare_search_data(doc):
-	data = {}
-	for field, config in SEARCH_CONFIG.items():
-		extractor = config["extractor"]
-		data[field] = extractor(doc)
-	data["source"] = doc.xml()
-	return data
-
-def add_document(file):
+def cli_search(query):
+	print(f"Searching for: '{query}'...\n", file=sys.stderr)
 	try:
-		doc = ingest.process_file(file).to_internal()
-	except tree.Error:
-		doc = tree.Tree()
-		doc.append(tree.Tag("document"))
-	data = enrich.fetch_file_data(file.name)
-	enrich.add_file_info(doc, data)
-	search_data = prepare_search_data(doc)
-	for field, config in SEARCH_CONFIG.items():
-		if config["type"] in ["list", "matrix", "people"]:
-			val = search_data.get(field) or []
-			search_data[field] = val
-	db = common.db("texts")
-	db.execute("""
-	insert or replace
-	into documents_search(
-		ident, logical, title, summary, repo_id, repo_name, hand,
-		author, editor, lang, script, source
-	)
-	values (
-		:ident, :logical, :title, :summary, :repo_id, :repo_name, :hand,
-		:author, :editor, :lang, :script, :source
-	)""", search_data)
-
-@common.transaction("texts")
-def export_search():
-	db = common.db("texts")
-	records = db.execute("""select *
-		from documents_search
-		where ident glob 'DHARMA_INS*'""")
-	records = [dict(r) for r in records]
-	print(common.to_json(records))
+		results = query_search_service(query, limit=5)
+		count = results.get("match_count", 0)
+		matches = results.get("matches", [])
+		print(f"Total matches found: {count}", file=sys.stderr)
+		print("-" * 60, file=sys.stderr)
+		for m in matches:
+			ident = m.get("ident", "Unknown")
+			xml = m.get("xml", "<document></document>")
+			xml = tree.parse_string(xml)
+			assert isinstance(xml, tree.Node), type(xml)
+			print(f"ID: {ident}", file=sys.stderr)
+			for snip in xml.find("//*[@snippet]"):
+				print(f"{snip.xml()}")
+			print("-" * 60, file=sys.stderr)
+			sys.exit()
+	except Exception as e:
+		raise e
 
 def main():
-	export_search()
+	if len(sys.argv) > 1:
+		cli_search(sys.argv[1])
+	else:
+		print("Please provide a query argument.")
 
 if __name__ == "__main__":
 	main()
