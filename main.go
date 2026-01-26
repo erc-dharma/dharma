@@ -1,3 +1,26 @@
+/*
+DHARMA Search Server
+
+Purpose:
+This program runs a standalone HTTP server designed to perform high-performance searches
+over a text corpus stored in a read-only SQLite database. It supports linguistic sorting,
+pagination, field filtering, and keyword highlighting.
+
+API Endpoint:
+  GET /search
+
+Query Parameters:
+  - q (string): The search query term.
+  - offset (int): The starting index for pagination (default: 0).
+  - limit (int): The maximum number of results to return.
+  - sort (string): The sorting criteria.
+      Values: "title" (default, uses linguistic collation) or "ident" (sort by ID).
+  - fields (string): A comma-separated list of fields to include in the JSON response.
+      Example: "ident,title,summary". If omitted, all fields are returned.
+      Optimization: If "source" is not requested, the server avoids fetching the large XML content.
+  - pretty (bool): If set to "true", "1", or "yes", the JSON response is indented for readability.
+*/
+
 package main
 
 import (
@@ -60,7 +83,8 @@ type SearchResponse struct {
 	Offset int    `json:"offset"`
 	Limit  int    `json:"limit"`
 	Sort   string `json:"sort"`
-	// Matches est interface{} pour accepter []SearchResult OU []map[string]interface{}
+	Query  string `json:"query"`
+	// Matches is interface{} to accept []SearchResult OR []map[string]interface{}
 	Matches interface{} `json:"matches"`
 }
 
@@ -73,10 +97,14 @@ var (
 )
 
 func init() {
+	// Initialize collator with "en-u-ka-shifted" (English, ignore punctuation).
 	titleCollator = collate.New(language.Make("en-u-ka-shifted"))
 }
 
 func main() {
+	// Log startup (also displays upon graceful restart)
+	log.Printf("DHARMA Search Server starting (PID: %d)...", os.Getpid())
+
 	dbPath, err := getDBPath()
 	if err != nil {
 		log.Fatalf("Path error: %v", err)
@@ -142,12 +170,14 @@ func restartSelf() {
 
 func handleSearch(w http.ResponseWriter, r *http.Request) {
 	setupHeaders(w)
-	q, off, lim, sortBy, fields := parseRequest(r)
+	// Retrieve parameters including the 'pretty' boolean flag
+	q, off, lim, sortBy, fields, pretty := parseRequest(r)
 	if q == "" {
-		sendResponse(w, 0, off, lim, sortBy, fields, []SearchResult{})
+		// Pass 'q' (empty) and 'pretty' to sendResponse so they appear in the JSON
+		sendResponse(w, 0, off, lim, sortBy, fields, []SearchResult{}, q, pretty)
 		return
 	}
-	processRequest(w, q, off, lim, sortBy, fields)
+	processRequest(w, q, off, lim, sortBy, fields, pretty)
 }
 
 func setupHeaders(w http.ResponseWriter) {
@@ -155,7 +185,8 @@ func setupHeaders(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func parseRequest(r *http.Request) (string, int, int, string, []string) {
+// MODIFICATION: Returns an additional boolean for pretty printing
+func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 	lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -176,10 +207,18 @@ func parseRequest(r *http.Request) (string, int, int, string, []string) {
 		}
 	}
 
-	return q, off, lim, sortBy, fields
+	// MODIFICATION: Parse the 'pretty' parameter
+	pretty := false
+	pParam := strings.ToLower(r.URL.Query().Get("pretty"))
+	if pParam == "true" || pParam == "1" || pParam == "yes" {
+		pretty = true
+	}
+
+	return q, off, lim, sortBy, fields, pretty
 }
 
-func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string) {
+// MODIFICATION: Signature update to include 'pretty'
+func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string, pretty bool) {
 	tx, err := db.Begin()
 	if err != nil {
 		http.Error(w, "DB error", 500)
@@ -191,18 +230,21 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 		http.Error(w, "Sync error", 500)
 		return
 	}
-	performSearch(w, tx, q, off, lim, sortBy, fields)
+	// Pass 'pretty' flag
+	performSearch(w, tx, q, off, lim, sortBy, fields, pretty)
 }
 
-func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string) {
+// MODIFICATION: Signature update to include 'pretty'
+func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool) {
 	allDocs := filterDocs(q)
 	sortDocs(allDocs, sortBy)
 	total := len(allDocs)
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, q)
-	// On passe 'fields' pour savoir si on doit récupérer le champ 'source' en DB
+	// Pass 'fields' to determine if we need to fetch the 'source' field from DB
 	enrichMatches(tx, results, fields)
-	sendResponse(w, total, off, lim, sortBy, fields, results)
+	// Pass 'pretty' flag
+	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty)
 }
 
 func sortDocs(docs []Document, sortBy string) {
@@ -417,10 +459,10 @@ func matrixMatches(mat [][]string, q string) bool {
 	return false
 }
 
-// enrichMatches récupère le champ 'source' (XML) en base de données.
-// Optimisation : Si 'fields' est défini et ne contient pas "source", on saute cette étape.
+// enrichMatches retrieves the 'source' (XML) field from the database.
+// Optimization: If 'fields' is defined and does not contain "source", skip this step.
 func enrichMatches(tx *sql.Tx, matches []SearchResult, fields []string) {
-	// Vérifier si "source" est requis
+	// Check if "source" is required
 	fetchSource := true
 	if len(fields) > 0 {
 		fetchSource = false
@@ -450,10 +492,11 @@ func enrichMatches(tx *sql.Tx, matches []SearchResult, fields []string) {
 	}
 }
 
-func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult) {
+// MODIFICATION: Updated signature and logic (pretty print)
+func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool) {
 	var finalMatches interface{} = matches
 
-	// Si des champs spécifiques sont demandés, on transforme en map pour ne renvoyer que ceux-là
+	// If specific fields are requested, transform to a map to return only those
 	if len(fields) > 0 {
 		filtered := make([]map[string]interface{}, len(matches))
 		for i, m := range matches {
@@ -495,10 +538,15 @@ func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fie
 		Offset:  off,
 		Limit:   lim,
 		Sort:    sortBy,
+		Query:   query,
 		Matches: finalMatches,
 	}
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
+	if pretty {
+		// MODIFICATION: Enable indentation if requested
+		enc.SetIndent("", "  ")
+	}
 	if err := enc.Encode(resp); err != nil {
 		log.Printf("Encoding error: %v", err)
 	}

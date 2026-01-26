@@ -325,13 +325,10 @@ SEARCH_CONFIG = {
 def query_search_service(query, offset=0, limit=20, sort="title"):
 	# Normalize query to NFC to match Go index
 	norm_query = unicodedata.normalize('NFC', query)
-	try:
-		params = {"q": norm_query, "offset": offset, "limit": limit, "sort": sort}
-		resp = requests.get(GO_SERVER_URL, params=params)
-		resp.raise_for_status()
-		data = resp.json()
-	except requests.exceptions.RequestException:
-		return {"query": query, "match_count": 0, "matches": []}
+	params = {"q": norm_query, "offset": offset, "limit": limit, "sort": sort}
+	resp = requests.get(GO_SERVER_URL, params=params)
+	resp.raise_for_status()
+	data = resp.json()
 	processed_matches = process_matches(data.get("matches", []))
 	return {
 		"query": query,

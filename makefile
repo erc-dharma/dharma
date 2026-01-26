@@ -21,8 +21,7 @@ forever:
 	@$(MAKE) || true
 	@while inotifywait -qqre modify . @texts @dbs @docs @notes @repos; do \
 		$(MAKE) || true; \
-		# Only restart the search server if it is already running. \
-		pkill -USR2 -x dharma || true; \
+		pkill -USR2 -x search || true; \
 	done
 
 # Usage: make commit-all m="Commit message"

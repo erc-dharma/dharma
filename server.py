@@ -572,7 +572,6 @@ def render_search_page():
 		return flask.render_template("search.tpl")
 	offset = (page - 1) * SEARCH_PER_PAGE
 	try:
-		print(repr(sort))
 		context = search.query_search_service(query, offset, SEARCH_PER_PAGE, sort)
 	except Exception as e:
 		return flask.render_template("search.tpl", error=f"Search error: {e}")
