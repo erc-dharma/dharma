@@ -2,7 +2,6 @@
 
 regarder ~DHARMA_INSSIIv04p0i0225.xml (dans south-indian-inscriptions, sous SII04), on devrait pas avoir source_lang, etc.
 
-
 regarder https://dharmalekha.info/errors/DHARMA_INSSIIv04p0i0433, qui n'a pas d'erreur.
 
 ===
