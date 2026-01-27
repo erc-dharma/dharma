@@ -112,6 +112,7 @@ tei_language_sensitive = {
 	"label", "foreign", "seg",
 	"lem", "rdg", "ex",
 }
+# XXX should extract the above list directly from the XML schema.
 
 class LanguageInfo:
 

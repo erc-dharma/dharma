@@ -6818,7 +6818,11 @@ Elements</ref>
                                     <desc>display in a Roman typeface</desc>
                                 </valItem>
                             </valList>
-                        </attDef><attDef ident="rendition" mode="delete"/><attDef ident="resp" mode="delete"/><attDef ident="sameAs" mode="delete"/><attDef ident="select" mode="delete"/><attDef ident="source" mode="delete"/><attDef ident="style" mode="delete"/><attDef ident="synch" mode="delete"/><attDef ident="xml:base" mode="delete"/><attDef ident="xml:id" mode="delete"/><attDef ident="xml:space" mode="delete"/><attDef ident="xml:lang" mode="change" usage="opt">
+                        </attDef><attDef ident="rendition" mode="change">
+                            <datatype>
+                                <dataRef key="dharma.script"/>
+                            </datatype>
+                        </attDef><attDef ident="resp" mode="delete"/><attDef ident="sameAs" mode="delete"/><attDef ident="select" mode="delete"/><attDef ident="source" mode="delete"/><attDef ident="style" mode="delete"/><attDef ident="synch" mode="delete"/><attDef ident="xml:base" mode="delete"/><attDef ident="xml:id" mode="delete"/><attDef ident="xml:space" mode="delete"/><attDef ident="xml:lang" mode="change" usage="opt">
                             <datatype>
                                 <dataRef key="dharma.language"/>
                             </datatype>
