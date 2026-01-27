@@ -15836,6 +15836,7 @@ généralement dans des textes oraux</desc>
                             <valItem ident="class:kharoṣṭhī"><desc>Kharoṣṭhī</desc></valItem>
                             <valItem ident="class:00000"><desc>Undetermined</desc></valItem>
                             <valItem ident="class:undetermined"><desc>Undetermined</desc></valItem>
+                            <valItem ident="class:malayalam"><desc>Malayalam</desc></valItem>
                         </valList>
                     </content>
                 </dataSpec><dataSpec rend="add" module="derived-module-dharma" ident="dharma.script_maturity">

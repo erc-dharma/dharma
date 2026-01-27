@@ -271,6 +271,7 @@
                             <valItem ident="class:kharoṣṭhī"><desc>Kharoṣṭhī</desc></valItem>
                             <valItem ident="class:00000"><desc>Undetermined</desc></valItem>
                             <valItem ident="class:undetermined"><desc>Undetermined</desc></valItem>
+                            <valItem ident="class:malayalam"><desc>Malayalam</desc></valItem>
                         </valList>
                     </content>
                 </dataSpec>
