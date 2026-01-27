@@ -239,7 +239,6 @@ def render_apparatus(self, node):
 	self.join() # </div class="apparatus"/>
 	self.heading_level -= 1
 
-@handler("logical")
 @handler("physical")
 @handler("full")
 def render_edition_display(self, node):
@@ -248,6 +247,17 @@ def render_edition_display(self, node):
 		self.top["class"] += " hidden"
 	self.dispatch_children(node)
 	self.join()
+
+@handler("logical")
+def render_logical_display(self, node):
+	self.push("div", class_=node.name, id=node.name, data_display=node.name)
+	if node.name != "physical":
+		self.top["class"] += " hidden"
+	self.dispatch_children(node)
+	self.join()
+	self.push("div", class_="logical")
+	self.dispatch_children(node)
+	self.document.logical = self.pop()
 
 @handler("title")
 def render_title(self, node):
@@ -397,6 +407,10 @@ def render_match(self, node):
 	self.dispatch_children(node)
 	self.join()
 
+@handler("omission")
+def render_omission(self, node):
+	self.dispatch_children(node)
+
 @handler("*")
 def render_tag(self, node):
 	assert isinstance(node, tree.Tag)
@@ -415,6 +429,7 @@ class HTMLDocument:
 		self.editors = []
 		self.edition_languages = []
 		self.body = None
+		self.logical = tree.Tree() # Only for snippets
 		self.repository = paired(identifier="", name="")
 		self.identifier = None
 		self.commit = None

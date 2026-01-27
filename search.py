@@ -34,24 +34,6 @@ def translate_string(s):
 		tmp.append(c)
 	return unicodedata.normalize('NFC', "".join(tmp))
 
-@render.handler("match")
-def render_match(renderer, node):
-	renderer.push(tree.Tag("mark"))
-	renderer.dispatch_children(node)
-	renderer.join()
-
-@render.handler("omission")
-def render_omission(renderer, node):
-	# CSS should handle visibility toggle
-	renderer.push(tree.Tag("span", class_="omission", onclick="this.classList.toggle('visible')"))
-	renderer.push(tree.Tag("span", class_="omission-marker"))
-	renderer.append("[...]")
-	renderer.join()
-	renderer.push(tree.Tag("span", class_="omission-content"))
-	renderer.dispatch_children(node)
-	renderer.join()
-	renderer.join()
-
 class InternalWalker:
 
 	def __init__(self, handler):
@@ -548,7 +530,12 @@ def process_single_match(item):
 	xml_str = item.get("source", "")
 	if not xml_str: return None
 	try:
-		return _create_result_dict(item, xml_str)
+		doc = tree.parse(io.StringIO(xml_str))
+		highlight_document(doc, item)
+		SnippetGenerator(doc).generate()
+		for_html = render.process(doc)
+		print(repr(for_html.logical.html()))
+		return for_html
 	except Exception as e:
 		print(f"Error processing match {item.get('ident')}: {e}")
 		return None
