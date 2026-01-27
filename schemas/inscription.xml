@@ -171,6 +171,7 @@
                             <valItem ident="und"><desc>Undetermined</desc></valItem>
                             <valItem ident="vie"><desc>Vietnamese</desc></valItem>
                             <valItem ident="xhm"><desc>Khmer, Middle (1400 to 1850 CE)</desc></valItem>
+                            <valItem ident="zho"><desc>Chinese</desc></valItem>
                             <valItem ident="zlm"><desc>Malay (individual language)</desc></valItem>
                             <valItem ident="ara-Latn"><desc>Arabic</desc></valItem>
                             <valItem ident="ban-Latn"><desc>Balinese</desc></valItem>
@@ -208,6 +209,7 @@
                             <valItem ident="und-Latn"><desc>Undetermined</desc></valItem>
                             <valItem ident="vie-Latn"><desc>Vietnamese</desc></valItem>
                             <valItem ident="xhm-Latn"><desc>Khmer, Middle (1400 to 1850 CE)</desc></valItem>
+                            <valItem ident="zho-Latn"><desc>Chinese</desc></valItem>
                             <valItem ident="zlm-Latn"><desc>Malay (individual language)</desc></valItem>
                         </valList>
                     </content>
