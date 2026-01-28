@@ -99,14 +99,14 @@ def scripts_hierarchy_to_html() -> tree.Tag:
 ######################## For annotating TEI documents ##########################
 
 # We interpret @xml:lang only on these elements. If another element has an
-# @xml:lang, we act as if it did not exist, and assign to it the language of its
-# parent node.
+# @xml:lang, we act as if the attribute did not exist, and assign to it the
+# language of its parent node.
 #
 # This must be kept in sync with the TEI parsing code.
 #
 # The reason we do not take all elements into account is that this would entail
-# much modifications to the TEI parsing code (because we would need to pass
-# a @lang parameter to most newly created elements).
+# much modifications to the TEI parsing code (because we would need to pass a
+# @lang parameter each time we create a new element).
 tei_language_sensitive = {
 	"div", "note", "p", "ab", "lg", "q", "head", "quote",
 	"label", "foreign", "seg",
@@ -267,10 +267,11 @@ def assign_languages(t):
         parent. But there are exceptions:
 
         ¶ If the tag is "foreign", "lem" or "rdg" and does not have an
-        @xml:lang, we assume it is in some source language (as per the guide)
-        and assign it a generic language named "source" and a script named
-        "source" as well. These represent any source language (per contrast with
-        languages used in translations).
+        @xml:lang, we assume it is in some undetermined source language (as per
+        the guide) and assign it a generic language named "source" and a script
+        named "source" as well. These "source" values just mean "any source
+	language" or "any source script". These represent any source language
+        (per contrast with languages used in translations).
 
 	Furthermore, we store two language values per node:
 

@@ -186,10 +186,6 @@ def add_edition_languages(t):
 	t.root.prepend(scripts_root)
 	t.root.prepend(langs_root)
 
-def fix_languages(t):
-	"""Set a @lang attribute on all elements."""
-	languages.complete_internal(t)
-
 ########## Normalization of whitespace + removal of empty elements #############
 
 def fix_spaces(doc: tree.Tree):
@@ -1383,7 +1379,7 @@ def process_edition(t: tree.Tree, edition: tree.Tag):
 
 def process(t: tree.Tree):
 	fix_search(t)
-	fix_languages(t)
+	languages.complete_internal(t)
 	# Structural stuff.
 	fix_blocks_within_paras(t)
 	fix_blocks_nesting(t)

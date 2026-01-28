@@ -77,7 +77,10 @@ inline = text | span | link | note | milestone | display | split
 
 # A "split" has two child nodes: "display" holds what we should display,
 # "search" is a textual representation of the same data that should be used for
-# searching.
+# searching. This is useful when we want to display something in a way that
+# would not be appropriate for search. When the "display" representation and the
+# "search" one would be the same (which is the case most of the time), we do not
+# use a "split" element.
 split = element split {
 	display,
 	element search {
