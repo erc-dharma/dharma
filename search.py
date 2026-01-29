@@ -615,6 +615,39 @@ def apply_string_highlight(nodes, marked_string):
 		hl = Highlighter(marked_string)
 		hl.highlight(nodes[0])
 
+def add_document(file):
+	try:
+		doc = ingest.process_file(file).to_internal()
+	except tree.Error:
+		doc = tree.Tree()
+		doc.append(tree.Tag("document"))
+	data = enrich.fetch_file_data(file.name)
+	enrich.add_file_info(doc, data)
+	search_data = prepare_search_data(doc)
+	for field, config in SEARCH_CONFIG.items():
+		if config["type"] in ["list", "matrix", "people"]:
+			val = search_data.get(field) or []
+			search_data[field] = val
+	db = common.db("texts")
+	db.execute("""
+	insert or replace
+	into documents_search(
+		ident, logical, title, summary, repo_id, repo_name, hand,
+		author, editor, lang, script, source
+	)
+	values (
+		:ident, :logical, :title, :summary, :repo_id, :repo_name, :hand,
+		:author, :editor, :lang, :script, :source
+	)""", search_data)
+
+def prepare_search_data(doc):
+	data = {}
+	for field, config in SEARCH_CONFIG.items():
+		extractor = config["extractor"]
+		data[field] = extractor(doc)
+	data["source"] = doc.xml()
+	return data
+
 def cli_search(query):
 	print(f"Searching for: '{query}'...\n", file=sys.stderr)
 	try:
