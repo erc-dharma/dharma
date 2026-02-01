@@ -173,7 +173,7 @@ def update_db(repo):
 	for name in changes.delete:
 		catalog.delete(name)
 		db.execute("delete from owners where name = ?", (name,))
-		db.execute("delete from documents_search where name = ?", (name,))
+		db.execute("delete from documents_search where ident = ?", (name,))
 		db.execute("delete from documents where name = ?", (name,))
 		db.execute("delete from files where name = ?", (name,))
 	for todo in ("insert", "update"):
