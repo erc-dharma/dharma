@@ -1054,6 +1054,8 @@ def fix_physical_inlines(t):
 			# Cells should remain inlines
 			continue
 		inline = mile.parent
+		if not isinstance(inline, tree.Tag):
+			continue
 		if inline.name not in ("span", "link"):
 			continue
 		while True:
