@@ -97,7 +97,9 @@ total.
    <p>
       Repository: {{doc.repository.name.html() | safe}} (<span class="repo-id">{{doc.repository.identifier.html() | safe}}</span>).
    </p>
-   <p><span class="text-id">{{doc.identifier.html() | safe}}</span>.</p>
+   <p>
+      Identifier: <span class="text-id">{{doc.identifier.html() | safe}}</span>.
+   </p>
    {{doc.logical.html() | safe}}
 </div> ## class=catalog-card
 % endfor

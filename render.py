@@ -436,7 +436,7 @@ class HTMLDocument:
 		self.last_modified_commit = None
 		self.path = None
 
-class HTMLRenderer(tree.Serializer):
+class _HTMLRenderer(tree.Serializer):
 
 	def __init__(self, input, handlers=HANDLERS, toc_depth=-1):
 		super().__init__()
@@ -481,12 +481,12 @@ class HTMLRenderer(tree.Serializer):
 # need to process an XML tree for highlighting; and 2) because it is more
 # convenient to use xpath.
 def process(doc: tree.Tree, toc_depth=-1):
-	render = HTMLRenderer(doc, toc_depth=toc_depth)
+	render = _HTMLRenderer(doc, toc_depth=toc_depth)
 	ret = render()
 	return ret
 
 def process_partial(xml):
-	render = HTMLRenderer(xml)
+	render = _HTMLRenderer(xml)
 	render()
 	return render.tree
 
