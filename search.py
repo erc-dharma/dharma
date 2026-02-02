@@ -152,88 +152,92 @@ def extract_text(root: tree.Node):
 class Highlighter:
 
 	def __init__(self, marked_stream):
-		self.hit_ranges = self._extract_hit_ranges(marked_stream)
+		self.hit_ranges = self._extract_ranges(marked_stream)
 		self.cursor = 0
 
 	def highlight(self, root: tree.Node):
+		# If there are no hits, there is no need to traverse the tree
 		if not self.hit_ranges: return
 		walker = InternalWalker(self)
 		walker.walk(root)
 
-	def _extract_hit_ranges(self, stream):
-		ranges = []
-		stack = []
-		clean_idx = 0
-		i = 0
-		while i < len(stream):
-			char = stream[i]
-			if char == MARKER_START: stack.append(clean_idx)
-			elif char == MARKER_END:
-				if stack: ranges.append((stack.pop(), clean_idx))
-			else: clean_idx += 1
-			i += 1
-		return sorted(ranges)
-
-	def on_virtual(self, char): self.cursor += len(char)
-
-	def on_skipped_node(self, node):
-		if self._is_inside_match(): self._highlight_leaves(node)
-
-	def _highlight_leaves(self, node):
-		if isinstance(node, tree.String):
-			match_node = tree.Tag("match")
-			node.replace_with(match_node)
-			match_node.append(node)
-		elif isinstance(node, tree.Tag):
-			if node.name == "search": return
-			for child in list(node): self._highlight_leaves(child)
-
 	def on_text(self, node):
-		normalized = translate_string(node)
-		length = len(normalized)
+		text = translate_string(node)
+		length = len(text)
 		mask = self._compute_mask(length)
 		self.cursor += length
-		if not any(mask): return
-		self._apply_mask(node, normalized, mask)
+		# Only modify the tree if there is an intersection with a hit
+		if any(mask):
+			self._apply_mask(node, text, mask)
+
+	def on_virtual(self, char):
+		# Virtual characters (like newlines) advance the cursor
+		self.cursor += len(char)
+
+	def on_skipped_node(self, node):
+		# Explicitly exclude specific tags from highlighting as requested
+		if node.name in {"npage", "nline", "ncell"}:
+			return
+		# If a skipped node falls strictly inside a match, highlight it entirely
+		if self._is_inside_match():
+			self._highlight_leaves(node)
+
+	def _extract_ranges(self, stream):
+		ranges, stack, idx = [], [], 0
+		for char in stream:
+			if char == MARKER_START:
+				stack.append(idx)
+			elif char == MARKER_END:
+				if stack: ranges.append((stack.pop(), idx))
+			else:
+				idx += 1
+		return sorted(ranges)
+
+	def _compute_mask(self, length):
+		mask = [False] * length
+		start, end = self.cursor, self.cursor + length
+		for h_start, h_end in self.hit_ranges:
+			# Calculate intersection between current node and hit range
+			i_start, i_end = max(start, h_start), min(end, h_end)
+			if i_start < i_end:
+				mask[i_start - start : i_end - start] = [True] * (i_end - i_start)
+		return mask
 
 	def _apply_mask(self, node, text, mask):
-		new_nodes = []
-		buffer = []
-		is_highlighting = mask[0] if mask else False
+		nodes, buf = [], []
+		highlighting = mask[0]
 		for i, char in enumerate(text):
-			if mask[i] != is_highlighting:
-				self._flush_buffer(new_nodes, buffer, is_highlighting)
-				is_highlighting = mask[i]
-			buffer.append(char)
-		self._flush_buffer(new_nodes, buffer, is_highlighting)
-		node.replace_with(*new_nodes)
+			if mask[i] != highlighting:
+				self._flush(nodes, buf, highlighting)
+				highlighting = mask[i]
+			buf.append(char)
+		self._flush(nodes, buf, highlighting)
+		node.replace_with(*nodes)
+
+	def _flush(self, nodes, buf, highlighting):
+		if not buf: return
+		content = "".join(buf)
+		buf.clear()
+		if highlighting:
+			match_node = tree.Tag("match")
+			match_node.append(tree.String(content))
+			nodes.append(match_node)
+		else:
+			nodes.append(tree.String(content))
 
 	def _is_inside_match(self):
 		for start, end in self.hit_ranges:
 			if start <= self.cursor < end: return True
 		return False
 
-	def _compute_mask(self, node_len):
-		mask = [False] * node_len
-		node_start = self.cursor
-		node_end = self.cursor + node_len
-		for hit_start, hit_end in self.hit_ranges:
-			inter_start = max(node_start, hit_start)
-			inter_end = min(node_end, hit_end)
-			if inter_start < inter_end:
-				for k in range(inter_start - node_start, inter_end - node_start):
-					mask[k] = True
-		return mask
-
-	def _flush_buffer(self, nodes, buffer, is_highlighting):
-		if not buffer: return
-		content = "".join(buffer)
-		buffer.clear()
-		if is_highlighting:
+	def _highlight_leaves(self, node):
+		if isinstance(node, tree.String):
 			match_node = tree.Tag("match")
-			match_node.append(tree.String(content))
-			nodes.append(match_node)
-		else: nodes.append(tree.String(content))
+			node.replace_with(match_node)
+			match_node.append(node)
+		elif isinstance(node, tree.Tag) and node.name != "search":
+			for child in list(node):
+				self._highlight_leaves(child)
 
 class SnippetGenerator:
 
@@ -530,7 +534,7 @@ def process_single_match(item):
 	xml_str = item.get("source", "")
 	if not xml_str: return None
 	try:
-		doc = tree.parse(io.StringIO(xml_str))
+		doc = tree.parse_string(xml_str)
 		highlight_document(doc, item)
 		SnippetGenerator(doc).generate()
 		for_html = render.process(doc)
@@ -539,15 +543,6 @@ def process_single_match(item):
 	except Exception as e:
 		print(f"Error processing match {item.get('ident')}: {e}")
 		return None
-
-def _create_result_dict(item, xml_str):
-	doc = tree.parse(io.StringIO(xml_str))
-	highlight_document(doc, item)
-	SnippetGenerator(doc).generate()
-	return {
-		"ident": item.get("ident"),
-		"xml": doc.xml()
-	}
 
 def highlight_document(doc, item_data):
 	for field, config in SEARCH_CONFIG.items():
@@ -648,26 +643,24 @@ def prepare_search_data(doc):
 	data["source"] = doc.xml()
 	return data
 
+def eprint(*args, **kwargs):
+	kwargs.setdefault("file", sys.stderr)
+	print(*args, **kwargs)
+
 def cli_search(query):
-	print(f"Searching for: '{query}'...\n", file=sys.stderr)
-	try:
-		results = query_search_service(query, limit=5)
-		count = results.get("match_count", 0)
-		matches = results.get("matches", [])
-		print(f"Total matches found: {count}", file=sys.stderr)
-		print("-" * 60, file=sys.stderr)
-		for m in matches:
-			ident = m.get("ident", "Unknown")
-			xml = m.get("xml", "<document></document>")
-			xml = tree.parse_string(xml)
-			assert isinstance(xml, tree.Node), type(xml)
-			print(f"ID: {ident}", file=sys.stderr)
-			for snip in xml.find("//*[@snippet]"):
-				print(f"{snip.xml()}")
-			print("-" * 60, file=sys.stderr)
-			sys.exit()
-	except Exception as e:
-		raise e
+	norm_query = unicodedata.normalize('NFC', query)
+	params = {"q": norm_query, "offset": 0, "limit": 1, "sort": "title"}
+	resp = requests.get(GO_SERVER_URL, params=params)
+	resp.raise_for_status()
+	data = resp.json()
+	count = data["count"]
+	if count < 1:
+		eprint("no match")
+		return
+	match = data["matches"][0]
+	t = tree.parse_string(match["source"])
+	highlight_document(t, match)
+	print(t.xml())
 
 def main():
 	if len(sys.argv) > 1:
