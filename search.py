@@ -175,8 +175,8 @@ class Highlighter:
 		self.cursor += len(char)
 
 	def on_skipped_node(self, node):
-		# Explicitly exclude specific tags from highlighting as requested
-		if node.name in {"npage", "nline", "ncell"}:
+		# Explicitly exclude specific tags from highlighting
+		if node.name in {"npage", "nline", "ncell", "display"}:
 			return
 		# If a skipped node falls strictly inside a match, highlight it entirely
 		if self._is_inside_match():
@@ -238,7 +238,6 @@ class Highlighter:
 		elif isinstance(node, tree.Tag) and node.name != "search":
 			for child in list(node):
 				self._highlight_leaves(child)
-
 class SnippetGenerator:
 
 	def __init__(self, doc, context_chars=60):
@@ -538,7 +537,6 @@ def process_single_match(item):
 		highlight_document(doc, item)
 		SnippetGenerator(doc).generate()
 		for_html = render.process(doc)
-		print(repr(for_html.logical.html()))
 		return for_html
 	except Exception as e:
 		print(f"Error processing match {item.get('ident')}: {e}")
