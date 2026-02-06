@@ -15,7 +15,7 @@
 
 import logging, unicodedata, html, re, time, sys, urllib, urllib.parse
 import requests # pip install requests
-from dharma import common, tree
+from dharma import common, tree, languages
 
 LIBRARY_ID = 1633743
 MY_API_KEY = "ojTBU4SxEQ4L0OqUhFVyImjq"
@@ -296,7 +296,7 @@ class Writer(tree.Serializer):
 		else:
 			self.name_last(authors[0])
 			self.space()
-			tag = tree.Tag("span", class_="italics", lang="study_other latin")
+			tag = tree.Tag("span", class_="italics")
 			tag.append("et al.")
 			self.append(tag)
 		self.space()
@@ -336,7 +336,7 @@ class Writer(tree.Serializer):
 	def italics(self, title):
 		self.space()
 		if title:
-			tag = tree.Tag("span", class_="italics", lang="study_other latin")
+			tag = tree.Tag("span", class_="italics")
 			tag.append(title)
 			self.append(tag)
 		else:
@@ -354,7 +354,7 @@ class Writer(tree.Serializer):
 		if not title:
 			return
 		self.space()
-		tag = tree.Tag("span", class_="italics", lang="study_other latin")
+		tag = tree.Tag("span", class_="italics")
 		tag.append(title)
 		self.append(tag)
 		self.space()
@@ -497,9 +497,9 @@ class Writer(tree.Serializer):
 		self.space()
 		self.append("DOI:")
 		self.space()
-		tag = tree.Tag("link", href_=f"https://doi.org/{doi}", lang="study_other latin")
+		tag = tree.Tag("link", href_=f"https://doi.org/{doi}")
 		tag.append(doi)
-		span = tree.Tag("span", class_="url", lang="study_other latin")
+		span = tree.Tag("span", class_="url")
 		span.append(tag)
 		self.append(span)
 		self.period()
@@ -512,9 +512,9 @@ class Writer(tree.Serializer):
 			self.append("URLs:")
 		self.space()
 		for i, url in enumerate(urls):
-			tag = tree.Tag("link", href=url, lang="study_other latin")
+			tag = tree.Tag("link", href=url)
 			tag.append(url)
-			span = tree.Tag("span", class_="url", lang="study_other latin")
+			span = tree.Tag("span", class_="url")
 			span.append(tag)
 			self.append(span)
 			if i < len(urls) - 1:
@@ -523,7 +523,7 @@ class Writer(tree.Serializer):
 
 	def url_hidden(self, urls):
 		for url in urls:
-			tag = tree.Tag("link", href=url, lang="study_other latin")
+			tag = tree.Tag("link", href=url)
 			tag.append("[URL]")
 			self.space()
 			self.append(tag)
@@ -623,18 +623,18 @@ def render_journal_article(rec, w):
 		name = rec["publicationTitle"]
 		# Use the abbreviated journal name if possible.
 		if abbr and name:
-			w.push(tree.Tag("span", class_="italics", lang="study_other latin"))
+			w.push(tree.Tag("span", class_="italics"))
 			w.append(name)
 			tip = w.pop().xml()
-			w.push(tree.Tag("span", class_="italics journal-abbr", tip=tip, lang="study_other latin"))
+			w.push(tree.Tag("span", class_="italics journal-abbr", tip=tip))
 			w.append(abbr)
 			w.join()
 		elif abbr:
-			w.push(tree.Tag("span", class_="italics", lang="study_other latin"))
+			w.push(tree.Tag("span", class_="italics"))
 			w.append(abbr)
 			w.join()
 		elif name:
-			w.push(tree.Tag("span", class_="italics", lang="study_other latin"))
+			w.push(tree.Tag("span", class_="italics"))
 			w.append(name)
 			w.join()
 		if rec["volume"]:
@@ -1206,7 +1206,6 @@ def fix_tag(tag):
 		case _:
 			tag.unwrap()
 			return
-	tag["lang"] = "study_other latin"
 
 def fix_markup(xml):
 	for tag in xml.find(".//*"):
@@ -1329,7 +1328,7 @@ def format_entry(rec, location=[], siglum=None):
 	out = Writer()
 	out.push(tree.Tag("para", class_="bib-entry", anchor=f"bib-{rec['shortTitle']}"))
 	if siglum:
-		out.push(tree.Tag("span", class_="bold", lang="study_other latin"))
+		out.push(tree.Tag("span", class_="bold"))
 		out.append("[")
 		out.append(siglum)
 		out.append("]")
@@ -1338,7 +1337,8 @@ def format_entry(rec, location=[], siglum=None):
 	renderers[rec["itemType"]](rec, out)
 	if location:
 		out.entry_loc(location)
-	return out.pop()
+	ret = out.pop()
+	return ret
 
 # "rend" is one of "omitname", "ibid", "default", "siglum". "omitname" for just
 # printing the date; "ibid" for omitting both the author and the date
@@ -1356,14 +1356,14 @@ def format_reference(rec, rend="default", location=[], external_link=True,
 	siglum=None, contents=[]):
 	assert rec
 	out = Writer()
-	out.push(tree.Tag("span", lang="study_other latin"))
+	out.push(tree.Tag("span"))
 	quoted = urllib.parse.quote(rec["shortTitle"], safe="")
 	if external_link:
-		out.push(tree.Tag("link", href=f"/bibliography/entry/{quoted}", lang="study_other latin"))
-		out.push(tree.Tag("span", lang="study_other latin"))
+		out.push(tree.Tag("link", href=f"/bibliography/entry/{quoted}"))
+		out.push(tree.Tag("span"))
 	else:
-		out.push(tree.Tag("link", href=f"#bib-{quoted}", lang="study_other latin"))
-		out.push(tree.Tag("span", lang="study_other latin"))
+		out.push(tree.Tag("link", href=f"#bib-{quoted}"))
+		out.push(tree.Tag("span"))
 	if rend == "siglum" and not siglum:
 		rend = "default"
 	match rend:
@@ -1386,7 +1386,7 @@ def format_reference(rec, rend="default", location=[], external_link=True,
 		case "ibid":
 			# Add the entry's Author+year in the tooltip
 			out.top["tip"] = make_author_year(rec).html()
-			out.push(tree.Tag("span", class_="italics", lang="study_other latin"))
+			out.push(tree.Tag("span", class_="italics"))
 			out.append("ibid.")
 			out.join()
 		case "siglum":
@@ -1403,7 +1403,8 @@ def format_reference(rec, rend="default", location=[], external_link=True,
 		out.loc(location)
 	out.join() # ...</span>
 	assert len(out.stack) == 1
-	return out.tree
+	ret = out.tree
+	return ret
 
 def make_author_year(rec):
 	x = Writer()

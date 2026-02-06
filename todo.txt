@@ -1,66 +1,47 @@
 # TODO
 
-regarder ~DHARMA_INSSIIv04p0i0225.xml (dans south-indian-inscriptions, sous SII04), on devrait pas avoir source_lang, etc.
+* biblio: DHARMA_INSTamilNadu01003 ; DHARMA_INSTamilNadu01009; GopinathaRao_1921-1922_01 ;
 
-copié dans dharma_test.xml
+cliquer sur les snippets dans la fenêtre de résultats doit renvoyer, sur le
+document, aux passages correspondants.
+
+* aux champs cherchés, ajouter: bibliograph (et autres)
+
+Languages and scripts are assigned recursively. For assigning
+	languages, we ignore the div[@type='apparatus'], to
+	keep things simple, because it does not explicitly indicate languages
+	and scripts on <lem> and <rdg>. Languages should only be extracted from
+	the other divs. We follow the basic inheritance rule: if an element does
+	not have an @xml:lang, it is assigned the language assigned to its
+	parent. But there is an exception: if the tag is "foreign" or
+	div[@type='edition'] and does not have a @lang, then its lang is set to
+	"und".
 
 
-For assigning languages, we ignore the div[@type='apparatus'], to keep things
-simple, because it does not explicitly indicate languages and scripts on <lem>
-and <rdg>. Languages should only be extracted from the other divs. We follow the
-basic inheritance rule: if an element does not have an @xml:lang, it is assigned
-the language assigned to its parent. But there is an exception: if the tag is
-"foreign" or div[@type='edition'] and does not have a lang, then its lang is set
-to "und".
 
-def add_lang_info(node, parent_lang="und"):
-	match node:
-		case tree.Tree():
-			for child in node:
-				add_lang_info(child, parent_lang)
-		case tree.Tag():
-			if node.name == "div" and node["type"] == "apparatus":
-				return
-			lang = node["lang"].split("-", 1)[0]
-			if not lang:
-				if node.name == "foreign" or node.name \
-					== "div" and node["type"] == "edition"
-					lang = "und"
-				else:
-					lang = parent_lang
-			for child in node:
-				add_lang_info(child, lang)
-		case tree.String():
-			node.notes["lang"] = parent_lang
 
-Within the div[@type='edition'], we need to distinguish between editorial
-portions (typically, <head>) from portions that belong to the edited text. We
-assume that an element is editorial iff it is one of {"note", "head", "bibl",
-"desc", "figDesc", "label"} or a descendant of them. (We expect these tags only
-to be used for editorial purposes.) In the internal representation, use @editorial=true to mark editorial portions.
+* deal with @lang
+* deal with @editorial
 
-```
-def add_editorial_info(node, parent_editorial=False):
-	match node:
-		case tree.Tree():
-			raise Exception
-		case tree.Tag():
-			editorial = parent_editorial or node.name in {"note",
-				"head", "bibl", "desc", "figDesc", "label"}
-			for child in node:
-				add_editorial_info(child, editorial)
-		case tree.String():
-			node.notes["editorial"] = parent_editorial
-```
+!!! This is breaking http://localhost:8023/editorial-conventions
 
+XXX
+¶ If the tag is "foreign", "lem" or "rdg" and does not have an
+        @xml:lang, we assume it is in some undetermined source language (as per
+        the guide) and assign it a generic language named "source" and a script
+        named "source" as well. These "source" values just mean "any source
+	language" or "any source script". These represent any source language
+        (per contrast with languages used in translations).
+
+exemple: dharma_test.xml.hid
 
 ===
 
-INSTamilOutsideTN10002: supprimer distinction entre langue source/traduction;
-	il faut ignorer au moins "head" et "note" pour la distribution des
-	langues.
+search: enjamb
+search: snippets selection
 
 ===
+
 
 mettre en gras tous les @rendition=grantha
 

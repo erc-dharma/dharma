@@ -529,7 +529,7 @@ class Branch(Node, list):
 		raise NotImplementedError
 
 	def __iadd__(self, value):
-		self.extend(value.copy())
+		raise NotImplementedError
 
 	def __imul__(self, value):
 		raise NotImplementedError
@@ -552,7 +552,7 @@ class Branch(Node, list):
 	def count(self, value):
 		raise NotImplementedError
 
-	def pop(self, index=-1):
+	def pop(self, index: SupportsIndex=-1):
 		node = self[index]
 		del self[index]
 		return node
@@ -862,6 +862,7 @@ class Tag(Branch):
 
 	def copy(self):
 		ret = Tag(self.name, **self.attrs)
+		ret.notes = self.notes.copy()
 		for child in self:
 			ret.append(child.copy())
 		return ret
@@ -1025,7 +1026,9 @@ class String(Node, collections.UserString):
 		return data
 
 	def copy(self):
-		return String(self.data)
+		ret = String(self.data)
+		ret.notes = self.notes.copy()
+		return ret
 
 class Comment(Node, collections.UserString):
 	"""Represents a comment.
@@ -1037,7 +1040,9 @@ class Comment(Node, collections.UserString):
 		return repr(self.xml())
 
 	def copy(self):
-		return Comment(self.data)
+		ret = Comment(self.data)
+		ret.notes = self.notes.copy()
+		return ret
 
 	def __hash__(self):
 		return id(self)
@@ -1061,7 +1066,9 @@ class Instruction(Node):
 		return id(self)
 
 	def copy(self):
-		return Instruction(self.target, self.data)
+		ret = Instruction(self.target, self.data)
+		ret.notes = self.notes.copy()
+		return ret
 
 class _Parser:
 
@@ -1966,9 +1973,12 @@ class Serializer:
 				for child in node:
 					self.stack[-1].append(child)
 			case Node():
-				self.stack[-1].append(node.copy())
-			case _:
+				node = node.copy()
 				self.stack[-1].append(node)
+			case str():
+				self.stack[-1].append(node)
+			case _:
+				raise Exception
 
 	def extend(self, node_iter):
 		for node in list(node_iter):

@@ -4,7 +4,32 @@ To keep things simple, we use a FIFO for IPC. The server process is hooked to
 Github. Whenever a repository is updated, it writes to the FIFO the name of this
 repository, followed by a line break. On its side, the update process reads the
 repository names and updates things accordingly. The same is done for
-bibliography updates.
+bibliography updates. Besides Git repository names, this update process
+understands the following special "names", which are not really names but
+commands: `.all`, `.bib`, `.global`, `.global-partial`, and `.rebuild`. Note the
+leading period, which is used to distinguish commands from repository names.
+
+The `.all` command triggers a full update. In other words, it tries to update
+the bibliography as well as all repositories.
+
+The `.bib` command updates just the bibliography. TODO Updating the bibliography
+should trigger a reprocessing of all files that mention the modified entries but
+we are not doing that.
+
+The `.global` command updates global, project-wide data (namely stuff in the
+`project-documentation` directory) and all the data that have these global data
+as a dependency.
+
+The `.global-partial` command updates global data but not the data that have
+them as a dependency. It doesn't reprocess individual texts. It should only be
+used for debugging and experimentation. The reason we have it is that the reconstruction of the whole database with the `.global` command is very slow.
+
+The `.rebuild` command triggers an update of the catalog. It does not check
+whether repositories are up-to-date. This is meant to be used for reprocessing
+all texts for search.
+
+TODO rename commands with a leading period, to prevent clashes with repository
+names.
 
 We do not implement any buffering for passing messages, because pipe buffers are
 big enough for our purposes.
@@ -13,15 +38,13 @@ We use the WAL mode in SQLite. Thus, writers don't block readers and vice-versa,
 but writers still do block each other, which is why we use just one and
 serialize writes.
 
-TODO Add an option for turning off web access (no git pulls, no backups)
+To save space, it is useful to make git repositories shallow. We do not examine
+git's history, so we only need the latest commit in practice. Relevant commands
+are:
 
-TODO Try to keep all git repositories shallow, to save disk space. For this,
-modify git commands to make them do shallow clones or pulls instead of regular
-ones. Interesting commands are:
-
-Make a shallow clone: git clone <url> --depth 1
-Make an existing repository shallow: git pull --depth 1 && git gc --prune=now
-Make a repository unshallow: git fetch --unshallow
+Make a shallow clone: git clone <url> --depth 1 Make an existing repository
+shallow: git pull --depth 1 && git gc --prune=now Make a repository unshallow:
+git fetch --unshallow
 """
 
 import os, sys, time, select, errno, logging, fcntl, argparse, traceback
@@ -102,7 +125,8 @@ class Changes:
 		self.insert = []
 		self.update = []
 		self.delete = []
-		self.commit_hash, self.commit_date = latest_commit_in_repo(self.repo)
+		self.commit_hash, self.commit_date = \
+			latest_commit_in_repo(self.repo)
 
 	def check_db(self):
 		db = common.db("texts")
@@ -188,7 +212,7 @@ def update_db(repo):
 # the db. Otherwise would have to write introspection code. Other reason: at
 # some point, we want to have a downloadable read-only db. Ideally, it should
 # be possible to run the code without having to set up repositories.
-def update_project():
+def update_project(rebuild_catalog=True):
 	changes = Changes("project-documentation")
 	changes.check_db()
 	if changes.done:
@@ -218,7 +242,8 @@ def update_project():
 		# in the same order.
 		for module in sorted(to_update, key=lambda m: m.__name__):
 			module.update()
-		catalog.rebuild()
+		if rebuild_catalog:
+			catalog.rebuild()
 	repo = "project-documentation"
 	commit_hash, commit_date = latest_commit_in_repo(repo)
 	db = common.db("texts")
@@ -263,7 +288,7 @@ def read_names(fd):
 		wait = NEXT_FULL_UPDATE - now
 		if wait <= 0:
 			logging.info("forcing full update")
-			yield "all"
+			yield ".all"
 			wait = FORCE_UPDATE_DELTA
 			NEXT_FULL_UPDATE = now + wait
 			continue
@@ -327,15 +352,25 @@ def update_repository(name):
 	handle_changes(name)
 	logging.info(f"updated single repo {name!r} in {time.time() - start}s")
 
+@common.transaction("texts")
+def update_global_partial():
+	logging.info("updating global data (without rebuilding the db)")
+	update_project(rebuild_catalog=False)
+	logging.info("done")
+
 def read_changes(fd):
 	for name in read_names(fd):
 		match name:
-			case "all":
+			case ".all":
 				update_everything()
-			case "bib":
+			case ".bib":
 				update_biblio()
-			case "rebuild":
+			case ".rebuild":
 				rebuild_catalog()
+			case ".global":
+				update_repository("project-documentation")
+			case ".global-partial":
+				update_global_partial()
 			case _ if name in all_useful_repos_protected():
 				update_repository(name)
 			case _:

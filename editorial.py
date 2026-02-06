@@ -16,7 +16,7 @@ tpl = """
 def parse_xml(context, code):
 	data = tpl.format(context=context, code=code).encode()
 	t = tree.parse_string(data, path="whatever")
-	languages.assign_languages(t)
+	languages.add_lang_info(t)
 	html = tree.html_format(t.first(f"//div[@type='{context}']"), skip_root=True)
 	file = texts.File("whatever", "whatever")
 	setattr(file, "_data", data)

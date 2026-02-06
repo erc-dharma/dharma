@@ -16,10 +16,26 @@ warnings.filterwarnings("ignore", category=bs4.MarkupResemblesLocatorWarning,
 DHARMA_HOME = os.path.dirname(os.path.abspath(__file__))
 os.environ["DHARMA_HOME"] = DHARMA_HOME # for subprocesses
 
+if (log_level := os.environ.get("DHARMA_LOG")):
+	match log_level.strip().lower():
+		case "dbg" | "debug":
+			log_level = "DEBUG"
+		case "info":
+			log_level = "INFO"
+		case "warn" | "warning":
+			log_level = "WARN"
+		case "err" | "error":
+			log_level = "ERROR"
+		case "crit" | "critic" | "critical":
+			log_level = "CRITICAL"
+		case _:
+			log_level = "INFO"
+	logging.basicConfig(level=log_level)
+else:
+	logging.basicConfig(level="INFO")
+
 def path_of(*path_elems):
 	return os.path.join(DHARMA_HOME, *path_elems)
-
-logging.basicConfig(level="INFO")
 
 # Like the eponymous function in xslt
 def normalize_space(s):
@@ -358,7 +374,7 @@ def unique(items):
 	return items
 
 def command(*cmd, **kwargs):
-	logging.debug("run %s" % " ".join(cmd))
+	logging.debug("running %s" % " ".join(cmd))
 	kwargs.setdefault("capture_output", True)
 	kwargs.setdefault("check", True)
 	kwargs.setdefault("env", os.environ)

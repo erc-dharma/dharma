@@ -288,9 +288,12 @@ create virtual table if not exists documents_index using fts5(
 	tokenize = "trigram"
 );
 
+-- This table is modeled as a tree. Each record has a parent, which is either
+-- null (for the root of the tree) or the record id (rid) of its parent.
 -- Interesting read for representing and querying trees in sqlite:
 -- https://charlesleifer.com/blog/querying-tree-structures-in-sqlite-using-python-and-the-transitive-closure-extension/
 create table if not exists scripts_list(
+	-- Record id.
 	rid integer primary key check(typeof(rid) = 'integer'),
 	-- DHARMA-specific id, e.g. "kharoṣṭhī" or "cam".
 	id text unique check(typeof(id) = 'text' and length(id) > 0),
@@ -388,8 +391,6 @@ create view if not exists scripts_display(script, name, inverted_name, prod,
 			on scripts_list.id = scripts_repos_prod_json.script
 		join scripts_closure
 			on scripts_list.rid = scripts_closure.rid
-	where scripts_list.rid in (select rid from scripts_closure
-		where root = (select rid from scripts_list where id = 'source'))
 	order by scripts_list.inverted_name;
 
 -- Language codes and names, extracted from the data table distributed
@@ -522,8 +523,6 @@ create view if not exists langs_display(lang, name, inverted_name, prod,
 			on langs_list.id = langs_repos_prod_json.lang
 		join langs_closure
 			on langs_list.rid = langs_closure.rid
-	where langs_list.rid in (select rid from langs_closure
-		where root = (select rid from langs_list where id = 'source'))
 	order by langs_list.inverted_name;
 
 create table if not exists prosody(
@@ -625,7 +624,7 @@ create view if not exists repos_display(repo, title, repo_prod, people,
 			left join langs_list on langs_list.id = json_each.value
 		where langs_list.rid in (select rid from langs_closure
 			where root = (select rid from langs_list
-				where id = 'source'))
+				where langs_list.parent is null))
 		group by repo, json_each.value
 		order by repo asc, lang_prod desc, lang asc
 	), repos_langs_stats_json as (
@@ -640,9 +639,6 @@ create view if not exists repos_display(repo, title, repo_prod, people,
 			count(*) as script_prod
 		from documents, json_each(documents.scripts)
 			left join scripts_list on scripts_list.id = json_each.value
-		where scripts_list.rid in (select rid from scripts_closure
-			where root = (select rid from scripts_list
-				where id = 'source'))
 		group by repo, json_each.value
 		order by repo asc, script_prod desc, script asc
 	), repos_scripts_stats_json as (
@@ -699,9 +695,6 @@ create view if not exists people_display as
 			json_group_array(json_array(lang, name, freq)) as langs_prod
 		from people_langs
 			join langs_list on people_langs.lang = langs_list.id
-		where langs_list.rid in (select rid from langs_closure
-			where root = (select rid from langs_list
-				where id = 'source'))
 		group by dh_id order by dh_id, freq, inverted_name
 	), people_repos_json as (
 		select dh_id, json_group_array(json_array(repos.repo, title, freq)) as repos_prod

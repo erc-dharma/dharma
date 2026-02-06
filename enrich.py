@@ -67,42 +67,23 @@ def extract_edition_languages(root: tree.Branch):
 	"""
 	langs = {}
 	scripts = set()
-	for node in root.find("descendant-or-self::*[@lang]"):
+	for node in root.find("descendant-or-self::*[@lang and not @editorial]"):
 		assert isinstance(node, tree.Tag)
 		lang, script = node["lang"].split()
 		langs.setdefault(lang, set()).add(script)
 		scripts.add(script)
-	# Filter out non-source languages and scripts.
+	# Fetch the corresponding names.
 	db = common.db("texts")
-	ignore_langs = []
 	lang_names = {}
 	for lang in langs:
-		rid, name = db.execute("""select rid, name
+		(name,) = db.execute("""select name
 		from langs_list where id = ?""", (lang,)).fetchone()
-		src = db.execute("""select 1 from langs_closure
-		where root = (select rid from langs_list where id = 'source')
-		and rid = ?""", (rid,)).fetchone()
-		if src:
-			lang_names[lang] = name
-		else:
-			ignore_langs.append(lang)
-	ignore_scripts = []
+		lang_names[lang] = name
 	script_names = {}
 	for script in scripts:
-		rid, name = db.execute("""select rid, name
+		(name,) = db.execute("""select name
 		from scripts_list where id = ?""", (script,)).fetchone()
-		src = db.execute("""select 1 from scripts_closure
-		where root = (select rid from scripts_list where id = 'source')
-		and rid = ?""", (rid,)).fetchone()
-		if src:
-			script_names[script] = name
-		else:
-			ignore_scripts.append(script)
-	for lang in ignore_langs:
-		del langs[lang]
-	for lang, lang_scripts in langs.items():
-		for script in ignore_scripts:
-			lang_scripts.discard(script)
+		script_names[script] = name
 	# And invert the langs map.
 	scripts = {}
 	for lang, lang_scripts in langs.items():
@@ -154,20 +135,20 @@ def add_edition_languages(t):
 	lang_nodes = {}
 	for lang in langs:
 		node = tree.Tag("language")
-		lang_id = tree.Tag("identifier", lang="ident latin")
+		lang_id = tree.Tag("identifier")
 		lang_id.append(lang)
 		node.append(lang_id)
-		lang_name = tree.Tag("name", lang="eng latin")
+		lang_name = tree.Tag("name")
 		lang_name.append(lang_names[lang])
 		node.append(lang_name)
 		lang_nodes[lang] = node
 	script_nodes = {}
 	for script in scripts:
 		node = tree.Tag("script")
-		script_id = tree.Tag("identifier", lang="ident latin")
+		script_id = tree.Tag("identifier")
 		script_id.append(script)
 		node.append(script_id)
-		script_name = tree.Tag("name", lang="eng latin")
+		script_name = tree.Tag("name")
 		script_name.append(script_names[script])
 		node.append(script_name)
 		script_nodes[script] = node
@@ -928,13 +909,13 @@ def wrap_for_physical(root, page=None, line=None):
 			case "npage":
 				page = tree.Tag("page", lang=root["lang"])
 				node.insert_before(page)
-				head = tree.Tag("head", lang="zxx latin")
+				head = tree.Tag("head")
 				head.append(node)
 				page.append(head)
 				line = None
 			case "nline":
 				if not page:
-					page = tree.Tag("page", lang="zxx latin")
+					page = tree.Tag("page")
 					node.insert_before(page)
 				line = tree.Tag("line", lang=root["lang"])
 				page.append(line)
@@ -976,7 +957,7 @@ def add_hyphens_to_lines(t):
 			i += 1
 			continue
 		if not common.to_boolean(head["break"], True):
-			span = tree.Tag("span", tip="Hyphen break", lang="zxx latin")
+			span = tree.Tag("span", tip="Hyphen break")
 			span.append("-")
 			lines[i - 1].append(span)
 		i += 1
@@ -1089,7 +1070,7 @@ def complete_verse_lines(t: tree.Tree):
 		prev_line = line.first("stuck-preceding-sibling::*")
 		assert isinstance(prev_line, tree.Tag)
 		assert prev_line.name == "verse-line"
-		span = tree.Tag("span", tip="Hyphen break", lang="zxx latin")
+		span = tree.Tag("span", tip="Hyphen break")
 		span.append("-")
 		prev_line.append(span)
 
@@ -1380,6 +1361,8 @@ def process_edition(t: tree.Tree, edition: tree.Tag):
 # and slower than the reverse.
 
 def process(t: tree.Tree):
+	# XXX enable this
+	#node = node.copy().replace("'", "’")
 	fix_search(t)
 	languages.complete_internal(t)
 	# Structural stuff.
@@ -1407,10 +1390,10 @@ def process(t: tree.Tree):
 			assert node["name"] == "logical"
 			del node["name"]
 	complete_verse_lines(t)
+	languages.finish_internal(t)
 	# And extract languages from the logical division.
 	if (root := t.first("/document/edition/logical")):
 		add_edition_languages(root)
-	languages.finish_internal(t)
 
 def fetch_file_data(ident):
 	# XXX should do this from the File() object, not from the db, because
