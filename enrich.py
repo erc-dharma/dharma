@@ -1,9 +1,9 @@
 """Internal transformations.
 
 This fixes various things in the internal XML representation (like the location
-of milestones), straightens things out, and produces three displays: physical,
-logical, full. Among other things, we remove all non-significant space from the
-input tree.
+of milestones), straightens things out, and produces three displays for the
+edition division: physical, logical, full. Among other things, we remove all
+non-significant space from the input tree.
 
 TODO
 
@@ -12,12 +12,9 @@ too messy, should just apply space normalization after we've expanded
 everything. But need to make sure that we don't rely on space normalization in
 preceding operations. This concerns:
 
-	fix_milestones(t)
-	number_notes(t)
-	# And create the three displays.
-	if (edition := t.first("/document/edition")):
-		assert isinstance(edition, tree.Tag)
-		process_edition(t, edition)
+        fix_milestones(t) number_notes(t) # And create the three displays. if
+        (edition := t.first("/document/edition")):
+                assert isinstance(edition, tree.Tag) process_edition(t, edition)
 
 display of <am> <ex> in logical/physical/full?
 
@@ -36,9 +33,9 @@ invent unique @n for each milestone.)
 
 make a root div without a @type or with an unknown type an anonymous division.
 
-should have an axis for "everything except <note>", because there are a #
-lots of cases where we _must_ avoid <note>, and it's not immediately clear #
-where, and it's error-prone.
+should have an axis for "everything except <note>", because there are a # lots
+of cases where we _must_ avoid <note>, and it's not immediately clear # where,
+and it's error-prone.
 
 
 For pandoc, the relevant documentation is:
@@ -1199,7 +1196,7 @@ def fix_blocks_nesting(t: tree.Tree):
 	"""
 	def inner(root):
 		assert isinstance(root, tree.Tag)
-		if is_inline(root) or root.name in ("para", "verse", "verse-line"):
+		if (is_inline(root) and root.name != "note") or root.name in ("para", "verse", "verse-line"):
 			unwrap_child_blocks(root)
 		for child in root:
 			if isinstance(child, tree.Tag):
@@ -1287,6 +1284,10 @@ def move_up_from_para(node):
 	para.replace_with(node)
 	if len(right) > 0:
 		node.insert_after(right)
+
+def put_grantha_in_bold(t: tree.Tree):
+	for node in t.find("//*[glob('* grantha', @lang) and not @editorial]"):
+		pass#XXX  TODO
 
 def expand_views(root: tree.Branch, keep_view=None):
 	"""Expands "views" element. They have the form:
@@ -1391,6 +1392,7 @@ def process(t: tree.Tree):
 			del node["name"]
 	complete_verse_lines(t)
 	languages.finish_internal(t)
+	put_grantha_in_bold(t)
 	# And extract languages from the logical division.
 	if (root := t.first("/document/edition/logical")):
 		add_edition_languages(root)
