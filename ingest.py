@@ -1,4 +1,8 @@
-"For parsing TEI files into an internal XML representation."
+"""
+For parsing TEI files and converting them to an internal XML representation.
+This is only a preliminary step. The output XML document must be passed to the
+`enrich` module to obtain the "final" internal representation that used for search, display, etc. This "final" internal representation is described in the schema `internal.rnc`.
+"""
 
 import os, sys, re, html, urllib.parse, posixpath, copy
 from dharma import common, prosody, people, tree, gaiji, biblio, languages

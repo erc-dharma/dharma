@@ -838,11 +838,11 @@ fieldset {
 
 /*************************************** Footnotes ****************************/
 
-.notes ol {
+.notes > ol {
 	list-style: none;
 	padding-left: 0;
 }
-.notes li:not(:last-child) {
+.notes > ol > li:not(:last-child) {
 	margin-bottom: 0.4em;
 }
 .note-ref {

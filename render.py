@@ -56,17 +56,19 @@ def render_document(self, node):
 		for note in self.notes:
 			n = int(note["n"])
 			self.push(tree.Tag("li", class_="note", id=f"note-{n}"))
-			paras = note.find("para")
 			self.push(tree.Tag("p"))
 			self.push(tree.Tag("a", class_="note-ref", data_note_n=str(n), href=f"#note-ref-{n}"))
 			self.append(f"{n}.")
 			self.join()
-			self.append(" ")
-			self.dispatch_children(paras[0])
-			self.join()
-			for para in paras[1:]:
-				self.dispatch(para)
-			self.join()
+			blocks = note.find("*")
+			if blocks and blocks[0].name == "para":
+				self.append(" ")
+				self.dispatch_children(blocks[0])
+				blocks = blocks[1:]
+			self.join("p")
+			for block in blocks:
+				self.dispatch(block)
+			self.join("li")
 		self.join() # </ol>
 		self.heading_level -= 1
 		self.join() # </div>

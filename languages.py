@@ -1,6 +1,4 @@
 """
-XXX Dans enrich.py, quand on a un passage en grantha, il faut le mettre en gras. Cela suppose de mettre le passage dans un ou plusieurs span.
-
 Stuff for dealing with languages and scripts.
 
 The language and script data are stored in project_documentation: see
@@ -16,20 +14,10 @@ For scripts, we use dharma-internal codes instead of ISO ones. See
 DHARMA_scripts in project-documentation.
 
 For languages we don't can't determine, we use the value `und`. There is also `zxx`, for non-linguistic contents.
-"""
 
-"""
-Pour les facettes, on devrai être en mesure de calculer la longueur d'un texte
+Pour les facettes, on devrait être en mesure de calculer la longueur d'un texte
 en phonèmes, en caractères, en lignes, en pages, en divisions, en paragraphes,
 etc.
-
-Expliquer différences entre assignement des langues dans le tei et dans la
-représentation interne. Noter qu'on ne fait pas ce qu'il faut pour l'apparatus;
-on pourrait éventuellement simplement assigner 'source' aux lem et rdg.
-
-TODO Au tableau des scripts by code, ajouter version avec l'autre r voyelle,
-éventuellement tout sans diacritiques. Oui en fait ajouter tout sans
-diacritiques et ajouter le vrai identifiant dans le tableau principal.
 
 Goals for languages/scripts:
 
