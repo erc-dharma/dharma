@@ -1,5 +1,38 @@
 # TODO
 
+prendre tous les blocks avec @snippet=true, découper des passages alentours.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 XXX Dans enrich.py, quand on a un passage en grantha, il faut le mettre en gras. Cela suppose d'entourer de <span> tous ces passages.
 
 * biblio: DHARMA_INSTamilNadu01003 ; DHARMA_INSTamilNadu01009; GopinathaRao_1921-1922_01 ;

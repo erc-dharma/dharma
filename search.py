@@ -1,7 +1,6 @@
 import sys
 import unicodedata
 import requests
-import io
 from dharma import common, ingest, tree, enrich, render
 
 # Unicode Private Use Area characters for search markers
@@ -258,8 +257,11 @@ class SnippetGenerator:
 
 	def _get_roots(self):
 		roots = []
-		roots.extend(self.doc.find("/document/edition/logical"))
-		roots.extend(self.doc.find("/document/hand"))
+		for path in ("/document/edition/logical", "/document/hand",
+			"/document/summary"):
+			node = self.doc.first(path)
+			if node:
+				roots.append(node)
 		return roots
 
 	def _collect_blocks_from_root(self, root, blocks):
@@ -658,7 +660,8 @@ def cli_search(query):
 	match = data["matches"][0]
 	t = tree.parse_string(match["source"])
 	highlight_document(t, match)
-	print(t.xml())
+	SnippetGenerator(t).generate()
+	print(t.first("//logical").xml())
 
 def main():
 	if len(sys.argv) > 1:
