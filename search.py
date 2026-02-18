@@ -1,7 +1,8 @@
 import sys
 import unicodedata
 import requests
-from dharma import common, ingest, tree, enrich, render
+from dharma import common, ingest, tree, enrich
+import icu # pip install PyICU
 
 # Unicode Private Use Area characters for search markers
 MARKER_START = "\uE000"
@@ -237,34 +238,52 @@ class Highlighter:
 		elif isinstance(node, tree.Tag) and node.name != "search":
 			for child in list(node):
 				self._highlight_leaves(child)
+
 class SnippetGenerator:
 
-	def __init__(self, doc, context_chars=60):
+	def __init__(self, doc, context_chars=80):
+		# Initialize the generator with the root document and context limit
 		self.doc = doc
 		self.context_chars = context_chars
 		self.seen_blocks = set()
 
 	def generate(self):
+		# Tag ancestors and prune isolated blocks around matches
 		roots = self._get_roots()
 		if not roots: return
+		for root in roots:
+			self._mark_match_ancestors(root)
 		blocks = []
 		for root in roots:
 			self._collect_blocks_from_root(root, blocks)
 		for block in blocks:
-			block["snippet"] = "true"
 			pruner = BlockPruner(block, self.context_chars)
 			pruner.prune()
 
+	def _mark_match_ancestors(self, node):
+		# Recursively assign match attribute to all ancestors of a hit
+		has_match = False
+		if getattr(node, "name", None) == "match":
+			has_match = True
+		if isinstance(node, tree.Tag):
+			for child in list(node):
+				if self._mark_match_ancestors(child):
+					has_match = True
+			if has_match and node.name != "match":
+				try: node["match"] = "true"
+				except Exception: pass
+		return has_match
+
 	def _get_roots(self):
+		# Identify the primary structural nodes for snippet extraction
 		roots = []
-		for path in ("/document/edition/logical", "/document/hand",
-			"/document/summary"):
+		for path in ("/document/edition/logical", "/document/hand", "/document/summary"):
 			node = self.doc.first(path)
-			if node:
-				roots.append(node)
+			if node: roots.append(node)
 		return roots
 
 	def _collect_blocks_from_root(self, root, blocks):
+		# Gather unique eligible block containers enclosing search hits
 		matches = []
 		self._collect_matches(root, matches)
 		for m in matches:
@@ -274,6 +293,7 @@ class SnippetGenerator:
 				blocks.append(eligible)
 
 	def _collect_matches(self, n, matches_list):
+		# Traverse the tree to compile a list of all match nodes
 		if isinstance(n, tree.Tag):
 			if n.name == "match":
 				matches_list.append(n)
@@ -281,6 +301,7 @@ class SnippetGenerator:
 				self._collect_matches(child, matches_list)
 
 	def _find_eligible_block(self, node):
+		# Ascend the DOM to find the nearest valid block container
 		curr = node
 		while curr:
 			if curr.name in BLOCK_TAGS:
@@ -293,114 +314,259 @@ class SnippetGenerator:
 class BlockPruner:
 
 	def __init__(self, block, context_chars):
+		# Initialize pruner with target block and context limits
 		self.block = block
 		self.context_chars = context_chars
-		self.cursor = 0
-		self.match_ranges = []
-		self.mask = []
+		self.events = []
+		self.char_keep = []
+		self.inline_tags = {
+			"span", "link", "note", "npage", "nline", "ncell",
+			"display", "split", "search", "name", "identifier", "match"
+		}
+		self.immune_tags = {"head", "source"}
+		self.milestone_tags = {"npage", "nline", "ncell"}
+		self.distance_tags = {"verse-line", "item"}
+		self.strict_tags = {"key", "value"}
+		self.block_tags = {"para", "verse", "quote", "dlist", "elist"}
+		self.snippet_items = self.distance_tags | self.strict_tags | self.block_tags
 
 	def prune(self):
-		total_len = self._scan_matches(self.block, 0)
-		self._build_mask(total_len)
-		if total_len < (self.context_chars * 3): return
-		self.cursor = 0
-		self._transform_children(self.block)
+		# Bypass pruning entirely if context limit is negative
+		if self.context_chars < 0: return
+		for child in list(self.block):
+			self._linearize(child, False, False, False, None)
+		self._compute_mask()
+		if not self.char_keep or all(self.char_keep): return
+		self.block.clear()
+		self._rebuild_tree()
 
-	def _scan_matches(self, node, offset):
-		length = 0
+	def _has_match_attr(self, node):
+		# Check if a node possesses the global match attribute
+		try: return node["match"] == "true"
+		except Exception: return False
+
+	def _linearize(self, node, in_match, in_ms, in_im, cur_si):
+		# Flatten tree into events tracking grapheme clusters
 		if isinstance(node, tree.String):
-			return len(str(node))
+			text = str(node)
+			bi = icu.BreakIterator.createCharacterInstance(icu.Locale.getRoot())
+			bi.setText(text)
+			start = bi.first()
+			for end in bi:
+				self.events.append(("char", text[start:end], in_match, in_ms, in_im, cur_si))
+				start = end
 		elif isinstance(node, tree.Tag):
-			if node.name == "match":
-				inner_len = 0
-				for c in node:
-					inner_len += self._scan_matches(c, offset + length + inner_len)
-				self.match_ranges.append((offset + length, offset + length + inner_len))
-				return inner_len
-			for c in node:
-				length += self._scan_matches(c, offset + length)
-			return length
-		return 0
+			m = in_match or node.name == "match"
+			ms = in_ms or node.name in self.milestone_tags
+			im = in_im or node.name in self.immune_tags
+			si = node if node.name in self.snippet_items else cur_si
+			self.events.append(("open", node))
+			for child in list(node):
+				self._linearize(child, m, ms, im, si)
+			self.events.append(("close", node.name))
 
-	def _build_mask(self, total_len):
-		self.mask = [False] * total_len
-		for start, end in self.match_ranges:
-			k_start = max(0, start - self.context_chars)
-			k_end = min(total_len, end + self.context_chars)
-			for i in range(k_start, k_end):
-				self.mask[i] = True
+	def _compute_mask(self):
+		# Determine which grapheme clusters fall within the window
+		char_idx = [i for i, ev in enumerate(self.events) if ev[0] == "char"]
+		n = len(char_idx)
+		if n == 0: return
+		dist = self._compute_distances(char_idx, n)
+		keep = [d <= self.context_chars or self.events[char_idx[i]][4] for i, d in enumerate(dist)]
+		self._snap_to_word_boundaries(keep, char_idx, n)
+		self._trim_mask(keep, char_idx, n)
+		self._clean_empty_omissions(keep, char_idx, n)
+		self._apply_snippet_item_rules(keep, char_idx, n)
+		self.char_keep = keep
 
-	def _transform_children(self, parent):
-		new_children = []
-		for child in list(parent):
-			res = self._transform_node(child)
-			for r in res:
-				if self._is_omission(r) and new_children and self._is_omission(new_children[-1]):
-					for sub in list(r): new_children[-1].append(sub)
-				else:
-					new_children.append(r)
-		parent.clear()
-		for c in new_children: parent.append(c)
+	def _clean_empty_omissions(self, keep, char_idx, n):
+		# Revert omissions that contain no substantive text
+		boundaries = {' ', '-', '\t', '\n', '\r'}
+		i = 0
+		while i < n:
+			if not keep[i]:
+				start = i
+				while i < n and not keep[i]: i += 1
+				end = i - 1
+				has_real = False
+				for k in range(start, end + 1):
+					ev = self.events[char_idx[k]]
+					if not ev[3] and not ev[4] and ev[1] not in boundaries:
+						has_real = True
+						break
+				if not has_real:
+					for k in range(start, end + 1): keep[k] = True
+			else: i += 1
 
-	def _is_omission(self, node):
-		return isinstance(node, tree.Tag) and node.name == "omission"
+	def _snap_to_word_boundaries(self, keep, char_idx, n):
+		# Adjust cut-off points to respect word integrity
+		i = 0
+		while i < n:
+			if keep[i]:
+				start = i
+				while i < n and keep[i]: i += 1
+				end = i - 1
+				ms, me = self._find_matches_in_segment(char_idx, start, end)
+				if ms <= end:
+					self._snap_left_edge(keep, char_idx, start, ms)
+					self._snap_right_edge(keep, char_idx, end, me)
+			else: i += 1
 
-	def _transform_node(self, node):
-		if isinstance(node, tree.String):
-			return self._transform_string(node)
-		elif isinstance(node, tree.Tag):
-			return self._transform_tag(node)
-		return [node]
+	def _find_matches_in_segment(self, char_idx, start, end):
+		# Locate the first and last match clusters within a kept segment
+		ms = start
+		while ms <= end and not self.events[char_idx[ms]][2]: ms += 1
+		me = end
+		while me >= start and not self.events[char_idx[me]][2]: me -= 1
+		return ms, me
 
-	def _transform_string(self, node):
-		text = str(node)
-		length = len(text)
-		node_start = self.cursor
-		self.cursor += length
-		node_mask = self.mask[node_start : node_start + length]
-		if all(node_mask): return [node]
-		if not any(node_mask):
-			om = tree.Tag("omission")
-			om.append(node)
-			return [om]
-		return self._split_string_node(text, node_mask)
+	def _snap_left_edge(self, keep, char_idx, start, ms):
+		# Retract the left edge to the nearest boundary if context remains
+		boundaries = {' ', '-', '\t', '\n', '\r'}
+		if start >= ms: return
+		B = start
+		while B < ms and self.events[char_idx[B]][1] not in boundaries: B += 1
+		if B < ms and self._has_normal_chars(char_idx, B + 1, ms, boundaries):
+			for k in range(start, B): keep[k] = False
 
-	def _split_string_node(self, text, node_mask):
-		result_nodes = []
-		current_segment = []
-		keeping = node_mask[0]
-		for i, char in enumerate(text):
-			if node_mask[i] == keeping:
-				current_segment.append(char)
-			else:
-				self._flush_segment(result_nodes, current_segment, keeping)
-				current_segment = [char]
-				keeping = not keeping
-		self._flush_segment(result_nodes, current_segment, keeping)
-		return result_nodes
+	def _snap_right_edge(self, keep, char_idx, end, me):
+		# Retract the right edge to the nearest boundary if context remains
+		boundaries = {' ', '-', '\t', '\n', '\r'}
+		if end <= me: return
+		B = end
+		while B > me and self.events[char_idx[B]][1] not in boundaries: B -= 1
+		if B > me and self._has_normal_chars(char_idx, me + 1, B, boundaries):
+			for k in range(B + 1, end + 1): keep[k] = False
 
-	def _flush_segment(self, nodes, segment, keeping):
-		if not segment: return
-		s_node = tree.String("".join(segment))
-		if keeping:
-			nodes.append(s_node)
-		else:
-			om = tree.Tag("omission")
-			om.append(s_node)
-			nodes.append(om)
+	def _has_normal_chars(self, char_idx, start_idx, end_idx, boundaries):
+		# Verify the presence of text content between boundaries
+		for k in range(start_idx, end_idx):
+			if self.events[char_idx[k]][1] not in boundaries: return True
+		return False
 
-	def _transform_tag(self, node):
-		if node.name == "match":
-			self._advance_cursor_recursive(node)
-			return [node]
-		self._transform_children(node)
-		return [node]
+	def _compute_distances(self, char_idx, n):
+		# Calculate distance ignoring boundaries and special elements
+		cost_free = {' ', '-', '\t', '\n', '\r'}
+		dist = [float('inf')] * n
+		self._sweep_distances(char_idx, dist, cost_free, range(n))
+		self._sweep_distances(char_idx, dist, cost_free, range(n - 1, -1, -1))
+		return dist
 
-	def _advance_cursor_recursive(self, node):
-		if isinstance(node, tree.String):
-			self.cursor += len(str(node))
-		elif isinstance(node, tree.Tag):
-			for child in node: self._advance_cursor_recursive(child)
+	def _sweep_distances(self, char_idx, dist, cost_free, indices):
+		# Perform a directional sweep to measure proximity to matches
+		cur_dist = float('inf')
+		for i in indices:
+			ev = self.events[char_idx[i]]
+			if ev[2]: cur_dist = 0
+			elif not ev[3] and not ev[4] and ev[1] not in cost_free:
+				if cur_dist != float('inf'): cur_dist += 1
+			dist[i] = min(dist[i], cur_dist)
+
+	def _trim_mask(self, keep, char_idx, n):
+		# Remove isolated milestone characters at the edges
+		i = 0
+		while i < n:
+			if keep[i]:
+				start = i
+				while i < n and keep[i]: i += 1
+				end = i - 1
+				if start > 0:
+					while start <= end and keep[start] and self.events[char_idx[start]][3]:
+						keep[start] = False
+						start += 1
+				if end < n - 1:
+					while end >= start and keep[end] and self.events[char_idx[end]][3]:
+						keep[end] = False
+						end -= 1
+			else: i += 1
+
+	def _apply_snippet_item_rules(self, keep, char_idx, n):
+		# Prevent omissions in items lacking the match ancestor attribute
+		active_ids = set()
+		for i in range(n):
+			si = self.events[char_idx[i]][5]
+			if si is not None and self._has_match_attr(si):
+				active_ids.add(id(si))
+		for i in range(n):
+			si = self.events[char_idx[i]][5]
+			if si is not None and id(si) not in active_ids:
+				keep[i] = True
+
+	def _rebuild_tree(self):
+		# Reconstruct the DOM tree applying omissions
+		self.tag_stack, self.dom_stack = [], [self.block]
+		self.is_omitting, self.char_buffer = False, []
+		self.char_cursor = 0
+		for ev in self.events:
+			if ev[0] == "char":
+				self._handle_char(ev[1], self.char_keep[self.char_cursor])
+				self.char_cursor += 1
+			elif ev[0] == "open":
+				self._handle_open(ev[1])
+			elif ev[0] == "close":
+				self._handle_close()
+		self._flush_buffer()
+
+	def _handle_char(self, char, keep):
+		# Trigger state changes upon encountering boundaries
+		omitting = not keep
+		if omitting != self.is_omitting: self._switch_state(omitting)
+		self.char_buffer.append(char)
+
+	def _handle_open(self, node):
+		# Apply state before opening a new tag
+		self._flush_buffer()
+		if node.name not in self.inline_tags and self.is_omitting:
+			self._switch_state(False)
+		elif node.name in self.inline_tags and self.char_cursor < len(self.char_keep):
+			omitting = not self.char_keep[self.char_cursor]
+			if omitting != self.is_omitting: self._switch_state(omitting)
+		self.tag_stack.append(node)
+		new_node = self._clone_tag(node)
+		self.dom_stack[-1].append(new_node)
+		self.dom_stack.append(new_node)
+
+	def _handle_close(self):
+		# Close the current tag and force boundaries on blocks
+		self._flush_buffer()
+		tag = self.tag_stack[-1]
+		if tag.name not in self.inline_tags and self.is_omitting:
+			self._switch_state(False)
+		self.tag_stack.pop()
+		self.dom_stack.pop()
+
+	def _switch_state(self, omitting):
+		# Reorganize only inline open tags across the omission boundary
+		self._flush_buffer()
+		inline_count = 0
+		for tag in reversed(self.tag_stack):
+			if tag.name in self.inline_tags: inline_count += 1
+			else: break
+		for _ in range(inline_count): self.dom_stack.pop()
+		self.is_omitting = omitting
+		if omitting:
+			om_node = tree.Tag("omission")
+			self.dom_stack[-1].append(om_node)
+			self.dom_stack.append(om_node)
+		else: self.dom_stack.pop()
+		for orig_node in self.tag_stack[len(self.tag_stack)-inline_count:]:
+			new_node = self._clone_tag(orig_node)
+			self.dom_stack[-1].append(new_node)
+			self.dom_stack.append(new_node)
+
+	def _flush_buffer(self):
+		# Append accumulated characters to the active node
+		if not self.char_buffer: return
+		text = "".join(self.char_buffer)
+		self.dom_stack[-1].append(tree.String(text))
+		self.char_buffer.clear()
+
+	def _clone_tag(self, original):
+		# Create an empty duplicate of a tag
+		clone = tree.Tag(original.name)
+		try:
+			for k, v in original.items(): clone[k] = v
+		except Exception: pass
+		return clone
 
 def extract_one_text(xpath):
 	def extractor(doc):
@@ -538,8 +704,7 @@ def process_single_match(item):
 		doc = tree.parse_string(xml_str)
 		highlight_document(doc, item)
 		SnippetGenerator(doc).generate()
-		for_html = render.process(doc)
-		return for_html
+		return doc
 	except Exception as e:
 		print(f"Error processing match {item.get('ident')}: {e}")
 		return None
@@ -640,7 +805,7 @@ def prepare_search_data(doc):
 	for field, config in SEARCH_CONFIG.items():
 		extractor = config["extractor"]
 		data[field] = extractor(doc)
-	data["source"] = doc.xml()
+	data["source"] = doc.xml(add_xml_prefix=False)
 	return data
 
 def eprint(*args, **kwargs):
@@ -648,20 +813,15 @@ def eprint(*args, **kwargs):
 	print(*args, **kwargs)
 
 def cli_search(query):
-	norm_query = unicodedata.normalize('NFC', query)
-	params = {"q": norm_query, "offset": 0, "limit": 1, "sort": "title"}
-	resp = requests.get(GO_SERVER_URL, params=params)
-	resp.raise_for_status()
-	data = resp.json()
-	count = data["count"]
-	if count < 1:
+	import snip
+	r = query_search_service(query, offset=0, limit=20, sort="title")
+	if r["match_count"] < 1:
 		eprint("no match")
 		return
-	match = data["matches"][0]
-	t = tree.parse_string(match["source"])
-	highlight_document(t, match)
-	SnippetGenerator(t).generate()
+	t = r["matches"][0]
 	print(t.first("//logical").xml())
+	doc = snip.process(t)
+	#print(doc.logical.xml(add_xml_prefix=False))
 
 def main():
 	if len(sys.argv) > 1:

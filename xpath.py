@@ -20,7 +20,6 @@ def main():
 	for file in args.file:
 		try:
 			t = tree.parse(file)
-			languages.assign_languages(t)
 		except tree.Error:
 			continue
 		for result in f(t):

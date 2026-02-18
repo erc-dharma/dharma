@@ -45,10 +45,10 @@ total.
 
 % if matches
 
-<div class="catalog-list">
+<div class="card-list">
 % for doc in matches:
-<div class="catalog-card">
-   <div class="catalog-card-heading">
+<div class="card">
+   <div class="card-heading">
       <a href="{{url_for("display_text", text=doc.identifier.text())}}">
    % if doc.authors:
 	% for author in doc.authors:
@@ -100,7 +100,9 @@ total.
    <p>
       Identifier: <span class="text-id">{{doc.identifier.html() | safe}}</span>.
    </p>
+   <div class="snippets">
    {{doc.logical.html() | safe}}
+   </div>
 </div> ## class=catalog-card
 % endfor
 </div> ## class=catalog-list

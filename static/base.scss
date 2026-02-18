@@ -681,7 +681,7 @@ dl.list > dd {
 	all: unset;
 }
 .quote > blockquote, .quote > p {
-	all: unset;
+	margin-left: unset;
 }
 .quote {
 	margin-left: 1.5em;
@@ -857,4 +857,8 @@ fieldset {
 }
 .prosody-segment {
 	letter-spacing: initial;
+}
+
+.snippets {
+	background-color: white;
 }

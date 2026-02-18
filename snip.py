@@ -1,3 +1,5 @@
+# TODO this uses much code from render.py, should refactor
+
 import sys, collections
 from dharma import tree
 
@@ -9,26 +11,10 @@ def handler(path):
 		return f
 	return decorator
 
-@handler("page")
-def render_page(self, node):
-	self.push(tree.Tag("div", class_="page"))
-	self.dispatch_children(node)
-	self.join()
-
-@handler("page/stuck-child::head")
-def render_page_head(self, node):
-	self.push(tree.Tag("div", class_="pagelike"))
-	self.dispatch_children(node)
-	self.join()
-
-@handler("line")
-def render_page_line(self, node):
-	self.push(tree.Tag(f"p", class_="line"))
-	self.dispatch_children(node)
-	self.join()
-
 @handler("quote")
 def render_quote(self, node):
+	if node["match"] != "true":
+		return
 	self.push(tree.Tag("div", class_="quote"))
 	source = node.first("stuck-child::source")
 	if source:
@@ -48,35 +34,13 @@ def render_quote(self, node):
 def render_document(self, node):
 	self.push(tree.Tag("div", id="inscription-display"))
 	self.dispatch_children(node)
-	if self.notes:
-		self.push(tree.Tag("div", class_="notes"))
-		self.heading_level += 1
-		render_head(self, "Notes")
-		self.push(tree.Tag("ol"))
-		for note in self.notes:
-			n = int(note["n"])
-			self.push(tree.Tag("li", class_="note", id=f"note-{n}"))
-			self.push(tree.Tag("p"))
-			self.push(tree.Tag("a", class_="note-ref", data_note_n=str(n), href=f"#note-ref-{n}"))
-			self.append(f"{n}.")
-			self.join()
-			blocks = note.find("*")
-			if blocks and blocks[0].name == "para":
-				self.append(" ")
-				self.dispatch_children(blocks[0])
-				blocks = blocks[1:]
-			self.join("p")
-			for block in blocks:
-				self.dispatch(block)
-			self.join("li")
-		self.join() # </ol>
-		self.heading_level -= 1
-		self.join() # </div>
 	self.join()
 	self.document.body = self.top
 
 @handler("elist")
 def render_list(self, node):
+	if node["match"] != "true":
+		return
 	match node["type"]:
 		case "plain":
 			self.push(tree.Tag("ul", class_="list list-plain"))
@@ -131,8 +95,7 @@ def process_commit(self, node):
 def process_path(self, node):
 	self.push(tree.Tree())
 	self.dispatch_children(node)
-	path = self.pop()
-	self.document.path = path
+	self.document.path = self.pop()
 
 @handler("repository")
 def process_repo(self, node):
@@ -150,10 +113,6 @@ def process_languages(self, node):
 		for script_node in lang_node.find("script"):
 			scripts.append(extract_paired(self, script_node))
 		self.document.edition_languages.append((lang, scripts))
-
-@handler("scripts")
-def process_scripts(self, node):
-	pass
 
 @handler("identifier")
 def render_identifier(self, node):
@@ -185,13 +144,6 @@ def render_hand(self, node):
 	self.document.hand = self.pop()
 	prepend_to_first_para(self.document.hand, "Palaeographic description: ")
 
-edition_tabs = tree.parse_string("""
-<ul class="ed-tabs">
-	<li id="physical-btn" class="active"><a href="#">Physical</a></li>
-	<li id="logical-btn"><a href="#">Logical</a></li>
-	<li id="full-btn"><a href="#">Full</a></li>
-</ul>""")
-
 @handler("edition")
 @handler("translation")
 @handler("commentary")
@@ -208,55 +160,10 @@ def render_section(self, node):
 	self.join()
 	self.heading_level -= 1
 
-@handler("extra")
-def render_extra(self, node):
-	self.dispatch_children(node)
-
-def push_heading(self, level: int, class_: list[str] = []):
-	class_ = class_.copy()
-	if self.toc_depth >= 0 and self.heading_level > self.toc_depth:
-		class_.append("skip-toc")
-	# HTML headings stop at <h6>. We could do something sensible when
-	# heading_level > 6, but this is unlikely to happen, so we just act is
-	# if they had a level 6.
-	level = min(self.heading_level, 6)
-	self.push(tree.Tag(f"h{level}", class_="".join(class_)))
-
-@handler("apparatus")
-def render_apparatus(self, node):
-	self.heading_level += 1
-	self.push("div", class_="apparatus")
-	# Heading
-	if (head := node.first("head")):
-		push_heading(self, self.heading_level, class_=["collapsible"])
-		self.dispatch_children(head)
-		self.join() # </head>
-	# Contents
-	self.push("div")
-	for child in node:
-		if child is not head:
-			self.dispatch(child)
-	self.join() # </div>
-	# End contents
-	self.join() # </div class="apparatus"/>
-	self.heading_level -= 1
-
-@handler("physical")
-@handler("full")
-def render_edition_display(self, node):
-	self.push("div", class_=node.name, id=node.name, data_display=node.name)
-	if node.name != "physical":
-		self.top["class"] += " hidden"
-	self.dispatch_children(node)
-	self.join()
-
 @handler("logical")
 def render_logical_display(self, node):
-	self.push("div", class_=node.name, id=node.name, data_display=node.name)
-	if node.name != "physical":
-		self.top["class"] += " hidden"
-	self.dispatch_children(node)
-	self.join()
+	if node["match"] != "true":
+		return
 	self.push("div", class_="logical")
 	self.dispatch_children(node)
 	self.document.logical = self.pop()
@@ -269,6 +176,8 @@ def render_title(self, node):
 
 @handler("dlist")
 def render_dlist(self, node):
+	if node["match"] != "true":
+		return
 	self.push(tree.Tag("dl", class_="list"))
 	for child in node.find("*"):
 		match child.name:
@@ -284,22 +193,11 @@ def render_dlist(self, node):
 
 @handler("div[@phantom='false']")
 def render_div(self, node):
+	if node["match"] != "true":
+		return
 	self.heading_level += 1
 	self.dispatch_children(node)
 	self.heading_level -= 1
-
-@handler("edition/stuck-child::head")
-def render_edition_head(self, node):
-	push_heading(self, self.heading_level)
-	self.dispatch_children(node)
-	self.join()
-	self.extend(edition_tabs)
-
-@handler("head")
-def render_head(self, node):
-	push_heading(self, self.heading_level)
-	self.dispatch_children(node)
-	self.join()
 
 @handler("npage")
 @handler("nline")
@@ -318,41 +216,6 @@ def render_milestone(self, node):
 	self.dispatch_children(node)
 	self.join()
 
-def make_note_ref(self, node, display=None):
-	n = int(node["n"])
-	if n == len(self.notes) + 1:
-		self.notes.append(node)
-	else:
-		# This should be a note in the edition, which is duplicated
-		# in the tree for the 3 displays (physical, logical, full).
-		# We only need one version, so ignore the others.
-		assert display is not None
-		assert n < len(self.notes) + 1, node.xml()
-	self.push(tree.Tag("sup"))
-	anchor = f"note-ref-{n}"
-	if display:
-		anchor += f"-{display}"
-	self.push(tree.Tag("a", class_="nav-link", href=f"#note-{n}", id=anchor))
-	self.append(str(n))
-	self.join()
-	self.join()
-
-@handler("physical//note")
-def render_physical_note_ref(self, node):
-	return make_note_ref(self, node, "physical")
-
-@handler("logical//note")
-def render_logical_note_ref(self, node):
-	return make_note_ref(self, node, "logical")
-
-@handler("full//note")
-def render_full_note_ref(self, node):
-	return make_note_ref(self, node, "full")
-
-@handler("note")
-def render_note_ref(self, node):
-	return make_note_ref(self, node)
-
 @handler("span")
 def render_span(self, node):
 	span = tree.Tag("span", class_=node["class"], data_tip=node["tip"])
@@ -362,6 +225,8 @@ def render_span(self, node):
 
 @handler("para")
 def render_para(self, node):
+	if node["match"] != "true":
+		return
 	self.push(tree.Tag("p", class_=node["class"], id=node["anchor"]))
 	self.dispatch_children(node)
 	self.join()
@@ -374,13 +239,13 @@ def render_link(self, node):
 
 @handler("verse")
 def render_verse(self, node):
+	if node["match"] != "true":
+		return
 	self.push("div", class_="verse")
-	if (head := node.first("stuck-child::head")):
-		self.push("div", class_="verse-heading")
-		self.dispatch_children(head)
-		self.join()
 	self.push("div", class_="verse-lines")
 	for line in node.find("verse-line"):
+		if line["match"] != "true":
+			continue
 		self.push("div", class_="verse-line")
 		self.push("p")
 		self.dispatch_children(line)
@@ -409,12 +274,28 @@ def render_match(self, node):
 	self.dispatch_children(node)
 	self.join()
 
+@handler("omission")
+def render_omission(self, node):
+	span = tree.Tag("span")
+	span.append("[\N{horizontal ellipsis}]")
+	span["data-tip"] = "Snippet limit"
+	self.append(span)
+
+@handler("apparatus")
+@handler("physical")
+@handler("full")
+@handler("note")
+@handler("head")
+@handler("scripts")
+def just_ignore(self, node):
+	pass
+
 @handler("*")
 def render_tag(self, node):
 	assert isinstance(node, tree.Tag)
 	print(f"render: UNKNOWN: {node.name}", file=sys.stderr)
 
-class HTMLDocument:
+class Document:
 
 	def __init__(self):
 		# We are using XML trees instead of str, even for basic stuff
@@ -426,15 +307,14 @@ class HTMLDocument:
 		self.hand = None
 		self.editors = []
 		self.edition_languages = []
-		self.body = None
-		self.logical = tree.Tree() # Only for snippets
+		self.logical = tree.Tree()
 		self.repository = paired(identifier="", name="")
 		self.identifier = None
 		self.commit = None
 		self.last_modified_commit = None
 		self.path = None
 
-class _HTMLRenderer(tree.Serializer):
+class Renderer(tree.Serializer):
 
 	def __init__(self, input, handlers=HANDLERS, toc_depth=-1):
 		super().__init__()
@@ -443,7 +323,7 @@ class _HTMLRenderer(tree.Serializer):
 		self.input = input
 		self.notes = []
 		self.heading_level = 1
-		self.document = HTMLDocument()
+		self.document = Document()
 		self.visited = set()
 
 	def __call__(self):
@@ -479,26 +359,22 @@ class _HTMLRenderer(tree.Serializer):
 # need to process an XML tree for highlighting; and 2) because it is more
 # convenient to use xpath.
 def process(doc: tree.Tree, toc_depth=-1):
-	render = _HTMLRenderer(doc, toc_depth=toc_depth)
+	render = Renderer(doc, toc_depth=toc_depth)
 	ret = render()
 	return ret
 
-def process_partial(xml):
-	render = _HTMLRenderer(xml)
-	render()
-	return render.tree
-
 if __name__ == "__main__":
 	import os
-	from dharma import texts, ingest, common
+	from dharma import texts, ingest, common, snip, enrich
 	@common.transaction("texts")
 	def main():
 		path = os.path.abspath(sys.argv[1])
 		try:
 			f = texts.File("/", path)
-			doc = ingest.process_file(f)
-			html = doc.to_html()
-			print(html.body.html())
+			doc = ingest.process_file(f).serialize()
+			enrich.process(doc)
+			ret = process(doc)
+			print(ret.logical.html())
 		except BrokenPipeError:
 			pass
 	main()

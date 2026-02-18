@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup # pip install bs4
 
 from dharma import common, change, ngrams, catalog, validate, ingest, tree
 from dharma import biblio, texts, editorial, prosody, render, languages
-from dharma import enrich, search
+from dharma import enrich, search, snip
 
 # We don't use the name "templates" for the template folder because we also
 # put other stuff in the same directory, not just templates.
@@ -573,6 +573,10 @@ def render_search_page():
 		context = search.query_search_service(query, offset, SEARCH_PER_PAGE, sort)
 	except Exception as e:
 		return flask.render_template("search.tpl", error=f"Search error: {e}")
+	matches = []
+	for match in context["matches"]:
+		matches.append(snip.process(match))
+	context["matches"] = matches
 	count = context.get("match_count", 0)
 	pages_nr = (count + SEARCH_PER_PAGE - 1) // SEARCH_PER_PAGE
 	first_entry = (page - 1) * SEARCH_PER_PAGE + 1
