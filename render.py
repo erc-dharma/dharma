@@ -1,5 +1,5 @@
 import sys, collections
-from dharma import tree
+from dharma import tree, common
 
 HANDLERS = []
 
@@ -185,13 +185,6 @@ def render_hand(self, node):
 	self.document.hand = self.pop()
 	prepend_to_first_para(self.document.hand, "Palaeographic description: ")
 
-edition_tabs = tree.parse_string("""
-<ul class="ed-tabs">
-	<li id="physical-btn" class="active"><a href="#">Physical</a></li>
-	<li id="logical-btn"><a href="#">Logical</a></li>
-	<li id="full-btn"><a href="#">Full</a></li>
-</ul>""")
-
 @handler("edition")
 @handler("translation")
 @handler("commentary")
@@ -245,7 +238,7 @@ def render_apparatus(self, node):
 @handler("full")
 def render_edition_display(self, node):
 	self.push("div", class_=node.name, id=node.name, data_display=node.name)
-	if node.name != "physical":
+	if node.name != self.display:
 		self.top["class"] += " hidden"
 	self.dispatch_children(node)
 	self.join()
@@ -253,7 +246,7 @@ def render_edition_display(self, node):
 @handler("logical")
 def render_logical_display(self, node):
 	self.push("div", class_=node.name, id=node.name, data_display=node.name)
-	if node.name != "physical":
+	if node.name != self.display:
 		self.top["class"] += " hidden"
 	self.dispatch_children(node)
 	self.join()
@@ -293,7 +286,27 @@ def render_edition_head(self, node):
 	push_heading(self, self.heading_level)
 	self.dispatch_children(node)
 	self.join()
-	self.extend(edition_tabs)
+	self.push(tree.Tag("ul", class_="ed-tabs"))
+	for display in ("physical", "logical", "full"):
+		item = tree.Tag("li", id=f"{display}-btn")
+		if display == self.display:
+			item["class"] = "active"
+		self.push(item)
+		self.push(tree.Tag("a", href="#"))
+		self.append(common.sentence_case(display))
+		self.join()
+		self.join()
+	self.join()
+
+
+
+edition_tabs = tree.parse_string("""
+<ul class="ed-tabs">
+	<li id="physical-btn" class="active"><a href="#">Physical</a></li>
+	<li id="logical-btn"><a href="#">Logical</a></li>
+	<li id="full-btn"><a href="#">Full</a></li>
+</ul>""")
+
 
 @handler("head")
 def render_head(self, node):
@@ -405,7 +418,7 @@ def render_split(self, node):
 
 @handler("match")
 def render_match(self, node):
-	self.push(tree.Tag("span", class_="highlight"))
+	self.push(tree.Tag("span", class_="highlight", id=node["id"]))
 	self.dispatch_children(node)
 	self.join()
 
@@ -436,11 +449,12 @@ class HTMLDocument:
 
 class _HTMLRenderer(tree.Serializer):
 
-	def __init__(self, input, handlers=HANDLERS, toc_depth=-1):
+	def __init__(self, input, handlers=HANDLERS, toc_depth=-1, display="physical"):
 		super().__init__()
 		self.handlers = handlers
 		self.toc_depth = toc_depth
 		self.input = input
+		self.display = display
 		self.notes = []
 		self.heading_level = 1
 		self.document = HTMLDocument()
@@ -478,8 +492,8 @@ class _HTMLRenderer(tree.Serializer):
 # We have an XML tree instead of a Document object as input because 1) we will
 # need to process an XML tree for highlighting; and 2) because it is more
 # convenient to use xpath.
-def process(doc: tree.Tree, toc_depth=-1):
-	render = _HTMLRenderer(doc, toc_depth=toc_depth)
+def process(doc: tree.Tree, toc_depth=-1, display="physical"):
+	render = _HTMLRenderer(doc, toc_depth=toc_depth, display=display)
 	ret = render()
 	return ret
 

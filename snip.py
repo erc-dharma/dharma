@@ -1,6 +1,6 @@
 # TODO this uses much code from render.py, should refactor
 
-import sys, collections
+import sys, collections, urllib.parse
 from dharma import tree
 
 HANDLERS = []
@@ -270,7 +270,13 @@ def render_split(self, node):
 
 @handler("match")
 def render_match(self, node):
-	self.push(tree.Tag("span", class_="highlight"))
+	if self.query and self.input_identifier:
+		ident = urllib.parse.quote(self.input_identifier, safe="")
+		query = urllib.parse.quote(self.query, safe="")
+		href = f"/texts/{ident}?q={query}&display=logical#{node['id']}"
+	else:
+		href = "#"
+	self.push(tree.Tag("a", class_="highlight", href=href))
 	self.dispatch_children(node)
 	self.join()
 
@@ -316,11 +322,16 @@ class Document:
 
 class Renderer(tree.Serializer):
 
-	def __init__(self, input, handlers=HANDLERS, toc_depth=-1):
+	def __init__(self, input, query=None, toc_depth=-1):
 		super().__init__()
-		self.handlers = handlers
+		self.handlers = HANDLERS
 		self.toc_depth = toc_depth
 		self.input = input
+		if (ident := input.first("/document/identifier")):
+			self.input_identifier = ident.text()
+		else:
+			self.input_identifier = None
+		self.query = query
 		self.notes = []
 		self.heading_level = 1
 		self.document = Document()
@@ -358,8 +369,8 @@ class Renderer(tree.Serializer):
 # We have an XML tree instead of a Document object as input because 1) we will
 # need to process an XML tree for highlighting; and 2) because it is more
 # convenient to use xpath.
-def process(doc: tree.Tree, toc_depth=-1):
-	render = Renderer(doc, toc_depth=toc_depth)
+def process(doc: tree.Tree, toc_depth=-1, query=None):
+	render = Renderer(doc, toc_depth=toc_depth, query=query)
 	ret = render()
 	return ret
 

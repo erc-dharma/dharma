@@ -5,20 +5,6 @@ Purpose:
 This program runs a standalone HTTP server designed to perform high-performance searches
 over a text corpus stored in a read-only SQLite database. It supports linguistic sorting,
 pagination, field filtering, and keyword highlighting.
-
-API Endpoint:
-  GET /search
-
-Query Parameters:
-  - q (string): The search query term.
-  - offset (int): The starting index for pagination (default: 0).
-  - limit (int): The maximum number of results to return (default: 20).
-  - sort (string): The sorting criteria.
-      Values: "title" (default, uses linguistic collation) or "ident" (sort by ID).
-  - fields (string): A comma-separated list of fields to include in the JSON response.
-      Example: "ident,title,summary". If omitted, all fields are returned.
-      Optimization: If "source" is not requested, the server avoids fetching the large XML content.
-  - pretty (bool): If set to "true", "1", or "yes", the JSON response is indented for readability.
 */
 
 package main
@@ -79,12 +65,11 @@ type SearchResult struct {
 }
 
 type SearchResponse struct {
-	Count  int    `json:"count"`
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
-	Sort   string `json:"sort"`
-	Query  string `json:"query"`
-	// Matches is interface{} to accept []SearchResult OR []map[string]interface{}
+	Count   int         `json:"count"`
+	Offset  int         `json:"offset"`
+	Limit   int         `json:"limit"`
+	Sort    string      `json:"sort"`
+	Query   string      `json:"query"`
 	Matches interface{} `json:"matches"`
 }
 
@@ -97,14 +82,13 @@ var (
 )
 
 func init() {
-	// Initialize collator with "en-u-ka-shifted" (English, ignore punctuation).
+	// Initialize collator with English configuration ignoring punctuation
 	titleCollator = collate.New(language.Make("en-u-ka-shifted"))
 }
 
 func main() {
-	// Log startup (also displays upon graceful restart)
+	// Log startup and initialize database connection
 	log.Printf("DHARMA Search Server starting (PID: %d)...", os.Getpid())
-
 	dbPath, err := getDBPath()
 	if err != nil {
 		log.Fatalf("Path error: %v", err)
@@ -116,6 +100,7 @@ func main() {
 }
 
 func getDBPath() (string, error) {
+	// Resolve the absolute path to the SQLite database
 	ex, err := os.Executable()
 	if err != nil {
 		return "", err
@@ -124,6 +109,7 @@ func getDBPath() (string, error) {
 }
 
 func initDB(path string) error {
+	// Open a read-only connection to the SQLite database
 	var err error
 	db, err = sql.Open("sqlite3", path+"?mode=ro")
 	if err != nil {
@@ -133,6 +119,7 @@ func initDB(path string) error {
 }
 
 func startServer() {
+	// Register routes and start the HTTP server
 	server := &http.Server{Addr: ":8026"}
 	go func() {
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
@@ -141,10 +128,12 @@ func startServer() {
 	}()
 	log.Printf("Listening on :8026 (PID: %d)...", os.Getpid())
 	http.HandleFunc("/search", handleSearch)
+	http.HandleFunc("/match", handleMatch)
 	manageLifecycle(server)
 }
 
 func manageLifecycle(server *http.Server) {
+	// Listen for SIGUSR2 to perform graceful restarts
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGUSR2)
 	<-ch
@@ -159,6 +148,7 @@ func manageLifecycle(server *http.Server) {
 }
 
 func restartSelf() {
+	// Execute the new binary replacing the current process
 	bin, err := os.Executable()
 	if err != nil {
 		log.Fatalf("Executable path error: %v", err)
@@ -169,59 +159,103 @@ func restartSelf() {
 }
 
 func handleSearch(w http.ResponseWriter, r *http.Request) {
+	// Process incoming search requests and apply filters
 	setupHeaders(w)
-	// Retrieve parameters including the 'pretty' boolean flag
 	q, off, lim, sortBy, fields, pretty := parseRequest(r)
-
-	// We no longer block empty queries. We process them.
-	// Filter logic handles the "match all" behavior for empty q.
 	processRequest(w, q, off, lim, sortBy, fields, pretty)
 }
 
+func handleMatch(w http.ResponseWriter, r *http.Request) {
+	// Process targeted match requests for a specific document
+	setupHeaders(w)
+	ident := strings.TrimSpace(r.URL.Query().Get("ident"))
+	if ident == "" {
+		http.Error(w, "Missing 'ident' parameter", http.StatusBadRequest)
+		return
+	}
+	q, _, _, _, fields, pretty := parseRequest(r)
+	processMatch(w, ident, q, fields, pretty)
+}
+
+func processMatch(w http.ResponseWriter, ident, q string, fields []string, pretty bool) {
+	// Isolate and process a single document from the corpus
+	tx, err := db.Begin()
+	if err != nil {
+		http.Error(w, "DB error", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+	if err := syncCorpus(tx); err != nil {
+		http.Error(w, "Sync error", http.StatusInternalServerError)
+		return
+	}
+	targetDoc := findDocument(ident)
+	if targetDoc == nil {
+		http.Error(w, "Document not found", http.StatusNotFound)
+		return
+	}
+	res := matchDocument(*targetDoc, q)
+	results := []SearchResult{res}
+	enrichMatches(tx, results, []Document{*targetDoc}, fields)
+	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty)
+}
+
+func findDocument(ident string) *Document {
+	// Search the in-memory corpus for a specific identifier
+	mu.RLock()
+	defer mu.RUnlock()
+	for _, doc := range corpus {
+		if doc.Ident == ident {
+			return &doc
+		}
+	}
+	return nil
+}
+
 func setupHeaders(w http.ResponseWriter) {
+	// Configure standard CORS and content type headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 }
 
-// Returns an additional boolean for pretty printing
 func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
+	// Extract and validate all query parameters from the request
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-
-	// MODIFICATION: Default limit to 20 if not specified (or if 0)
 	lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if lim <= 0 {
 		lim = 20
 	}
-
 	sortBy := r.URL.Query().Get("sort")
 	if sortBy == "" {
 		sortBy = "title"
 	}
+	fields := parseFields(r.URL.Query().Get("fields"))
+	pretty := parsePretty(r.URL.Query().Get("pretty"))
+	return q, off, lim, sortBy, fields, pretty
+}
 
+func parseFields(fParam string) []string {
+	// Split and trim the requested fields parameter
 	var fields []string
-	fParam := r.URL.Query().Get("fields")
 	if fParam != "" {
-		parts := strings.Split(fParam, ",")
-		for _, p := range parts {
-			trim := strings.TrimSpace(p)
-			if trim != "" {
+		for _, p := range strings.Split(fParam, ",") {
+			if trim := strings.TrimSpace(p); trim != "" {
 				fields = append(fields, trim)
 			}
 		}
 	}
+	return fields
+}
 
-	// Parse the 'pretty' parameter
-	pretty := false
-	pParam := strings.ToLower(r.URL.Query().Get("pretty"))
-	if pParam == "true" || pParam == "1" || pParam == "yes" {
-		pretty = true
-	}
-
-	return q, off, lim, sortBy, fields, pretty
+func parsePretty(pParam string) bool {
+	// Determine if pretty printing is enabled
+	p := strings.ToLower(pParam)
+	return p == "true" || p == "1" || p == "yes"
 }
 
 func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string, pretty bool) {
+	// Manage the database transaction and trigger the search
 	tx, err := db.Begin()
 	if err != nil {
 		http.Error(w, "DB error", 500)
@@ -229,28 +263,25 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 	}
 	defer tx.Rollback()
 	if err := syncCorpus(tx); err != nil {
-		log.Printf("Sync error: %v", err)
 		http.Error(w, "Sync error", 500)
 		return
 	}
-	// Pass 'pretty' flag
 	performSearch(w, tx, q, off, lim, sortBy, fields, pretty)
 }
 
 func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool) {
+	// Execute the search pipeline over the entire corpus
 	allDocs := filterDocs(q)
 	sortDocs(allDocs, sortBy)
 	total := len(allDocs)
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, q)
-	// Pass 'fields' to determine if we need to fetch the 'source' field from DB.
-	// Pass 'pageDocs' (clean documents) to allow retrieving source by clean Ident.
 	enrichMatches(tx, results, pageDocs, fields)
-	// Pass 'pretty' flag
 	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty)
 }
 
 func sortDocs(docs []Document, sortBy string) {
+	// Apply the requested sorting algorithm to the document list
 	if sortBy == "ident" {
 		return
 	}
@@ -259,11 +290,8 @@ func sortDocs(docs []Document, sortBy string) {
 	})
 }
 
-// This is a replacement for titleCollator.CompareString(), because this
-// function is broken. See https://github.com/golang/go/issues/68166. The fix
-// just follows
-// https://go-review.googlesource.com/c/text/+/638717/5/collate/collate.go.
 func myCompareString(c *collate.Collator, a, b string) int {
+	// Compare two strings using the collator avoiding known bugs
 	var buf collate.Buffer
 	kA := c.KeyFromString(&buf, a)
 	kB := c.KeyFromString(&buf, b)
@@ -273,6 +301,7 @@ func myCompareString(c *collate.Collator, a, b string) int {
 }
 
 func compareDocs(d1, d2 Document, sortBy string) bool {
+	// Compare two documents based on the specified sort criteria
 	if sortBy == "title" {
 		hasT1 := len(d1.Title) > 0
 		hasT2 := len(d2.Title) > 0
@@ -288,6 +317,7 @@ func compareDocs(d1, d2 Document, sortBy string) bool {
 }
 
 func paginateDocs(docs []Document, off, lim int) []Document {
+	// Extract the requested page of results from the full list
 	if off < 0 {
 		off = 0
 	}
@@ -305,6 +335,7 @@ func paginateDocs(docs []Document, off, lim int) []Document {
 }
 
 func buildResults(docs []Document, q string) []SearchResult {
+	// Generate search results with highlighted matches
 	results := make([]SearchResult, 0, len(docs))
 	for _, doc := range docs {
 		results = append(results, matchDocument(doc, q))
@@ -313,6 +344,7 @@ func buildResults(docs []Document, q string) []SearchResult {
 }
 
 func syncCorpus(tx *sql.Tx) error {
+	// Synchronize the in-memory corpus with the database state
 	var ver int
 	if err := tx.QueryRow("pragma data_version").Scan(&ver); err != nil {
 		return err
@@ -327,12 +359,12 @@ func syncCorpus(tx *sql.Tx) error {
 }
 
 func reloadCorpus(tx *sql.Tx, ver int) error {
+	// Fetch and swap the corpus data under a write lock
 	mu.Lock()
 	defer mu.Unlock()
 	if ver == lastDataVersion {
 		return nil
 	}
-	log.Printf("Reloading corpus (v%d -> v%d)...", lastDataVersion, ver)
 	docs, err := fetchDocuments(tx)
 	if err != nil {
 		return err
@@ -343,6 +375,7 @@ func reloadCorpus(tx *sql.Tx, ver int) error {
 }
 
 func fetchDocuments(tx *sql.Tx) ([]Document, error) {
+	// Retrieve all search documents from the database
 	count, err := getCount(tx)
 	if err != nil {
 		return nil, err
@@ -359,12 +392,14 @@ func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 }
 
 func getCount(tx *sql.Tx) (int, error) {
+	// Count the total number of documents in the search table
 	var count int
 	err := tx.QueryRow("select count(*) from documents_search").Scan(&count)
 	return count, err
 }
 
 func scanRows(rows *sql.Rows, count int) ([]Document, error) {
+	// Parse all rows from the database result set
 	docs := make([]Document, 0, count)
 	for rows.Next() {
 		doc, err := scanOne(rows)
@@ -377,6 +412,7 @@ func scanRows(rows *sql.Rows, count int) ([]Document, error) {
 }
 
 func scanOne(rows *sql.Rows) (Document, error) {
+	// Scan a single row into a Document struct
 	var ident, logStr, titleJson, sum, rid, rname, hand, authJson, edJson, langJson, scrJson string
 	err := rows.Scan(
 		&ident, &logStr, &titleJson, &sum, &rid, &rname, &hand,
@@ -386,15 +422,15 @@ func scanOne(rows *sql.Rows) (Document, error) {
 		return Document{}, err
 	}
 	return Document{
-		Ident: ident, Logical: logStr,
-		Title: parseList(titleJson), Summary: sum,
-		RepoID: rid, RepoName: rname, Hand: hand,
+		Ident: ident, Logical: logStr, Title: parseList(titleJson),
+		Summary: sum, RepoID: rid, RepoName: rname, Hand: hand,
 		Author: parseList(authJson), Editor: parseList(edJson),
 		Lang: parseMatrix(langJson), Script: parseMatrix(scrJson),
 	}, nil
 }
 
 func parseList(jsonStr string) []string {
+	// Deserialize a JSON array into a string slice
 	var list []string
 	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
 		return []string{}
@@ -403,6 +439,7 @@ func parseList(jsonStr string) []string {
 }
 
 func parseMatrix(jsonStr string) [][]string {
+	// Deserialize a JSON array of arrays into a matrix
 	var mat [][]string
 	if err := json.Unmarshal([]byte(jsonStr), &mat); err != nil {
 		return [][]string{}
@@ -411,19 +448,15 @@ func parseMatrix(jsonStr string) [][]string {
 }
 
 func filterDocs(q string) []Document {
+	// Filter the corpus returning documents matching the query
 	mu.RLock()
 	snap := corpus
 	mu.RUnlock()
-
-	// MODIFICATION: Optimisation pour la requête vide.
-	// Si q est vide, on retourne tout le corpus.
-	// paginateDocs se chargera de découper selon offset/limit.
 	if q == "" {
 		docs := make([]Document, len(snap))
 		copy(docs, snap)
 		return docs
 	}
-
 	var docs []Document
 	for _, doc := range snap {
 		if docMatches(doc, q) {
@@ -434,6 +467,7 @@ func filterDocs(q string) []Document {
 }
 
 func docMatches(d Document, q string) bool {
+	// Verify if any document field contains the query term
 	if strings.Contains(d.Ident, q) || strings.Contains(d.Logical, q) {
 		return true
 	}
@@ -453,6 +487,7 @@ func docMatches(d Document, q string) bool {
 }
 
 func listMatches(list []string, q string) bool {
+	// Verify if any item in the list contains the query term
 	for _, item := range list {
 		if strings.Contains(item, q) {
 			return true
@@ -462,6 +497,7 @@ func listMatches(list []string, q string) bool {
 }
 
 func matrixMatches(mat [][]string, q string) bool {
+	// Verify if any cell in the matrix contains the query term
 	for _, row := range mat {
 		for _, item := range row {
 			if strings.Contains(item, q) {
@@ -472,82 +508,43 @@ func matrixMatches(mat [][]string, q string) bool {
 	return false
 }
 
-// enrichMatches retrieves the 'source' (XML) field from the database.
-// Optimization: If 'fields' is defined and does not contain "source", skip this step.
-// We pass docs []Document to access the clean Ident, as matches[] may contain highlights.
 func enrichMatches(tx *sql.Tx, matches []SearchResult, docs []Document, fields []string) {
-	// Check if "source" is required
-	fetchSource := true
-	if len(fields) > 0 {
-		fetchSource = false
-		for _, f := range fields {
-			if f == "source" {
-				fetchSource = true
-				break
-			}
-		}
-	}
-
-	if !fetchSource {
+	// Fetch and append the full XML source from the database
+	if !shouldFetchSource(fields) {
 		return
 	}
-
 	stmt, err := tx.Prepare("select source from documents_search where ident = ?")
 	if err != nil {
-		log.Printf("DB prepare error: %v", err)
 		return
 	}
 	defer stmt.Close()
 	for i := range matches {
 		var src string
-		// Use docs[i].Ident (clean) instead of matches[i].Ident (potentially highlighted)
 		if err := stmt.QueryRow(docs[i].Ident).Scan(&src); err == nil {
 			matches[i].Source = src
 		}
 	}
 }
 
-// Updated signature and logic (pretty print)
-func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool) {
-	var finalMatches interface{} = matches
-
-	// If specific fields are requested, transform to a map to return only those
-	if len(fields) > 0 {
-		filtered := make([]map[string]interface{}, len(matches))
-		for i, m := range matches {
-			filtered[i] = make(map[string]interface{})
-			for _, f := range fields {
-				switch f {
-				case "ident":
-					filtered[i]["ident"] = m.Ident
-				case "logical":
-					filtered[i]["logical"] = m.Logical
-				case "title":
-					filtered[i]["title"] = m.Title
-				case "summary":
-					filtered[i]["summary"] = m.Summary
-				case "repo_id":
-					filtered[i]["repo_id"] = m.RepoID
-				case "repo_name":
-					filtered[i]["repo_name"] = m.RepoName
-				case "hand":
-					filtered[i]["hand"] = m.Hand
-				case "author":
-					filtered[i]["author"] = m.Author
-				case "editor":
-					filtered[i]["editor"] = m.Editor
-				case "lang":
-					filtered[i]["lang"] = m.Lang
-				case "script":
-					filtered[i]["script"] = m.Script
-				case "source":
-					filtered[i]["source"] = m.Source
-				}
-			}
-		}
-		finalMatches = filtered
+func shouldFetchSource(fields []string) bool {
+	// Determine if the source field is requested by the client
+	if len(fields) == 0 {
+		return true
 	}
+	for _, f := range fields {
+		if f == "source" {
+			return true
+		}
+	}
+	return false
+}
 
+func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool) {
+	// Encode and transmit the final JSON response to the client
+	var finalMatches interface{} = matches
+	if len(fields) > 0 {
+		finalMatches = filterFields(matches, fields)
+	}
 	resp := SearchResponse{
 		Count:   count,
 		Offset:  off,
@@ -559,15 +556,55 @@ func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fie
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	if pretty {
-		// Enable indentation if requested
 		enc.SetIndent("", "  ")
 	}
-	if err := enc.Encode(resp); err != nil {
-		log.Printf("Encoding error: %v", err)
+	enc.Encode(resp)
+}
+
+func filterFields(matches []SearchResult, fields []string) []map[string]interface{} {
+	// Restrict the output maps to the requested field names
+	filtered := make([]map[string]interface{}, len(matches))
+	for i, m := range matches {
+		filtered[i] = make(map[string]interface{})
+		for _, f := range fields {
+			assignField(filtered[i], m, f)
+		}
+	}
+	return filtered
+}
+
+func assignField(mMap map[string]interface{}, m SearchResult, f string) {
+	// Copy a single field from the result struct to the map
+	switch f {
+	case "ident":
+		mMap["ident"] = m.Ident
+	case "logical":
+		mMap["logical"] = m.Logical
+	case "title":
+		mMap["title"] = m.Title
+	case "summary":
+		mMap["summary"] = m.Summary
+	case "repo_id":
+		mMap["repo_id"] = m.RepoID
+	case "repo_name":
+		mMap["repo_name"] = m.RepoName
+	case "hand":
+		mMap["hand"] = m.Hand
+	case "author":
+		mMap["author"] = m.Author
+	case "editor":
+		mMap["editor"] = m.Editor
+	case "lang":
+		mMap["lang"] = m.Lang
+	case "script":
+		mMap["script"] = m.Script
+	case "source":
+		mMap["source"] = m.Source
 	}
 }
 
 func matchDocument(doc Document, q string) SearchResult {
+	// Duplicate the document and apply highlights if necessary
 	res := SearchResult{
 		Ident: doc.Ident, Logical: doc.Logical,
 		Title: cloneList(doc.Title), Summary: doc.Summary,
@@ -575,12 +612,15 @@ func matchDocument(doc Document, q string) SearchResult {
 		Author: cloneList(doc.Author), Editor: cloneList(doc.Editor),
 		Lang: cloneMatrix(doc.Lang), Script: cloneMatrix(doc.Script),
 	}
-
-	// MODIFICATION: Si q est vide, on retourne l'objet tel quel sans surlignage.
 	if q == "" {
 		return res
 	}
+	applyHighlights(&res, doc, q)
+	return res
+}
 
+func applyHighlights(res *SearchResult, doc Document, q string) {
+	// Inject highlight markers across all relevant fields
 	processField(&res.Logical, doc.Logical, q)
 	processField(&res.Ident, doc.Ident, q)
 	processField(&res.Summary, doc.Summary, q)
@@ -592,16 +632,17 @@ func matchDocument(doc Document, q string) SearchResult {
 	processStringList(res.Editor, doc.Editor, q)
 	processStringMatrix(res.Lang, doc.Lang, q)
 	processStringMatrix(res.Script, doc.Script, q)
-	return res
 }
 
 func cloneList(src []string) []string {
+	// Create a deep copy of a string slice
 	dst := make([]string, len(src))
 	copy(dst, src)
 	return dst
 }
 
 func cloneMatrix(src [][]string) [][]string {
+	// Create a deep copy of a string matrix
 	dst := make([][]string, len(src))
 	for i, row := range src {
 		dst[i] = make([]string, len(row))
@@ -611,6 +652,7 @@ func cloneMatrix(src [][]string) [][]string {
 }
 
 func processField(target *string, source, q string) bool {
+	// Detect occurrences and update the target string with markers
 	intervals := findOccurrences(source, q)
 	if len(intervals) > 0 {
 		*target = injectMarkers(source, intervals)
@@ -620,6 +662,7 @@ func processField(target *string, source, q string) bool {
 }
 
 func processStringList(targets []string, sources []string, q string) bool {
+	// Apply highlight processing to a list of strings
 	matched := false
 	for i, item := range sources {
 		if processField(&targets[i], item, q) {
@@ -630,6 +673,7 @@ func processStringList(targets []string, sources []string, q string) bool {
 }
 
 func processStringMatrix(targets [][]string, sources [][]string, q string) bool {
+	// Apply highlight processing to a matrix of strings
 	matched := false
 	for i, row := range sources {
 		for j, item := range row {
@@ -642,6 +686,7 @@ func processStringMatrix(targets [][]string, sources [][]string, q string) bool 
 }
 
 func findOccurrences(text, term string) [][2]int {
+	// Identify all start and end indices of the query term
 	var matches [][2]int
 	start := 0
 	termLen := len(term)
@@ -663,13 +708,13 @@ type Point struct {
 }
 
 func injectMarkers(text string, intervals [][2]int) string {
+	// Insert boundary markers around all identified occurrences
 	if len(intervals) == 0 {
 		return text
 	}
 	points := buildPoints(intervals)
 	var sb strings.Builder
-	cursor := 0
-	depth := 0
+	cursor, depth := 0, 0
 	for _, p := range points {
 		if p.idx > cursor {
 			sb.WriteString(text[cursor:p.idx])
@@ -684,6 +729,7 @@ func injectMarkers(text string, intervals [][2]int) string {
 }
 
 func buildPoints(intervals [][2]int) []Point {
+	// Transform intervals into a sorted list of boundary points
 	var points []Point
 	for _, interval := range intervals {
 		points = append(points, Point{interval[0], 1})
@@ -694,6 +740,7 @@ func buildPoints(intervals [][2]int) []Point {
 }
 
 func sortPoints(points []Point) {
+	// Sort boundary points sequentially ensuring logical nesting
 	sort.Slice(points, func(i, j int) bool {
 		if points[i].idx != points[j].idx {
 			return points[i].idx < points[j].idx
@@ -703,6 +750,7 @@ func sortPoints(points []Point) {
 }
 
 func processPoint(p Point, depth int, sb *strings.Builder) int {
+	// Compute nesting depth and emit structural markers
 	if p.kind == 1 {
 		if depth == 0 {
 			sb.WriteString(MarkerStart)

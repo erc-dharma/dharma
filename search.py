@@ -2,7 +2,7 @@ import sys
 import unicodedata
 import requests
 from dharma import common, ingest, tree, enrich
-import icu # pip install PyICU
+import icu
 
 # Unicode Private Use Area characters for search markers
 MARKER_START = "\uE000"
@@ -14,20 +14,16 @@ BLOCK_TAGS = {"para", "verse", "quote", "dlist", "elist"}
 VALID_PARENTS = {"div", "logical", "hand"}
 
 def translate_char(c):
+	# Translate specific characters for search normalization
 	match c:
-		case "'":
-			return "’"
-		case "œ":
-			return "oe"
-		case "æ":
-			return "ae"
-		case "đ":
-			return "d"
-		case _:
-			return c
+		case "'": return "’"
+		case "œ": return "oe"
+		case "æ": return "ae"
+		case "đ": return "d"
+		case _: return c
 
 def translate_string(s):
-	# Normalize strings to NFC to ensure index alignment with Go.
+	# Normalize strings to NFC to ensure index alignment with Go
 	tmp = []
 	for c in s.data:
 		c = translate_char(c)
@@ -37,46 +33,46 @@ def translate_string(s):
 class InternalWalker:
 
 	def __init__(self, handler):
+		# Initialize the walker with a target handler
 		self.handler = handler
 
 	def walk(self, root):
+		# Initiate tree traversal
 		self._walk_node(root)
 
 	def _walk_node(self, node):
+		# Process an individual node based on its type
 		match node:
-			case tree.String():
-				self.handler.on_text(node)
-			case tree.Tag():
-				self._walk_tag(node)
+			case tree.String(): self.handler.on_text(node)
+			case tree.Tag(): self._walk_tag(node)
 
 	def _walk_tag(self, root):
+		# Delegate tag processing based on structural function
 		children = list(root)
 		if root.name in ["logical", "title", "span", "search", "link", "identifier", "omission"]:
 			for node in children: self._walk_node(node)
-		elif root.name == "para":
-			self._handle_para(children)
-		elif root.name == "split":
-			self._handle_split(root)
-		elif root.name == "verse":
-			self._handle_verse(root)
-		elif root.name == "div":
-			self._handle_div(root, children)
-		elif root.name in ["elist", "dlist", "quote"]:
-			self._handle_complex_blocks(root, children)
+		elif root.name == "para": self._handle_para(children)
+		elif root.name == "split": self._handle_split(root)
+		elif root.name == "verse": self._handle_verse(root)
+		elif root.name == "div": self._handle_div(root, children)
+		elif root.name in ["elist", "dlist", "quote"]: self._handle_complex_blocks(root, children)
 		elif root.name in ["npage", "nline", "ncell", "display", "note"]:
 			self.handler.on_skipped_node(root)
 		else:
 			for node in children: self._walk_node(node)
 
 	def _handle_para(self, children):
+		# Handle paragraph nodes appending virtual space
 		for node in children: self._walk_node(node)
 		self.handler.on_virtual("\n")
 
 	def _handle_split(self, root):
+		# Handle split nodes extracting searchable representation
 		search_node = root.first("search")
 		if search_node: self._walk_node(search_node)
 
 	def _handle_div(self, root, children):
+		# Skip phantom divisions or process standard divisions
 		if common.to_boolean(root["phantom"]):
 			self.handler.on_skipped_node(root)
 			return
@@ -87,10 +83,9 @@ class InternalWalker:
 		self.handler.on_virtual("\n")
 
 	def _handle_complex_blocks(self, root, children):
-		if root.name == "elist":
-			self._handle_elist(root)
-		elif root.name == "dlist":
-			self._handle_dlist(root)
+		# Delegate processing for lists and quotes
+		if root.name == "elist": self._handle_elist(root)
+		elif root.name == "dlist": self._handle_dlist(root)
 		elif root.name == "quote":
 			source = root.first("stuck-child::source")
 			self.handler.on_virtual("\t")
@@ -99,6 +94,7 @@ class InternalWalker:
 				self._walk_node(node)
 
 	def _handle_verse(self, root):
+		# Iterate through verse lines and append virtual space if broken
 		first = True
 		for line in root.find("verse-line"):
 			if first: first = False
@@ -106,6 +102,7 @@ class InternalWalker:
 			for child in list(line): self._walk_node(child)
 
 	def _handle_elist(self, root):
+		# Process enumerated lists with generated labels
 		labels = generate_list_labels(root)
 		for label, item in zip(labels, root.find("item")):
 			for c in label: self.handler.on_virtual(c)
@@ -113,6 +110,7 @@ class InternalWalker:
 			for thing in list(item): self._walk_node(thing)
 
 	def _handle_dlist(self, root):
+		# Process definition lists generating virtual arrows
 		keys = root.find("key")
 		values = root.find("value")
 		for key, value in zip(keys, values):
@@ -122,6 +120,7 @@ class InternalWalker:
 			self.handler.on_virtual("\n")
 
 def generate_list_labels(node):
+	# Yield progressive labels based on list type
 	match node["type"]:
 		case "plain":
 			while True: yield "◦"
@@ -136,14 +135,24 @@ def generate_list_labels(node):
 
 class TextExtractor:
 
-	def __init__(self): self.buf = []
-	def on_text(self, node): self.buf.append(translate_string(node))
-	def on_virtual(self, char): self.buf.append(char)
-	def on_skipped_node(self, node): pass
+	def __init__(self):
+		# Initialize extraction buffer
+		self.buf = []
+	def on_text(self, node):
+		# Append translated string to buffer
+		self.buf.append(translate_string(node))
+	def on_virtual(self, char):
+		# Append virtual structural character to buffer
+		self.buf.append(char)
+	def on_skipped_node(self, node):
+		# Ignore explicitly skipped nodes
+		pass
 	def get_result(self):
+		# Concatenate and return final extracted text
 		return "".join(str(s) for s in self.buf).rstrip()
 
 def extract_text(root: tree.Node):
+	# Extract plain text representation from a DOM tree
 	handler = TextExtractor()
 	walker = InternalWalker(handler)
 	walker.walk(root)
@@ -151,59 +160,57 @@ def extract_text(root: tree.Node):
 
 class Highlighter:
 
-	def __init__(self, marked_stream):
+	def __init__(self, marked_stream, counter):
+		# Initialize the highlighter with a shared counter for unique IDs
 		self.hit_ranges = self._extract_ranges(marked_stream)
 		self.cursor = 0
+		self.counter = counter
 
 	def highlight(self, root: tree.Node):
-		# If there are no hits, there is no need to traverse the tree
+		# Traverse the DOM to apply match elements
 		if not self.hit_ranges: return
 		walker = InternalWalker(self)
 		walker.walk(root)
 
 	def on_text(self, node):
+		# Evaluate and split text nodes intersecting with search hits
 		text = translate_string(node)
 		length = len(text)
 		mask = self._compute_mask(length)
 		self.cursor += length
-		# Only modify the tree if there is an intersection with a hit
-		if any(mask):
-			self._apply_mask(node, text, mask)
+		if any(mask): self._apply_mask(node, text, mask)
 
 	def on_virtual(self, char):
-		# Virtual characters (like newlines) advance the cursor
+		# Advance the virtual cursor for structural spacing
 		self.cursor += len(char)
 
 	def on_skipped_node(self, node):
-		# Explicitly exclude specific tags from highlighting
-		if node.name in {"npage", "nline", "ncell", "display"}:
-			return
-		# If a skipped node falls strictly inside a match, highlight it entirely
-		if self._is_inside_match():
-			self._highlight_leaves(node)
+		# Apply highlight to entire leaves if enclosed within a match boundary
+		if node.name in {"npage", "nline", "ncell", "display"}: return
+		if self._is_inside_match(): self._highlight_leaves(node)
 
 	def _extract_ranges(self, stream):
+		# Parse internal markers to compute intersection ranges
 		ranges, stack, idx = [], [], 0
 		for char in stream:
-			if char == MARKER_START:
-				stack.append(idx)
+			if char == MARKER_START: stack.append(idx)
 			elif char == MARKER_END:
 				if stack: ranges.append((stack.pop(), idx))
-			else:
-				idx += 1
+			else: idx += 1
 		return sorted(ranges)
 
 	def _compute_mask(self, length):
+		# Create a boolean mask indicating characters to highlight
 		mask = [False] * length
 		start, end = self.cursor, self.cursor + length
 		for h_start, h_end in self.hit_ranges:
-			# Calculate intersection between current node and hit range
 			i_start, i_end = max(start, h_start), min(end, h_end)
 			if i_start < i_end:
 				mask[i_start - start : i_end - start] = [True] * (i_end - i_start)
 		return mask
 
 	def _apply_mask(self, node, text, mask):
+		# Segment text nodes and wrap highlighted portions
 		nodes, buf = [], []
 		highlighting = mask[0]
 		for i, char in enumerate(text):
@@ -215,29 +222,34 @@ class Highlighter:
 		node.replace_with(*nodes)
 
 	def _flush(self, nodes, buf, highlighting):
+		# Consume the character buffer and generate an identified match node
 		if not buf: return
 		content = "".join(buf)
 		buf.clear()
 		if highlighting:
+			self.counter[0] += 1
 			match_node = tree.Tag("match")
+			match_node["id"] = f"match-{self.counter[0]}"
 			match_node.append(tree.String(content))
 			nodes.append(match_node)
-		else:
-			nodes.append(tree.String(content))
+		else: nodes.append(tree.String(content))
 
 	def _is_inside_match(self):
+		# Check if the current cursor position falls strictly within a hit
 		for start, end in self.hit_ranges:
 			if start <= self.cursor < end: return True
 		return False
 
 	def _highlight_leaves(self, node):
+		# Recursively tag terminal nodes while generating unique identifiers
 		if isinstance(node, tree.String):
+			self.counter[0] += 1
 			match_node = tree.Tag("match")
+			match_node["id"] = f"match-{self.counter[0]}"
 			node.replace_with(match_node)
 			match_node.append(node)
 		elif isinstance(node, tree.Tag) and node.name != "search":
-			for child in list(node):
-				self._highlight_leaves(child)
+			for child in list(node): self._highlight_leaves(child)
 
 class SnippetGenerator:
 
@@ -251,11 +263,9 @@ class SnippetGenerator:
 		# Tag ancestors and prune isolated blocks around matches
 		roots = self._get_roots()
 		if not roots: return
-		for root in roots:
-			self._mark_match_ancestors(root)
+		for root in roots: self._mark_match_ancestors(root)
 		blocks = []
-		for root in roots:
-			self._collect_blocks_from_root(root, blocks)
+		for root in roots: self._collect_blocks_from_root(root, blocks)
 		for block in blocks:
 			pruner = BlockPruner(block, self.context_chars)
 			pruner.prune()
@@ -263,12 +273,10 @@ class SnippetGenerator:
 	def _mark_match_ancestors(self, node):
 		# Recursively assign match attribute to all ancestors of a hit
 		has_match = False
-		if getattr(node, "name", None) == "match":
-			has_match = True
+		if getattr(node, "name", None) == "match": has_match = True
 		if isinstance(node, tree.Tag):
 			for child in list(node):
-				if self._mark_match_ancestors(child):
-					has_match = True
+				if self._mark_match_ancestors(child): has_match = True
 			if has_match and node.name != "match":
 				try: node["match"] = "true"
 				except Exception: pass
@@ -295,10 +303,8 @@ class SnippetGenerator:
 	def _collect_matches(self, n, matches_list):
 		# Traverse the tree to compile a list of all match nodes
 		if isinstance(n, tree.Tag):
-			if n.name == "match":
-				matches_list.append(n)
-			for child in list(n):
-				self._collect_matches(child, matches_list)
+			if n.name == "match": matches_list.append(n)
+			for child in list(n): self._collect_matches(child, matches_list)
 
 	def _find_eligible_block(self, node):
 		# Ascend the DOM to find the nearest valid block container
@@ -306,8 +312,7 @@ class SnippetGenerator:
 		while curr:
 			if curr.name in BLOCK_TAGS:
 				parent = curr.parent
-				if parent and parent.name in VALID_PARENTS:
-					return curr
+				if parent and parent.name in VALID_PARENTS: return curr
 			curr = curr.parent
 		return None
 
@@ -500,10 +505,8 @@ class BlockPruner:
 			if ev[0] == "char":
 				self._handle_char(ev[1], self.char_keep[self.char_cursor])
 				self.char_cursor += 1
-			elif ev[0] == "open":
-				self._handle_open(ev[1])
-			elif ev[0] == "close":
-				self._handle_close()
+			elif ev[0] == "open": self._handle_open(ev[1])
+			elif ev[0] == "close": self._handle_close()
 		self._flush_buffer()
 
 	def _handle_char(self, char, keep):
@@ -569,25 +572,30 @@ class BlockPruner:
 		return clone
 
 def extract_one_text(xpath):
+	# Extract a single text representation using xpath
 	def extractor(doc):
 		nodes = doc.find(xpath)
 		return extract_text(nodes[0]) if nodes else ""
 	return extractor
 
 def extract_list_text(xpath):
+	# Extract a list of text representations using xpath
 	def extractor(doc):
 		return [extract_text(n) for n in doc.find(xpath)]
 	return extractor
 
 def get_repo_id(doc):
+	# Retrieve the repository identifier
 	nodes = doc.find("/document/repository/identifier")
 	return extract_text(nodes[0]) if nodes else ""
 
 def get_repo_name(doc):
+	# Retrieve the repository name
 	nodes = doc.find("/document/repository/name")
 	return extract_text(nodes[0]) if nodes else ""
 
 def get_flat_people(xpath):
+	# Extract a flat list of people identifiers and names
 	def extractor(doc):
 		res = []
 		for node in doc.find(xpath):
@@ -599,6 +607,7 @@ def get_flat_people(xpath):
 	return extractor
 
 def get_flat_matrix(parent_xpath, child_tag):
+	# Extract a flat matrix linking languages and scripts
 	def extractor(doc):
 		matrix = []
 		for parent in doc.find(parent_xpath):
@@ -677,6 +686,7 @@ SEARCH_CONFIG = {
 }
 
 def query_search_service(query, offset=0, limit=20, sort="title"):
+	# Query the backend search service and process occurrences
 	norm_query = unicodedata.normalize('NFC', query)
 	params = {"q": norm_query, "offset": offset, "limit": limit, "sort": sort}
 	resp = requests.get(GO_SERVER_URL, params=params)
@@ -690,7 +700,27 @@ def query_search_service(query, offset=0, limit=20, sort="title"):
 		"sort": data.get("sort", sort)
 	}
 
+def query_match_document(ident, query="") -> tree.Tree | None:
+	# Retrieve and highlight a full document without applying snippet pruning
+	norm_query = unicodedata.normalize('NFC', query) if query else ""
+	params = {"ident": ident, "q": norm_query}
+	url = GO_SERVER_URL.replace("/search", "/match")
+	resp = requests.get(url, params=params)
+	resp.raise_for_status()
+	data = resp.json()
+	matches = data.get("matches", [])
+	assert len(matches) <= 1
+	if not matches:
+		return None
+	item = matches[0]
+	xml_str = item["source"]
+	doc = tree.parse_string(xml_str)
+	if norm_query:
+		highlight_document(doc, item)
+	return doc
+
 def process_matches(raw_matches):
+	# Transform raw matches into highlighted document trees
 	results = []
 	for item in raw_matches:
 		processed = process_single_match(item)
@@ -698,6 +728,7 @@ def process_matches(raw_matches):
 	return results
 
 def process_single_match(item):
+	# Parse XML source and apply structural pruning
 	xml_str = item.get("source", "")
 	if not xml_str: return None
 	try:
@@ -710,72 +741,80 @@ def process_single_match(item):
 		return None
 
 def highlight_document(doc, item_data):
+	# Traverse configured fields and apply coordinated highlighting
+	counter = [0]
 	for field, config in SEARCH_CONFIG.items():
 		xpath = config.get("highlight")
 		if not xpath: continue
 		marked_data = item_data.get(field)
 		nodes = doc.find(xpath)
 		if not marked_data or not nodes: continue
-		_dispatch_highlight(nodes, marked_data, config)
+		_dispatch_highlight(nodes, marked_data, config, counter)
 
-def _dispatch_highlight(nodes, marked_data, config):
+def _dispatch_highlight(nodes, marked_data, config, counter):
+	# Route the highlighting procedure according to field topography
 	if config["type"] == "list" and isinstance(marked_data, list):
-		apply_list_highlight(nodes, marked_data)
+		apply_list_highlight(nodes, marked_data, counter)
 	elif config["type"] == "matrix" and isinstance(marked_data, list):
-		apply_matrix_highlight(nodes, marked_data, config.get("child"))
+		apply_matrix_highlight(nodes, marked_data, config.get("child"), counter)
 	elif config["type"] == "people" and isinstance(marked_data, list):
-		apply_people_highlight(nodes, marked_data)
+		apply_people_highlight(nodes, marked_data, counter)
 	else:
-		apply_string_highlight(nodes, marked_data)
+		apply_string_highlight(nodes, marked_data, counter)
 
-def apply_list_highlight(nodes, marked_list):
+def apply_list_highlight(nodes, marked_list, counter):
+	# Map search hits across sequential lists
 	for i, content in enumerate(marked_list):
-		if MARKER_START in content:
-			if i < len(nodes):
-				hl = Highlighter(content)
-				hl.highlight(nodes[i])
+		if MARKER_START in content and i < len(nodes):
+			hl = Highlighter(content, counter)
+			hl.highlight(nodes[i])
 
-def apply_people_highlight(nodes, flat_list):
+def apply_people_highlight(nodes, flat_list, counter):
+	# Distribute highlighted markers across structured names and identifiers
 	for i, node in enumerate(nodes):
 		id_idx = 2 * i
 		name_idx = 2 * i + 1
 		if id_idx < len(flat_list):
 			targets = node.find("identifier")
-			if targets: apply_string_highlight(targets, flat_list[id_idx])
+			if targets: apply_string_highlight(targets, flat_list[id_idx], counter)
 		if name_idx < len(flat_list):
 			targets = node.find("name")
-			if targets: apply_string_highlight(targets, flat_list[name_idx])
+			if targets: apply_string_highlight(targets, flat_list[name_idx], counter)
 
-def apply_matrix_highlight(nodes, matrix, child_tag):
+def apply_matrix_highlight(nodes, matrix, child_tag, counter):
+	# Propagate highlighting logic within bi-dimensional structures
 	for node, row in zip(nodes, matrix):
 		if len(row) > 0:
 			targets = node.find("identifier")
-			if targets: apply_string_highlight(targets, row[0])
+			if targets: apply_string_highlight(targets, row[0], counter)
 		if len(row) > 1:
 			targets = node.find("name")
-			if targets: apply_string_highlight(targets, row[1])
+			if targets: apply_string_highlight(targets, row[1], counter)
 		if child_tag:
-			_apply_matrix_child_highlight(node, row, child_tag)
+			_apply_matrix_child_highlight(node, row, child_tag, counter)
 
-def _apply_matrix_child_highlight(node, row, child_tag):
+def _apply_matrix_child_highlight(node, row, child_tag, counter):
+	# Traverse subordinated components of matrix structures
 	children = node.find(child_tag)
 	col = 2
 	for child in children:
 		if col < len(row):
 			targets = child.find("identifier")
-			if targets: apply_string_highlight(targets, row[col])
+			if targets: apply_string_highlight(targets, row[col], counter)
 		col += 1
 		if col < len(row):
 			targets = child.find("name")
-			if targets: apply_string_highlight(targets, row[col])
+			if targets: apply_string_highlight(targets, row[col], counter)
 		col += 1
 
-def apply_string_highlight(nodes, marked_string):
+def apply_string_highlight(nodes, marked_string, counter):
+	# Instantiate highlighting for solitary character sequences
 	if MARKER_START in marked_string:
-		hl = Highlighter(marked_string)
+		hl = Highlighter(marked_string, counter)
 		hl.highlight(nodes[0])
 
 def add_document(file):
+	# Ingest enrich and persist a new document into the text database
 	try:
 		doc = ingest.process_file(file).to_internal()
 	except tree.Error:
@@ -801,6 +840,7 @@ def add_document(file):
 	)""", search_data)
 
 def prepare_search_data(doc):
+	# Compile normalized structural fields for database insertion
 	data = {}
 	for field, config in SEARCH_CONFIG.items():
 		extractor = config["extractor"]
@@ -809,10 +849,12 @@ def prepare_search_data(doc):
 	return data
 
 def eprint(*args, **kwargs):
+	# Print output directly to the standard error stream
 	kwargs.setdefault("file", sys.stderr)
 	print(*args, **kwargs)
 
 def cli_search(query):
+	# Execute a command line search and display initial snippet
 	import snip
 	r = query_search_service(query, offset=0, limit=20, sort="title")
 	if r["match_count"] < 1:
@@ -821,13 +863,12 @@ def cli_search(query):
 	t = r["matches"][0]
 	print(t.first("//logical").xml())
 	doc = snip.process(t)
-	#print(doc.logical.xml(add_xml_prefix=False))
 
 def main():
+	# Handle standard execution entry point from the command line
 	if len(sys.argv) > 1:
 		cli_search(sys.argv[1])
-	else:
-		print("Please provide a query argument.")
+	else: print("Please provide a query argument.")
 
 if __name__ == "__main__":
 	main()

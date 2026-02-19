@@ -374,7 +374,12 @@ def legacy_display_text(text):
 @app.get("/texts/<text>.xml")
 @app.get("/texts/DHARMA_<text>")
 def redirect_to_display_text(text):
-	return flask.redirect(flask.url_for("display_text", text=text))
+	kwargs = {"text": text}
+	if (query := flask.request.args.get("q")):
+		kwargs["q"] = query
+	if (display := flask.request.args.get("display")):
+		kwargs["display"] = display
+	return flask.redirect(flask.url_for("display_text", **kwargs))
 
 @app.get("/texts/<text>")
 def display_text(text):
@@ -383,8 +388,32 @@ def display_text(text):
 		return display_critical(text)
 	return display_inscription(text)
 
-@common.transaction("texts")
 def display_inscription(text):
+	query = flask.request.args.get("q", "")
+	display = flask.request.args.get("display", "physical")
+	t = search.query_match_document(text, query)
+	if not t:
+		return render_invalid_inscription(text)
+	repo = t.first("/document/repository/identifier").text()
+	commit = t.first("/document/commit/hash").text()
+	last_modified_commit = t.first("/document/last-modified-commit/hash").text()
+	path = t.first("/document/path").text()
+	github_commit_url = f"https://github.com/erc-dharma/{repo}/blob/{commit}/{path}"
+	github_last_modified_commit_url = f"https://github.com/erc-dharma/{repo}/blob/{last_modified_commit}/{path}"
+	github_download_url = f"https://raw.githubusercontent.com/erc-dharma/{repo}/{commit}/{path}"
+	data = {
+		"text": text,
+		"doc": render.process(t, display=display),
+		"highlighted_xml": tree.html_format(tree.Tree()),
+		# XXX highlighted_xml: tree.html_format(tei)
+		"github_commit_url": github_commit_url,
+		"github_last_modified_commit_url": github_last_modified_commit_url,
+		"github_download_url": github_download_url,
+	}
+	return flask.render_template("inscription.tpl", **data)
+
+@common.transaction("texts")
+def render_invalid_inscription(text):
 	db = common.db("texts")
 	data = enrich.fetch_file_data(text)
 	if not data:
@@ -396,14 +425,18 @@ def render_inscription(file: texts.File, data: dict):
 	assert not data.get("text")
 	data["text"] = file.name
 	try:
-		t = tree.parse_string(file.data, path=file.full_path)
+		tei = tree.parse_string(file.data, path=file.full_path)
 	except tree.Error:
 		# TODO still need improvements for the display of invalid
 		# inscriptions; in particular, should display file info.
 		data["highlighted_xml"] = tree.html_format(file.text)
 		return flask.render_template("invalid_inscription.tpl", **data)
-	data["doc"] = ingest.process_tree(t).to_html(data=data)
-	data["highlighted_xml"] = tree.html_format(t)
+	t = ingest.process_tree(tei).serialize()
+	enrich.process(t)
+	enrich.add_file_info(t, data)
+	t = render.process(t)
+	data["doc"] = t
+	data["highlighted_xml"] = tree.html_format(tei)
 	return flask.render_template("inscription.tpl", **data)
 
 def display_critical(text):
@@ -575,7 +608,7 @@ def render_search_page():
 		return flask.render_template("search.tpl", error=f"Search error: {e}")
 	matches = []
 	for match in context["matches"]:
-		matches.append(snip.process(match))
+		matches.append(snip.process(match, query=query))
 	context["matches"] = matches
 	count = context.get("match_count", 0)
 	pages_nr = (count + SEARCH_PER_PAGE - 1) // SEARCH_PER_PAGE
