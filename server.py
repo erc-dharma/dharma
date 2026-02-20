@@ -273,7 +273,9 @@ def show_catalog():
 @common.transaction("texts")
 def show_bestow():
 	import bestow
-	doc = bestow.process().to_html(toc_depth=2)
+	doc_tree = bestow.process()
+	enrich.process(doc_tree)
+	doc = render.process(doc_tree, toc_depth=2)
 	# XXX should not read it directly, stick it in the db first
 	with open(common.path_of("repos/BESTOW/BestowPresentation.md")) as f:
 		text = f.read()
@@ -446,7 +448,7 @@ def render_inscription(file: texts.File, data: dict):
 		# inscriptions; in particular, should display file info.
 		data["highlighted_xml"] = tree.html_format(file.text)
 		return flask.render_template("invalid_inscription.tpl", **data)
-	t = ingest.process_tree(tei).serialize()
+	t = ingest.process_tree(tei)
 	enrich.process(t)
 	enrich.add_file_info(t, data)
 	t = render.process(t)
@@ -486,10 +488,10 @@ def convert_text():
 		base = ntpath.basename(path)
 	name = os.path.splitext(base)[0]
 	file = texts.File(":memory:", name)
-	setattr(file, "_mtime", 0)
-	setattr(file, "_last_modified", ("", 0))
-	setattr(file, "_data", data)
-	setattr(file, "_owners", [])
+	file._mtime = 0
+	file._last_modified = ("", 0)
+	file._data = data
+	file._owners = []
 	html = render_inscription(file, {"ident": name, "path": path})
 	soup = BeautifulSoup(html, "html.parser")
 	make_links_absolute(soup, "href")

@@ -382,7 +382,7 @@ if __name__ == "__main__":
 		path = os.path.abspath(sys.argv[1])
 		try:
 			f = texts.File("/", path)
-			doc = ingest.process_file(f).serialize()
+			doc = ingest.process_file(f)
 			enrich.process(doc)
 			ret = process(doc)
 			print(ret.logical.html())

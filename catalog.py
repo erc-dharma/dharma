@@ -1,5 +1,5 @@
-import logging
-from dharma import tree, texts, common, ingest, render
+import logging, copy
+from dharma import tree, texts, common, ingest, render, enrich
 
 class Query:
 
@@ -120,10 +120,12 @@ def insert(file: texts.File):
 	# XXX should store XML fields as such in the DB, not as HTML, because
 	# we need to be able to highlight them later on.
 	try:
-		doc = ingest.process_file(file)
-		internal = doc.to_internal()
+		doc_tree = ingest.process_file(file)
+		internal = copy.deepcopy(doc_tree)
+		enrich.process(internal)
 		data = make_document_record(file, internal)
-		html_doc = doc.to_html()
+		enrich.process(doc_tree)
+		html_doc = render.process(doc_tree)
 	except tree.Error:
 		data = {}
 		data["title"] = None

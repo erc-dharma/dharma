@@ -2028,14 +2028,14 @@ def parse_remainder(self, node):
 	print(f"UNKNOWN {node!r}", file=sys.stderr)
 	self.append(node.text())
 
-def process_file(file):
+def process_file(file) -> tree.Tree:
 	t = tree.parse_string(file.data, path=file.full_path)
 	only_body = False
 	if file.name.startswith("DHARMA_DiplEd") or file.name.startswith("DHARMA_CritEd"):
 		only_body = True
 	return process_tree(t, only_body)
 
-def process_tree(t, only_body=False, handlers=HANDLERS):
+def process_tree(t, only_body=False, handlers=HANDLERS) -> tree.Tree:
 	languages.annotate_for_ingestion(t)
 	p = Parser(t, handlers=handlers)
 	# When we are parsing the file, not to display it but to extract
@@ -2059,7 +2059,7 @@ def process_tree(t, only_body=False, handlers=HANDLERS):
 	p.push(r)
 	p.dispatch(t.root)
 	assert r.empty, r.xml()
-	return p.document
+	return p.document.serialize()
 
 if __name__ == "__main__":
 	from dharma import texts
@@ -2068,8 +2068,8 @@ if __name__ == "__main__":
 		path = os.path.abspath(sys.argv[1])
 		try:
 			f = texts.File("/", path)
-			doc = process_file(f)
-			print(doc.serialize().xml(add_xml_prefix=False))
+			doc_tree = process_file(f)
+			print(doc_tree.xml(add_xml_prefix=False))
 		except BrokenPipeError:
 			pass
 	main()

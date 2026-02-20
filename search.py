@@ -818,7 +818,8 @@ def apply_string_highlight(nodes, marked_string, counter):
 def add_document(file):
 	# Ingest enrich and persist a new document into the text database
 	try:
-		doc = ingest.process_file(file).to_internal()
+		doc = ingest.process_file(file)
+		enrich.process(doc)
 	except tree.Error:
 		doc = tree.Tree()
 		doc.append(tree.Tag("document"))

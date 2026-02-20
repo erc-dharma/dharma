@@ -146,10 +146,10 @@ class Database:
 			raise Exception("not found")
 		from dharma import texts #XXX circular import
 		f = texts.File(row["repo"], row["path"])
-		setattr(f, "_mtime", row["mtime"])
-		setattr(f, "_last_modified", (row["last_modified_commit"], row["last_modified"]))
-		setattr(f, "_data", row["data"])
-		setattr(f, "_owners", json.loads(row["file_owners"]))
+		f._mtime = row["mtime"])
+		f._last_modified = (row["last_modified_commit"], row["last_modified"]))
+		f._data = row["data"])
+		f._owners = json.loads(row["file_owners"]))
 		return f
 
 class Cursor(apsw.Cursor):

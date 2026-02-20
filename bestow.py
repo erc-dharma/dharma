@@ -8,11 +8,9 @@ Main divisions are:
 	bibliography
 	notes
 	variation
-
-TODO Dans <div type="notes">, remplacer les <note> par des <p>.
 """
 
-from dharma import common, tree
+from dharma import common, tree, ingest, enrich, render
 
 # Handlers are tested per order of appearance in this file, so the most
 # specific ones should come first.
@@ -51,18 +49,19 @@ def handle_verse(self, div):
 	self.join() # </div>
 	self.document.extra.append(self.pop())
 
-import ingest
 HANDLERS.extend(ingest.HANDLERS)
 
 def process():
 	t = tree.parse("repos/BESTOW/DHARMA_BESTOW.xml")
-	document = ingest.process_tree(t, handlers=HANDLERS)
-	return document
+	document_tree = ingest.process_tree(t, handlers=HANDLERS)
+	return document_tree
 
 if __name__ == "__main__":
 	@common.transaction("texts")
 	def main():
 		t = tree.parse("repos/BESTOW/DHARMA_BESTOW.xml")
-		document = ingest.process_tree(t, handlers=HANDLERS)
-		print(document.to_html(toc_depth=1))
+		document_tree = ingest.process_tree(t, handlers=HANDLERS)
+		enrich.process(document_tree)
+		html_doc = render.process(document_tree, toc_depth=1)
+		print(html_doc)
 	main()

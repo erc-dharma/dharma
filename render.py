@@ -494,14 +494,15 @@ def process_partial(xml):
 
 if __name__ == "__main__":
 	import os
-	from dharma import texts, ingest, common
+	from dharma import texts, ingest, common, enrich
 	@common.transaction("texts")
 	def main():
 		path = os.path.abspath(sys.argv[1])
 		try:
 			f = texts.File("/", path)
-			doc = ingest.process_file(f)
-			html = doc.to_html()
+			doc_tree = ingest.process_file(f)
+			enrich.process(doc_tree)
+			html = process(doc_tree)
 			print(html.body.html())
 		except BrokenPipeError:
 			pass

@@ -510,7 +510,7 @@ def _cmd_print_stuff():
 	from dharma import ingest, common, texts, enrich
 	path = os.path.abspath(sys.argv[1])
 	f = texts.File("/", path)
-	t = ingest.process_file(f).serialize()
+	t = ingest.process_file(f)
 	enrich.process(t)
 	enrich.make_pretty_printable(t)
 	root = t.first("/document")
