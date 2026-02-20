@@ -1419,7 +1419,8 @@ def fetch_file_data(ident):
 			as github_last_modified_commit_url,
 		format_url('https://raw.githubusercontent.com/erc-dharma/%s/%s/%s',
 			repos.repo, commit_hash, path)
-			as github_download_url
+			as github_download_url,
+		files.data as source
 	from documents
 		join files on documents.name = files.name
 		join repos on documents.repo = repos.repo
@@ -1447,9 +1448,14 @@ def add_file_info(t: tree.Tree, data: dict):
 			<hash/>
 			<date/>
 		</last-modified-commit>
-		...
+		<!--here the stuff parsed from TEI-->
+		<source><!--TEI source of the document--></source>
 	</document>
 	```
+
+	The TEI source is represented as a string, not as XML, because it is not
+	necessarily valid XML and because we want to be able to display it
+	exactly as it was encoded (with comments, spaces, etc.).
 	"""
 	# Last modified commit
 	if data.get("last_modified_commit_hash"):
@@ -1491,6 +1497,11 @@ def add_file_info(t: tree.Tree, data: dict):
 		identifier = tree.Tag("identifier")
 		identifier.append(data["ident"])
 		t.root.prepend(identifier)
+	# TEI source
+	if data.get("source"):
+		source = tree.Tag("source")
+		source.append(data["source"])
+		t.root.append(source)
 
 def make_pretty_printable(t: tree.Tree):
 	t.coalesce()

@@ -405,7 +405,7 @@ def display_inscription(text):
 		"text": text,
 		"doc": render.process(t, display=display),
 		"highlighted_xml": tree.html_format(tree.Tree()),
-		# XXX highlighted_xml: tree.html_format(tei)
+		# XXX REPR HERE highlighted_xml: tree.html_format(tei)
 		"github_commit_url": github_commit_url,
 		"github_last_modified_commit_url": github_last_modified_commit_url,
 		"github_download_url": github_download_url,

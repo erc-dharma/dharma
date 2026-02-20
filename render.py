@@ -298,16 +298,6 @@ def render_edition_head(self, node):
 		self.join()
 	self.join()
 
-
-
-edition_tabs = tree.parse_string("""
-<ul class="ed-tabs">
-	<li id="physical-btn" class="active"><a href="#">Physical</a></li>
-	<li id="logical-btn"><a href="#">Logical</a></li>
-	<li id="full-btn"><a href="#">Full</a></li>
-</ul>""")
-
-
 @handler("head")
 def render_head(self, node):
 	push_heading(self, self.heading_level)
