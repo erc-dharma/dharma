@@ -584,16 +584,6 @@ def extract_list_text(xpath):
 		return [extract_text(n) for n in doc.find(xpath)]
 	return extractor
 
-def get_repo_id(doc):
-	# Retrieve the repository identifier
-	nodes = doc.find("/document/repository/identifier")
-	return extract_text(nodes[0]) if nodes else ""
-
-def get_repo_name(doc):
-	# Retrieve the repository name
-	nodes = doc.find("/document/repository/name")
-	return extract_text(nodes[0]) if nodes else ""
-
 def get_flat_people(xpath):
 	# Extract a flat list of people identifiers and names
 	def extractor(doc):

@@ -403,18 +403,6 @@ def significant_milestones(t: tree.Tree):
 # overlap.
 milestone_accepting = ("para", "verse-line")
 
-def in_milestone_accepting(node):
-	while True:
-		parent = node.parent
-		if not isinstance(parent, tree.Tag):
-			return False
-		if parent.name in ("span", "link"):
-			node = parent
-			continue
-		if parent.name in milestone_accepting:
-			return True
-		return False
-
 def fix_milestone_location(mile: tree.Tag):
 	parent = mile.parent
 	assert isinstance(parent, tree.Tag)
@@ -1284,10 +1272,6 @@ def move_up_from_para(node):
 	para.replace_with(node)
 	if len(right) > 0:
 		node.insert_after(right)
-
-def put_grantha_in_bold(t: tree.Tree):
-	for node in t.find("//*[glob('* grantha', @lang) and not @editorial]"):
-		pass#XXX  TODO
 
 def expand_views(root: tree.Branch, keep_view=None):
 	"""Expands "views" element. They have the form:

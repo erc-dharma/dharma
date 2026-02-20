@@ -13,11 +13,8 @@ FATAL = 3	# Invalid XML, cannot be processed at all
 
 # For simplifying RNG files, download rng2srng-20020831
 
-# Nnote that we can link to a span of text on github by adding a fragment like
+# Note that we can link to a span of text on github by adding a fragment like
 # #L8C23-L14C34 at the end; but doesn't work with just #L8C23.
-
-def split_lines(text):
-	return re.findall(r"(.*)(?:\r\n|\r|\n)", text)
 
 class Message:
 

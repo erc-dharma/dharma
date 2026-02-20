@@ -26,9 +26,6 @@ vowels = {
 	"ḥ"
 }
 
-def hyphenate(s):
-	return s
-
 # TODO reenable only for mobile+tablet or find a way to exclude soft hyphenate
 # from clipboard copy, see https://stackoverflow.com/questions/28837944/simplest-way-to-filter-text-copied-from-a-web-page-using-javascript
 # or use css for including the hyphen

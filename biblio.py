@@ -1445,12 +1445,5 @@ def load_biblio_from_file():
 		entry = common.from_json(line)
 		insert_entry(db, entry)
 
-@common.transaction("texts")
-def print_entries():
-	pattern = len(sys.argv) > 1 and sys.argv[1] or "*"
-	db = common.db("texts")
-	for (entry,) in db.execute("select data from biblio where short_title glob ?", (pattern,)):
-		print(format_entry(entry).xml())
-
 if __name__ == "__main__":
 	load_biblio_from_file()

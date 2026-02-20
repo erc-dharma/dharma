@@ -42,14 +42,6 @@ class File:
 		file on the disk, but we don't attempt to examine the disk if
 		this is the case."""
 
-	@classmethod
-	def from_data(cls, name: str, data: str | bytes, path: str = ""):
-		"""Create a virtual file from a string or bytes."""
-		if isinstance(data, str):
-			data = data.encode("utf-8")
-		return cls(repo, path or (name + ".xml"), data=data, mtime=0,
-			last_modified=("", 0), owners=[], status=0)
-
 	def __repr__(self):
 		return f"File({self.repo!r}, {self.path!r})"
 
@@ -180,11 +172,6 @@ def iter_texts_in_repo(repo: str) -> typing.Generator[File, None, None]:
 			full_path = os.path.join(root, file)
 			rel_path = os.path.relpath(full_path, repo_path)
 			yield File(repo, rel_path)
-
-def iter_texts():
-	"Iterates over all texts in all repositories."
-	for repo in os.listdir(common.path_of("repos")):
-		yield from iter_texts_in_repo(repo)
 
 def save(repo: str, path: str):
 	"Save a file in the database and returns it as well."

@@ -427,14 +427,6 @@ class Node:
 		i = parent.index(self)
 		parent.insert(i, other)
 
-	def comment_out(self, **kwargs):
-		"""Comment out a node viz. replace it with a commented out XML
-		representation of it. Keyword arguments are the same as the ones
-		of the `.xml()` method."""
-		tmp = self.xml(**kwargs)
-		self.replace_with(Comment(tmp))
-		return self
-
 	def text(self, space="default") -> str:
 		"""Returns the text contents of this subtree. Per default, we do
 		normalize-space(); to prevent this, pass `space="preserve"`.
@@ -515,9 +507,7 @@ class Branch(Node, list):
 		return id(self)
 
 	def __add__(self, value):
-		ret = self.copy()
-		ret.extend(value.copy())
-		return ret
+		raise NotImplementedError
 
 	def __eq__(self, value):
 		raise NotImplementedError
@@ -900,9 +890,6 @@ class Tag(Branch):
 		self.location = None
 		list.clear(self)
 		return self
-
-	def bad(self, msg):
-		self.problems.append(msg)
 
 	@property
 	def path(self):
@@ -1630,71 +1617,6 @@ colors = {
 	"attr-value": "#5500ff",
 }
 
-def space_before_opening(node):
-	assert isinstance(node, Tag)
-	parent = node.parent
-	if not parent:
-		return False
-	i = parent.index(node) - 1
-	while i >= 0:
-		if isinstance(parent[i], String):
-			if parent[i].rstrip() != parent[i]:
-				return True
-			if parent[i] != "":
-				return False
-		elif not isinstance(parent[i], (Comment, Instruction)):
-			return False
-		i -= 1
-	return False
-
-def space_after_opening(node):
-	assert isinstance(node, Tag)
-	i = 0
-	while i < len(node):
-		if isinstance(node[i], String):
-			if node[i].lstrip() != node[i]:
-				return True
-			if node[i] != "":
-				return False
-		elif not isinstance(node[i], (Comment, Instruction)):
-			return False
-		i += 1
-	return False
-
-def space_before_closing(node):
-	assert isinstance(node, Tag)
-	i = len(node)
-	while i > 0:
-		i -= 1
-		if isinstance(node[i], String):
-			if node[i].rstrip() != node[i]:
-				return True
-			if node[i] != "":
-				return False
-		elif not isinstance(node[i], (Comment, Instruction)):
-			return False
-	return False
-
-def space_after_closing(node):
-	assert isinstance(node, Tag)
-	parent = node.parent
-	if not parent:
-		return False
-	i = parent.index(node) + 1
-	while i < len(parent):
-		match parent[i]:
-			case String() if node.data and not node.data.isspace():
-				if parent[i].lstrip() != parent[i]:
-					return True
-				if parent[i] != "":
-					return False
-			case Comment() | Instruction():
-				pass
-			case _:
-				return False
-		i += 1
-	return False
-
 def tag_category(node):
 	assert isinstance(node, Tag)
 	if node.matches("//teiHeader//title"):
@@ -1733,9 +1655,6 @@ def attr_value_style(node, attr):
 		case _:
 			if attr == "n":
 				return "attr-n"
-	return ""
-
-def contents_style(node):
 	return ""
 
 class Formatter:
@@ -1899,9 +1818,6 @@ class Formatter:
 			self.buf.write(quote_string(text))
 		else:
 			self.buf.write(text)
-
-	def wrote_space(self):
-		return self.buf.getvalue()[-1].isspace()
 
 	def text(self):
 		return self.buf.getvalue()

@@ -76,13 +76,6 @@ def plain(ident):
 		(ident,)).fetchone()
 	return ret and ret[0] or None
 
-def plain_from_github(github_id):
-	db = common.db("texts")
-	ret = db.execute("""select print_name
-		from people_main natural join people_github
-		where git_name = ?""", (github_id,)).fetchone()
-	return ret and ret[0] or github_id
-
 if __name__ == "__main__":
 	@common.transaction("texts")
 	def main():

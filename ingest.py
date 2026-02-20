@@ -99,20 +99,6 @@ class Document:
 		add_lang_to_parents(f.tree)
 		return f.tree
 
-	def to_internal(self):
-		ret = self.serialize()
-		enrich.process(ret)
-		return ret
-
-	def to_html(self, toc_depth=-1, data=None):
-		from dharma import render
-		ret = self.serialize()
-		enrich.process(ret)
-		if data is not None:
-			enrich.add_file_info(ret, data)
-		ret = render.process(ret, toc_depth=toc_depth)
-		return ret
-
 def add_lang_to_parents(node: tree.Node):
 	match node:
 		case tree.Tag():
