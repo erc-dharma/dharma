@@ -145,12 +145,11 @@ class Database:
 		if not name:
 			raise Exception("not found")
 		from dharma import texts #XXX circular import
-		f = texts.File(row["repo"], row["path"])
-		f._mtime = row["mtime"])
-		f._last_modified = (row["last_modified_commit"], row["last_modified"]))
-		f._data = row["data"])
-		f._owners = json.loads(row["file_owners"]))
-		return f
+		return texts.File(row["repo"], row["path"],
+			mtime=row["mtime"],
+			last_modified=(row["last_modified_commit"], row["last_modified"]),
+			data=row["data"],
+			owners=json.loads(row["file_owners"]))
 
 class Cursor(apsw.Cursor):
 

@@ -18,8 +18,9 @@ _ignore_dirs = {"sii-corpus"}
 
 class File:
 
-	def __init__(self, repo: str, path: str):
-		"""`repo` is the repo name (e.g. `tfa-pallava-epigraphy`);
+	def __init__(self, repo="", path="", data=None,
+		mtime=None, last_modified=None, owners=None, status=None):
+		"""`repo` is the repo name (e.g. `tfa-pallava-epigraphy`).
 		`path` is the file path relative to the repository directory
 		e.g. `texts/xml/DHARMA_INSPallava00002.xml`.
 		"""
@@ -28,11 +29,26 @@ class File:
 		self.path: str = path
 		"""Path of the file relative to the repository directory
 		(e.g. `texts/xml/DHARMA_INSPallava00002.xml`)."""
-		self._status = None
-		self._mtime = None
-		self._data = None
-		self._owners = None
-		self._last_modified = None
+		self._status = kwargs.get("status")
+		self._mtime = kwargs.get("mtime")
+		self._data = kwargs.get("data")
+		if isinstance(self._data, str):
+			self._data = self._data.encode("utf-8")
+		self._owners = kwargs.get("owners")
+		self._last_modified = kwargs.get("last_modified")
+		self.virtual: bool = self._data is not None
+		"""Whether this file was constructed from a real file or from
+		memory. A file created from memory might correspond to a real
+		file on the disk, but we don't attempt to examine the disk if
+		this is the case."""
+
+	@classmethod
+	def from_data(cls, name: str, data: str | bytes, path: str = ""):
+		"""Create a virtual file from a string or bytes."""
+		if isinstance(data, str):
+			data = data.encode("utf-8")
+		return cls(repo, path or (name + ".xml"), data=data, mtime=0,
+			last_modified=("", 0), owners=[], status=0)
 
 	def __repr__(self):
 		return f"File({self.repo!r}, {self.path!r})"
@@ -53,12 +69,14 @@ class File:
 
 	@property
 	def mtime(self) -> int:
-		"""Value of st_mtime. We use this to figure out which files have
+		"""Value of `st_mtime`. We use this to figure out which files have
 		been updated after we do a pull. We do not rely on git both
 		because this is unnecessary and because at a later point we will
 		want to be able to track other sources than git repos, like e.g.
 		local directories, maybe with inotify or friends."""
 		if self._mtime is None:
+			if self.virtual:
+				return 0
 			self._mtime = int(os.stat(self.full_path).st_mtime)
 		return self._mtime
 
@@ -66,13 +84,15 @@ class File:
 	def data(self) -> bytes:
 		"""File contents, as a byte string."""
 		if self._data is None:
+			if self.virtual:
+				raise Exception(f"virtual file {self.path} has no data")
 			with open(self.full_path, "rb") as f:
 				self._data = f.read()
 		return self._data
 
 	@property
 	def text(self) -> str:
-		"""File contents, as NFC-normalized unicode string"""
+		"""File contents, as a NFC-normalized Unicode string"""
 		return unicodedata.normalize("NFC", self.data.decode())
 
 	@property
@@ -82,6 +102,8 @@ class File:
 		filter by their name.
 		"""
 		if self._owners is None:
+			if self.virtual:
+				return []
 			out = common.command("git",
 				"-C", common.path_of("repos", self.repo),
 				"log", "--follow", "--format=%aN", "--", self.path)
@@ -97,6 +119,8 @@ class File:
 		for convenience. We do not use this for other purposes.
 		"""
 		if self._last_modified is None:
+			if self.virtual:
+				return ("", 0)
 			out = common.command("git",
 				"-C", common.path_of("repos", self.repo),
 				"log", "-1", "--format=%H %at", "--", self.path)
@@ -112,7 +136,7 @@ class File:
 		"""
 		return common.path_of("repos", self.repo, self.path)
 
-def iter_files_in_repo(repo) -> typing.Generator[File, None, None]:
+def iter_files_in_repo(repo: str) -> typing.Generator[File, None, None]:
 	"""Iterates over all files in a given repository (but ignores hidden
 	directories). `repo` is the name of the repository (e.g.
 	`tfa-pallava-epigraphy`).
@@ -128,7 +152,7 @@ def iter_files_in_repo(repo) -> typing.Generator[File, None, None]:
 			rel_path = os.path.relpath(full_path, repo_path)
 			yield File(repo, rel_path)
 
-def iter_texts_in_repo(repo) -> typing.Generator[File, None, None]:
+def iter_texts_in_repo(repo: str) -> typing.Generator[File, None, None]:
 	"""Iterates over TEI editions in a repository. `repo` is the name of the
 	repository (e.g. `tfa-pallava-epigraphy`).
 	"""
@@ -162,7 +186,7 @@ def iter_texts():
 	for repo in os.listdir(common.path_of("repos")):
 		yield from iter_texts_in_repo(repo)
 
-def save(repo, path):
+def save(repo: str, path: str):
 	"Save a file in the database and returns it as well."
 	file = File(repo, path)
 	db = common.db("texts")

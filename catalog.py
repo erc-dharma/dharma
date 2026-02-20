@@ -172,10 +172,7 @@ def rebuild():
 		select files.repo, path, mtime, data
 		from files join documents on files.name = documents.name
 		order by files.repo, files.name"""):
-		file = texts.File(repo, path)
-		setattr(file, "_mtime", mtime)
-		setattr(file, "_data", data)
-		insert(file)
+		insert(texts.File(repo, path, mtime=mtime, data=data))
 	logging.info("rebuilded the catalog")
 
 class InvalidQuery(Exception):

@@ -18,9 +18,7 @@ def parse_xml(context, code):
 	t = tree.parse_string(data, path="whatever")
 	languages.add_lang_info(t)
 	html = tree.html_format(t.first(f"//div[@type='{context}']"), skip_root=True)
-	file = texts.File("whatever", "whatever")
-	setattr(file, "_data", data)
-	doc_tree = ingest.process_file(file)
+	doc_tree = ingest.process_file(texts.File(data=data))
 	enrich.process(doc_tree)
 	block = render.process(doc_tree).body
 	# XXX

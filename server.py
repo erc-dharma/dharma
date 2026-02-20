@@ -135,10 +135,8 @@ def show_text_errors(name):
 		row['repo'], row['commit_hash'], row['xml_path'])
 	if row["status"] == validate.OK:
 		return flask.redirect(url)
-	file = texts.File(row["repo"], row["xml_path"])
-	setattr(file, "_mtime", row["mtime"])
-	setattr(file, "_data", row["data"])
-	setattr(file, "_status", row["status"])
+	file = texts.File(row["repo"], row["xml_path"],
+		mtime=row["mtime"], data=row["data"], status=row["status"])
 	return flask.render_template("invalid_text.tpl",
 		text=row, github_url=url, result=validate.file(file))
 
@@ -487,11 +485,7 @@ def convert_text():
 		# already using the code.
 		base = ntpath.basename(path)
 	name = os.path.splitext(base)[0]
-	file = texts.File(":memory:", name)
-	file._mtime = 0
-	file._last_modified = ("", 0)
-	file._data = data
-	file._owners = []
+	file = texts.File(path=path, data=data)
 	html = render_inscription(file, {"ident": name, "path": path})
 	soup = BeautifulSoup(html, "html.parser")
 	make_links_absolute(soup, "href")
