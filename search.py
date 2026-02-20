@@ -700,7 +700,8 @@ def query_search_service(query, offset=0, limit=20, sort="title"):
 		"sort": data.get("sort", sort)
 	}
 
-def query_match_document(ident, query="") -> tree.Tree | None:
+def query_match_document(ident, query="") \
+	-> tuple[None, None] | tuple[tree.Tree, tree.Tree]:
 	# Retrieve and highlight a full document without applying snippet pruning
 	norm_query = unicodedata.normalize('NFC', query) if query else ""
 	params = {"ident": ident, "q": norm_query}
@@ -711,13 +712,14 @@ def query_match_document(ident, query="") -> tree.Tree | None:
 	matches = data.get("matches", [])
 	assert len(matches) <= 1
 	if not matches:
-		return None
+		return None, None
 	item = matches[0]
 	xml_str = item["source"]
 	doc = tree.parse_string(xml_str)
 	if norm_query:
 		highlight_document(doc, item)
-	return doc
+	original = tree.parse_string(item["original"])
+	return doc, original
 
 def process_matches(raw_matches):
 	# Transform raw matches into highlighted document trees

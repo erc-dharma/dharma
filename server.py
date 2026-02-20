@@ -391,7 +391,7 @@ def display_text(text):
 def display_inscription(text):
 	query = flask.request.args.get("q", "")
 	display = flask.request.args.get("display", "physical")
-	t = search.query_match_document(text, query)
+	t, original = search.query_match_document(text, query)
 	if not t:
 		return render_invalid_inscription(text)
 	repo = t.first("/document/repository/identifier").text()
@@ -404,8 +404,7 @@ def display_inscription(text):
 	data = {
 		"text": text,
 		"doc": render.process(t, display=display),
-		"highlighted_xml": tree.html_format(tree.Tree()),
-		# XXX REPR HERE highlighted_xml: tree.html_format(tei)
+		"highlighted_xml": tree.html_format(original),
 		"github_commit_url": github_commit_url,
 		"github_last_modified_commit_url": github_last_modified_commit_url,
 		"github_download_url": github_download_url,

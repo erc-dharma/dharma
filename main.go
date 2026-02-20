@@ -62,6 +62,7 @@ type SearchResult struct {
 	Lang     [][]string `json:"lang"`
 	Script   [][]string `json:"script"`
 	Source   string     `json:"source"`
+	Original string     `json:"original,omitempty"`
 }
 
 type SearchResponse struct {
@@ -195,6 +196,11 @@ func processMatch(w http.ResponseWriter, ident, q string, fields []string, prett
 		return
 	}
 	res := matchDocument(*targetDoc, q)
+	// Fetch original TEI content from the files table
+	err = tx.QueryRow("select data from files where name = ?", ident).Scan(&res.Original)
+	if err != nil {
+		log.Printf("Error fetching original TEI: %v", err)
+	}
 	results := []SearchResult{res}
 	enrichMatches(tx, results, []Document{*targetDoc}, fields)
 	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty)
@@ -600,6 +606,8 @@ func assignField(mMap map[string]interface{}, m SearchResult, f string) {
 		mMap["script"] = m.Script
 	case "source":
 		mMap["source"] = m.Source
+	case "original":
+		mMap["original"] = m.Original
 	}
 }
 
