@@ -1419,8 +1419,7 @@ def fetch_file_data(ident):
 			as github_last_modified_commit_url,
 		format_url('https://raw.githubusercontent.com/erc-dharma/%s/%s/%s',
 			repos.repo, commit_hash, path)
-			as github_download_url,
-		files.data as source
+			as github_download_url
 	from documents
 		join files on documents.name = files.name
 		join repos on documents.repo = repos.repo
@@ -1497,11 +1496,6 @@ def add_file_info(t: tree.Tree, data: dict):
 		identifier = tree.Tag("identifier")
 		identifier.append(data["ident"])
 		t.root.prepend(identifier)
-	# TEI source
-	if data.get("source"):
-		source = tree.Tag("source")
-		source.append(data["source"])
-		t.root.append(source)
 
 def make_pretty_printable(t: tree.Tree):
 	t.coalesce()

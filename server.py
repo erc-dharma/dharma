@@ -388,26 +388,42 @@ def display_text(text):
 		return display_critical(text)
 	return display_inscription(text)
 
+def github_commit_url(repo, commit, path):
+	repo = urllib.parse.quote(repo, safe="")
+	commit = urllib.parse.quote(commit, safe="")
+	path = urllib.parse.quote(path, safe="/")
+	return f"https://github.com/erc-dharma/{repo}/blob/{commit}/{path}"
+
+def github_last_modified_commit_url(repo, commit, path):
+	repo = urllib.parse.quote(repo, safe="")
+	commit = urllib.parse.quote(commit, safe="")
+	path = urllib.parse.quote(path, safe="/")
+	return f"https://github.com/erc-dharma/{repo}/blob/{commit}/{path}"
+
+def github_download_url(repo, commit, path):
+	repo = urllib.parse.quote(repo, safe="")
+	commit = urllib.parse.quote(commit, safe="")
+	path = urllib.parse.quote(path, safe="/")
+	f"https://raw.githubusercontent.com/erc-dharma/{repo}/{commit}/{path}"
+
 def display_inscription(text):
 	query = flask.request.args.get("q", "")
 	display = flask.request.args.get("display", "physical")
 	t, original = search.query_match_document(text, query)
-	if not t:
+	if t is None:
 		return render_invalid_inscription(text)
+	assert original is not None
 	repo = t.first("/document/repository/identifier").text()
 	commit = t.first("/document/commit/hash").text()
 	last_modified_commit = t.first("/document/last-modified-commit/hash").text()
 	path = t.first("/document/path").text()
-	github_commit_url = f"https://github.com/erc-dharma/{repo}/blob/{commit}/{path}"
-	github_last_modified_commit_url = f"https://github.com/erc-dharma/{repo}/blob/{last_modified_commit}/{path}"
-	github_download_url = f"https://raw.githubusercontent.com/erc-dharma/{repo}/{commit}/{path}"
 	data = {
 		"text": text,
 		"doc": render.process(t, display=display),
 		"highlighted_xml": tree.html_format(original),
-		"github_commit_url": github_commit_url,
-		"github_last_modified_commit_url": github_last_modified_commit_url,
-		"github_download_url": github_download_url,
+		"github_commit_url": github_commit_url(repo, commit, path),
+		"github_last_modified_commit_url": github_last_modified_commit_url(repo, last_modified_commit, path),
+		"github_download_url": github_download_url(repo, commit, path),
 	}
 	return flask.render_template("inscription.tpl", **data)
 
