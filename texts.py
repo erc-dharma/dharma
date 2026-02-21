@@ -29,13 +29,13 @@ class File:
 		self.path: str = path
 		"""Path of the file relative to the repository directory
 		(e.g. `texts/xml/DHARMA_INSPallava00002.xml`)."""
-		self._status = kwargs.get("status")
-		self._mtime = kwargs.get("mtime")
-		self._data = kwargs.get("data")
+		self._status = status
+		self._mtime = mtime
+		self._data = data
 		if isinstance(self._data, str):
 			self._data = self._data.encode("utf-8")
-		self._owners = kwargs.get("owners")
-		self._last_modified = kwargs.get("last_modified")
+		self._owners = owners
+		self._last_modified = last_modified
 		self.virtual: bool = self._data is not None
 		"""Whether this file was constructed from a real file or from
 		memory. A file created from memory might correspond to a real

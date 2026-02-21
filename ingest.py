@@ -1163,7 +1163,7 @@ def _parse_seg(p, seg):
 	p.push(tree.Tag("span"))
 	rend = seg["rend"].split()
 	if "pun" in rend:
-		p.push(tree.Tag("span", class_="pun", tip=XML('Pun (<span class="italics">ślesa</span>').xml()))
+		p.push(tree.Tag("span", class_="pun", tip=_XML('Pun (<span class="italics">ślesa</span>').xml()))
 		p.append_display("{")
 	if "check" in rend:
 		p.push(tree.Tag("span", class_="check", tip="To be checked"))
@@ -1463,7 +1463,7 @@ def _parse_lg(p, lg):
 	p.push(tree.Tag("verse"))
 	# Generally we have a single number e.g. "10", but sometimes ranges
 	# e.g. "10-20" (with various types of dashes).
-	n = get_n(lg)
+	n = _get_n(lg)
 	unsure = False
 	if (tmp := lg.first("stuck-child::certainty[@match='../@met' and @locus='value']")):
 		p.visited.add(tmp)
