@@ -1,34 +1,37 @@
+"""
+Conversion from the internal representation to HTML.
+"""
 import sys, collections
 from dharma import tree, common
 
-HANDLERS = []
+_HANDLERS = []
 
-def handler(path):
+def _handler(path):
 	def decorator(f):
-		HANDLERS.append((tree.Node.match_func(path), f))
+		_HANDLERS.append((tree.Node.match_func(path), f))
 		return f
 	return decorator
 
-@handler("page")
-def render_page(self, node):
+@_handler("page")
+def _render_page(self, node):
 	self.push(tree.Tag("div", class_="page"))
 	self.dispatch_children(node)
 	self.join()
 
-@handler("page/stuck-child::head")
-def render_page_head(self, node):
+@_handler("page/stuck-child::head")
+def _render_page_head(self, node):
 	self.push(tree.Tag("div", class_="pagelike"))
 	self.dispatch_children(node)
 	self.join()
 
-@handler("line")
-def render_page_line(self, node):
+@_handler("line")
+def _render_page_line(self, node):
 	self.push(tree.Tag("p", class_="line"))
 	self.dispatch_children(node)
 	self.join()
 
-@handler("quote")
-def render_quote(self, node):
+@_handler("quote")
+def _render_quote(self, node):
 	self.push(tree.Tag("div", class_="quote"))
 	source = node.first("stuck-child::source")
 	if source:
@@ -44,14 +47,14 @@ def render_quote(self, node):
 		self.join() # </p>
 	self.join() # </div>
 
-@handler("document")
-def render_document(self, node):
+@_handler("document")
+def _render_document(self, node):
 	self.push(tree.Tag("div", id="inscription-display"))
 	self.dispatch_children(node)
 	if self.notes:
 		self.push(tree.Tag("div", class_="notes"))
 		self.heading_level += 1
-		render_head(self, "Notes")
+		_render_head(self, "Notes")
 		self.push(tree.Tag("ol"))
 		for note in self.notes:
 			n = int(note["n"])
@@ -75,8 +78,8 @@ def render_document(self, node):
 	self.join()
 	self.document.body = self.top
 
-@handler("elist")
-def render_list(self, node):
+@_handler("elist")
+def _render_list(self, node):
 	match node["type"]:
 		case "plain":
 			self.push(tree.Tag("ul", class_="list list-plain"))
@@ -90,9 +93,9 @@ def render_list(self, node):
 		self.join()
 	self.join()
 
-paired = collections.namedtuple("paired", "identifier name")
+Paired = collections.namedtuple("Paired", "identifier name")
 
-def extract_paired(self, node):
+def _extract_paired(self, node):
 	name = node.first("name")
 	if name:
 		self.push(tree.Tree())
@@ -103,13 +106,13 @@ def extract_paired(self, node):
 		self.push(tree.Tree())
 		self.dispatch_children(identifier)
 		identifier = self.pop()
-	return paired(identifier, name)
+	return Paired(identifier, name)
 
-commit = collections.namedtuple("commit", "hash date")
+Commit = collections.namedtuple("Commit", "hash date")
 
-@handler("commit")
-@handler("last-modified-commit")
-def process_commit(self, node):
+@_handler("commit")
+@_handler("last-modified-commit")
+def _process_commit(self, node):
 	hash_ = node.first("hash")
 	if hash_:
 		self.push(tree.Tree())
@@ -120,49 +123,49 @@ def process_commit(self, node):
 		self.push(tree.Tree())
 		self.dispatch_children(date)
 		date = self.pop()
-	data = commit(hash_, date)
+	data = Commit(hash_, date)
 	if node.name == "commit":
 		self.document.commit = data
 	else:
 		assert node.name == "last-modified-commit"
 		self.document.last_modified_commit = data
 
-@handler("path")
-def process_path(self, node):
+@_handler("path")
+def _process_path(self, node):
 	self.push(tree.Tree())
 	self.dispatch_children(node)
 	path = self.pop()
 	self.document.path = path
 
-@handler("repository")
-def process_repo(self, node):
-	self.document.repository = extract_paired(self, node)
+@_handler("repository")
+def _process_repo(self, node):
+	self.document.repository = _extract_paired(self, node)
 
-@handler("editor")
-def process_editor(self, node):
-	self.document.editors.append(extract_paired(self, node))
+@_handler("editor")
+def _process_editor(self, node):
+	self.document.editors.append(_extract_paired(self, node))
 
-@handler("languages")
-def process_languages(self, node):
+@_handler("languages")
+def _process_languages(self, node):
 	for lang_node in node.find("language"):
-		lang = extract_paired(self, lang_node)
+		lang = _extract_paired(self, lang_node)
 		scripts = []
 		for script_node in lang_node.find("script"):
-			scripts.append(extract_paired(self, script_node))
+			scripts.append(_extract_paired(self, script_node))
 		self.document.edition_languages.append((lang, scripts))
 
-@handler("scripts")
-def process_scripts(self, node):
+@_handler("scripts")
+def _process_scripts(self, node):
 	pass
 
-@handler("identifier")
-def render_identifier(self, node):
+@_handler("identifier")
+def _render_identifier(self, node):
 	self.push(tree.Tree())
 	self.dispatch_children(node)
 	name = node.name.replace("-", "_")
 	setattr(self.document, name, self.pop())
 
-def prepend_to_first_para(t, text):
+def _prepend_to_first_para(t, text):
 	if t.empty:
 		return
 	para = t.first("stuck-child::p")
@@ -171,25 +174,25 @@ def prepend_to_first_para(t, text):
 		t.prepend(para)
 	para.prepend(text)
 
-@handler("summary")
-def render_summary(self, node):
+@_handler("summary")
+def _render_summary(self, node):
 	self.push(tree.Tree())
 	self.dispatch_children(node)
 	self.document.summary = self.pop()
-	prepend_to_first_para(self.document.summary, "Summary: ")
+	_prepend_to_first_para(self.document.summary, "Summary: ")
 
-@handler("hand")
-def render_hand(self, node):
+@_handler("hand")
+def _render_hand(self, node):
 	self.push(tree.Tree())
 	self.dispatch_children(node)
 	self.document.hand = self.pop()
-	prepend_to_first_para(self.document.hand, "Palaeographic description: ")
+	_prepend_to_first_para(self.document.hand, "Palaeographic description: ")
 
-@handler("edition")
-@handler("translation")
-@handler("commentary")
-@handler("bibliography")
-def render_section(self, node):
+@_handler("edition")
+@_handler("translation")
+@_handler("commentary")
+@_handler("bibliography")
+def _render_section(self, node):
 	self.heading_level += 1
 	# Use the language attribute populated during enrichment, with fallbacks.
 	lang = node["lang"] or ("und" if node.name == "edition" else "en")
@@ -198,11 +201,11 @@ def render_section(self, node):
 	self.join()
 	self.heading_level -= 1
 
-@handler("extra")
-def render_extra(self, node):
+@_handler("extra")
+def _render_extra(self, node):
 	self.dispatch_children(node)
 
-def push_heading(self, level: int, class_: list[str] = []):
+def _push_heading(self, level: int, class_: list[str] = []):
 	class_ = class_.copy()
 	if self.toc_depth >= 0 and self.heading_level > self.toc_depth:
 		class_.append("skip-toc")
@@ -212,13 +215,13 @@ def push_heading(self, level: int, class_: list[str] = []):
 	level = min(self.heading_level, 6)
 	self.push(tree.Tag(f"h{level}", class_=" ".join(class_)))
 
-@handler("apparatus")
-def render_apparatus(self, node):
+@_handler("apparatus")
+def _render_apparatus(self, node):
 	self.heading_level += 1
 	self.push(tree.Tag("div", class_="apparatus"))
 	# Heading
 	if (head := node.first("head")):
-		push_heading(self, self.heading_level, class_=["collapsible"])
+		_push_heading(self, self.heading_level, class_=["collapsible"])
 		self.dispatch_children(head)
 		self.join() # </head>
 	# Contents
@@ -231,17 +234,17 @@ def render_apparatus(self, node):
 	self.join() # </div class="apparatus"/>
 	self.heading_level -= 1
 
-@handler("physical")
-@handler("full")
-def render_edition_display(self, node):
+@_handler("physical")
+@_handler("full")
+def _render_edition_display(self, node):
 	self.push(tree.Tag("div", class_=node.name, id=node.name, data_display=node.name))
 	if node.name != self.display:
 		self.top["class"] += " hidden"
 	self.dispatch_children(node)
 	self.join()
 
-@handler("logical")
-def render_logical_display(self, node):
+@_handler("logical")
+def _render_logical_display(self, node):
 	self.push(tree.Tag("div", class_=node.name, id=node.name, data_display=node.name))
 	if node.name != self.display:
 		self.top["class"] += " hidden"
@@ -251,14 +254,14 @@ def render_logical_display(self, node):
 	self.dispatch_children(node)
 	self.document.logical = self.pop()
 
-@handler("title")
-def render_title(self, node):
+@_handler("title")
+def _render_title(self, node):
 	self.push(tree.Tree())
 	self.dispatch_children(node)
 	self.document.titles.append(self.pop())
 
-@handler("dlist")
-def render_dlist(self, node):
+@_handler("dlist")
+def _render_dlist(self, node):
 	self.push(tree.Tag("dl", class_="list"))
 	for child in node.find("*"):
 		match child.name:
@@ -272,15 +275,15 @@ def render_dlist(self, node):
 		self.join()
 	self.join()
 
-@handler("div[@phantom='false']")
-def render_div(self, node):
+@_handler("div[@phantom='false']")
+def _render_div(self, node):
 	self.heading_level += 1
 	self.dispatch_children(node)
 	self.heading_level -= 1
 
-@handler("edition/stuck-child::head")
-def render_edition_head(self, node):
-	push_heading(self, self.heading_level)
+@_handler("edition/stuck-child::head")
+def _render_edition_head(self, node):
+	_push_heading(self, self.heading_level)
 	self.dispatch_children(node)
 	self.join()
 	self.push(tree.Tag("ul", class_="ed-tabs"))
@@ -295,16 +298,16 @@ def render_edition_head(self, node):
 		self.join()
 	self.join()
 
-@handler("head")
-def render_head(self, node):
-	push_heading(self, self.heading_level)
+@_handler("head")
+def _render_head(self, node):
+	_push_heading(self, self.heading_level)
 	self.dispatch_children(node)
 	self.join()
 
-@handler("npage")
-@handler("nline")
-@handler("ncell")
-def render_milestone(self, node):
+@_handler("npage")
+@_handler("nline")
+@_handler("ncell")
+def _render_milestone(self, node):
 	match node.name:
 		case "npage":
 			class_ = "pagelike"
@@ -318,7 +321,7 @@ def render_milestone(self, node):
 	self.dispatch_children(node)
 	self.join()
 
-def make_note_ref(self, node, display=None):
+def _make_note_ref(self, node, display=None):
 	n = int(node["n"])
 	if n == len(self.notes) + 1:
 		self.notes.append(node)
@@ -337,43 +340,43 @@ def make_note_ref(self, node, display=None):
 	self.join()
 	self.join()
 
-@handler("physical//note")
-def render_physical_note_ref(self, node):
-	return make_note_ref(self, node, "physical")
+@_handler("physical//note")
+def _render_physical_note_ref(self, node):
+	return _make_note_ref(self, node, "physical")
 
-@handler("logical//note")
-def render_logical_note_ref(self, node):
-	return make_note_ref(self, node, "logical")
+@_handler("logical//note")
+def _render_logical_note_ref(self, node):
+	return _make_note_ref(self, node, "logical")
 
-@handler("full//note")
-def render_full_note_ref(self, node):
-	return make_note_ref(self, node, "full")
+@_handler("full//note")
+def _render_full_note_ref(self, node):
+	return _make_note_ref(self, node, "full")
 
-@handler("note")
-def render_note_ref(self, node):
-	return make_note_ref(self, node)
+@_handler("note")
+def _render_note_ref(self, node):
+	return _make_note_ref(self, node)
 
-@handler("span")
-def render_span(self, node):
+@_handler("span")
+def _render_span(self, node):
 	span = tree.Tag("span", class_=node["class"], data_tip=node["tip"])
 	self.push(span)
 	self.dispatch_children(node)
 	self.join()
 
-@handler("para")
-def render_para(self, node):
+@_handler("para")
+def _render_para(self, node):
 	self.push(tree.Tag("p", class_=node["class"], id=node["anchor"]))
 	self.dispatch_children(node)
 	self.join()
 
-@handler("link")
-def render_link(self, node):
+@_handler("link")
+def _render_link(self, node):
 	self.push(tree.Tag("a", href=node["href"]))
 	self.dispatch_children(node)
 	self.join()
 
-@handler("verse")
-def render_verse(self, node):
+@_handler("verse")
+def _render_verse(self, node):
 	self.push(tree.Tag("div", class_="verse"))
 	if (head := node.first("stuck-child::head")):
 		self.push(tree.Tag("div", class_="verse-heading"))
@@ -392,51 +395,50 @@ def render_verse(self, node):
 	self.join()
 	self.join()
 
-@handler("display")
-@handler("div") # phantom divisions
-def just_dispatch(self, node):
+@_handler("display")
+@_handler("div") # phantom divisions
+def _just_dispatch(self, node):
 	self.dispatch_children(node)
 
-@handler("split")
-def render_split(self, node):
+@_handler("split")
+def _render_split(self, node):
 	display = node.first("display")
 	assert display
 	self.dispatch_children(display)
 
-@handler("match")
-def render_match(self, node):
+@_handler("match")
+def _render_match(self, node):
 	self.push(tree.Tag("span", class_="highlight", id=node["id"]))
 	self.dispatch_children(node)
 	self.join()
 
-@handler("*")
-def render_tag(self, node):
+@_handler("*")
+def _render_tag(self, node):
 	assert isinstance(node, tree.Tag)
 	print(f"render: UNKNOWN: {node.name}", file=sys.stderr)
 
-class HTMLDocument:
+class Document:
 
 	def __init__(self):
 		# We are using XML trees instead of str, even for basic stuff
 		# like repository, because we expect even fields like that to be
 		# highlightable in search results; and, for this to be possible,
 		# we need to use trees.
-		self.titles = []
-		self.summary = None
-		self.hand = None
-		self.editors = []
-		self.edition_languages = []
-		self.body = None
-		self.logical = tree.Tree() # Only for snippets
-		self.repository = paired(identifier="", name="")
-		self.identifier = None
-		self.commit = None
-		self.last_modified_commit = None
-		self.path = None
+		self.titles: list[tree.Tree] = []
+		self.summary: tree.Tree | None = None
+		self.hand: tree.Tree | None = None
+		self.editors: list[tree.Tree] = []
+		self.edition_languages: list[tree.Tree] = []
+		self.body: tree.Tree | None = None
+		self.repository: Paired | None = None
+		self.identifier: tree.Tree | None = None
+		self.commit: Commit | None = None
+		self.last_modified_commit: Commit | None = None
+		self.path: str | None = None
 
 class _HTMLRenderer(tree.Serializer):
 
-	def __init__(self, input, handlers=HANDLERS, toc_depth=-1, display="physical"):
+	def __init__(self, input, handlers=_HANDLERS, toc_depth=-1, display="physical"):
 		super().__init__()
 		self.handlers = handlers
 		self.toc_depth = toc_depth
@@ -444,7 +446,7 @@ class _HTMLRenderer(tree.Serializer):
 		self.display = display
 		self.notes = []
 		self.heading_level = 1
-		self.document = HTMLDocument()
+		self.document = Document()
 		self.visited = set()
 
 	def __call__(self):
@@ -479,12 +481,25 @@ class _HTMLRenderer(tree.Serializer):
 # We have an XML tree instead of a Document object as input because 1) we will
 # need to process an XML tree for highlighting; and 2) because it is more
 # convenient to use xpath.
-def process(doc: tree.Tree, toc_depth=-1, display="physical"):
+def process(doc: tree.Tree, toc_depth=-1, display="physical") -> Document:
+	"""
+	Processes a document in the internal representation and converts it to a
+	HTML representation.
+
+	`toc_depth` is the maximum depth of the table of contents in the
+	generated HTML. If it is negative, the depth is unbounded. Otherwise, it
+	is limited to the heading level of `toc_depth`. If `toc_depth=2`,
+	headings upto `<h2>` included are displayed in the table of contents,
+	etc.
+
+	`display` is the default display of the generated HTML. It should be one
+	of "physical", "logical", "full".
+	"""
 	render = _HTMLRenderer(doc, toc_depth=toc_depth, display=display)
 	ret = render()
 	return ret
 
-def process_partial(xml):
+def process_partial(xml) -> tree.Tree:
 	render = _HTMLRenderer(xml)
 	render()
 	return render.tree
