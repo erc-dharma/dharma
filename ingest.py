@@ -8,7 +8,7 @@ import os, sys, re, html, urllib.parse, posixpath, copy
 from dharma import common, prosody, people, tree, gaiji, biblio, languages
 from dharma import enrich
 
-class Document:
+class _Document:
 
 	def __init__(self):
 		self.title: list[tree.Tree] = []
@@ -96,16 +96,16 @@ class Document:
 			f.extend(self.extra)
 			f.join()
 		f.join()
-		add_lang_to_parents(f.tree)
+		_add_lang_to_parents(f.tree)
 		return f.tree
 
-def add_lang_to_parents(node: tree.Node):
+def _add_lang_to_parents(node: tree.Node):
 	match node:
 		case tree.Tag():
 			pass # see below
 		case tree.Tree():
 			for child in node:
-				add_lang_to_parents(child)
+				_add_lang_to_parents(child)
 			return
 		case _:
 			return
@@ -128,9 +128,9 @@ def add_lang_to_parents(node: tree.Node):
 	if editorial:
 		node["editorial"] = "true"
 	for child in node:
-		add_lang_to_parents(child)
+		_add_lang_to_parents(child)
 
-def XML(s):
+def _XML(s):
 	r = tree.parse_string(f"<root>{s}</root>")
 	r.root.unwrap()
 	return r
@@ -139,19 +139,19 @@ def XML(s):
 # specific ones should come first.
 HANDLERS = []
 
-def handler(path):
+def _handler(path):
 	def decorator(f):
 		HANDLERS.append((tree.Node.match_func(path), f))
 		return f
 	return decorator
 
-class Parser(tree.Serializer):
+class _Parser(tree.Serializer):
 
 	def __init__(self, t, handlers=HANDLERS):
 		super().__init__()
 		self.handlers = handlers
 		self.tree = t
-		self.document = Document()
+		self.document = _Document()
 		# Nodes in this set are ignored in dispatch(). These nodes
 		# still remain in the tree and are still accessible from
 		# within handlers.
@@ -316,16 +316,16 @@ class Parser(tree.Serializer):
 # <a href="myurl">foo</ref>. <ptr/> is like <ref> except that it is supposed
 # to be empty. Even so, we try to deal appropriately with a non-empty <ptr/>.
 
-bibl_units = set(biblio.cited_range_units)
+_bibl_units = set(biblio.cited_range_units)
 
-def extract_bibl_ref(bibl, ref):
+def _extract_bibl_ref(bibl, ref):
 	# The ptr/@target is supposed to start with "bib:". If it doesn't, we
 	# still assume it refers to a bibliography entry.
 	short_title = ref["target"].removeprefix("bib:")
 	location = []
 	for range in bibl.find("citedRange"):
 		unit = range["unit"] or "page"
-		if unit not in bibl_units:
+		if unit not in _bibl_units:
 			unit = "mixed"
 		value = range.text()
 		if not value:
@@ -335,36 +335,36 @@ def extract_bibl_ref(bibl, ref):
 
 # For printing entries within the bibliography. In this context, bibl needs to
 # be replaced with the bibliography entry.
-@handler("listBibl/bibl")
-def parse_listbibl_bibl(p, bibl):
+@_handler("listBibl/bibl")
+def _parse_listbibl_bibl(p, bibl):
 	ref = bibl.first("ptr") or bibl.first("ref")
 	if not ref or ref["target"].removeprefix("bib:") == "AuthorYear_01":
 		return
-	short_title, location = extract_bibl_ref(bibl, ref)
+	short_title, location = _extract_bibl_ref(bibl, ref)
 	if not short_title:
 		return
 	p.append(p.bib_entry(short_title, location=location))
 
-bibl_rend_formats = ("default", "omitname", "ibid", "siglum")
+_bibl_rend_formats = ("default", "omitname", "ibid", "siglum")
 
 # For printing bibliographic references.
-@handler("bibl")
-def parse_bibl_ref(p, bibl):
+@_handler("bibl")
+def _parse_bibl_ref(p, bibl):
 	rend = bibl["rend"]
-	if rend not in bibl_rend_formats:
+	if rend not in _bibl_rend_formats:
 		rend = "default"
-		assert rend in bibl_rend_formats
+		assert rend in _bibl_rend_formats
 	# We use a dummy node if there is no ptr nor ref.
 	ref = bibl.first("ptr") or bibl.first("ref") or tree.Tag("ref")
-	short_title, location = extract_bibl_ref(bibl, ref)
+	short_title, location = _extract_bibl_ref(bibl, ref)
 	p.append(p.bib_reference(short_title, rend=rend, contents=list(ref),
 		location=location))
 	if (note := bibl.first("note")):
 		p.dispatch(note)
 
-@handler("ref")
-@handler("ptr")
-def parse_ref(p, ref):
+@_handler("ref")
+@_handler("ptr")
+def _parse_ref(p, ref):
 	url = ref["target"]
 	if not url:
 		return p.dispatch_children(ref)
@@ -426,7 +426,7 @@ def parse_ref(p, ref):
 
 ################################# Apparatus ###################################
 
-def append_reading_sources(p, sources):
+def _append_reading_sources(p, sources):
 	refs = []
 	for short_title in sources.split():
 		short_title = short_title.removeprefix("bib:")
@@ -437,35 +437,35 @@ def append_reading_sources(p, sources):
 		p.append(" ")
 		p.append(p.bib_reference(short_title, rend="siglum"))
 
-@handler("lem")
-def parse_lem(p, lem):
+@_handler("lem")
+def _parse_lem(p, lem):
 	p.push(tree.Tag("span"))
 	p.dispatch_children(lem)
 	p.join()
-	append_reading_sources(p, lem["source"])
+	_append_reading_sources(p, lem["source"])
 
-@handler("rdg")
-def parse_rdg(p, rdg):
+@_handler("rdg")
+def _parse_rdg(p, rdg):
 	p.push(tree.Tag("span", class_="reading", tip="Reading"))
 	p.dispatch_children(rdg)
 	p.join()
-	append_reading_sources(p, rdg["source"])
+	_append_reading_sources(p, rdg["source"])
 
-@handler("app")
-def parse_app(p, app):
+@_handler("app")
+def _parse_app(p, app):
 	if (n := app["loc"]):
 		p.push(tree.Tag("span", class_="lb", tip="Line start"))
 		p.append(f"⟨{n}⟩")
 		p.join()
 		p.append(" ")
 	if (lem := app.first("lem")):
-		p.dispatch(lem)
+		_parse_lem(p, lem)
 	rdgs = app.find("rdg")
 	if rdgs:
 		p.append(" \N{white medium diamond} ")
 	notes = app.find("note") # we deal with other notes elsewhere
 	for i, rdg in enumerate(rdgs):
-		p.dispatch(rdg)
+		_parse_rdg(p, rdg)
 		if i < len(rdgs) - 1:
 			p.append("; ")
 		elif not notes:
@@ -476,8 +476,8 @@ def parse_app(p, app):
 		p.dispatch_children(note)
 		p.join()
 
-@handler("listApp")
-def parse_listApp(p, listApp):
+@_handler("listApp")
+def _parse_listApp(p, listApp):
 	apps = listApp.find("app[lem[not empty()]]")
 	if not apps:
 		return
@@ -489,14 +489,14 @@ def parse_listApp(p, listApp):
 			if prev_loc is not None:
 				p.join()
 			p.push(tree.Tag("para"))
-		p.dispatch(app)
+		_parse_app(p, app)
 		prev_loc = app["loc"]
 	p.join()
 
 ################################# Editorial ####################################
 
-@handler("num")
-def parse_num(p, num):
+@_handler("num")
+def _parse_num(p, num):
 	if num["value"] and num["value"] == num.text() and not num["cert"] == "low":
 		tip = "" # Pointless to add a tooltip in this case.
 	elif num["value"]:
@@ -519,21 +519,21 @@ def parse_num(p, num):
 
 # Try to have more precise tooltips for this. If this does not work, we fall
 # back to a generic one.
-@handler("supplied[@reason='subaudible']")
-def parse_supplied_subaudible(p, supplied):
+@_handler("supplied[@reason='subaudible']")
+def _parse_supplied_subaudible(p, supplied):
 	match supplied.text():
 		case "'" | "’":
-			tip = XML('<span class="italics">Avagraha</span> added by the editor to clarify the interpretation')
+			tip = _XML('<span class="italics">Avagraha</span> added by the editor to clarify the interpretation')
 		case ".":
 			tip = "Punctuation added by the editor at semantic break"
 		case _:
 			tip = "Editorial addition to clarify interpretation"
-	return emit_supplied(p, supplied, tip, "⟨⟩")
+	return _emit_supplied(p, supplied, tip, "⟨⟩")
 
 # EGD "Additions to the translation"
 # EGD "Marking up restored text"
 # EGD "The basis of restoration"
-supplied_tbl = {
+_supplied_tbl = {
 	# EGD: "words added to the translation for the sake of target language
 	# syntax"
 	# subaudible is handled separately
@@ -550,12 +550,12 @@ supplied_tbl = {
 	"undefined": ("[]", "Text supplied for undefined reason (lost or omitted)")
 }
 # OK
-@handler("supplied") # [not @reason='subaudible']
-def parse_supplied(p, supplied):
-	brackets, tip = supplied_tbl.get(supplied["reason"], supplied_tbl["lost"])
-	return emit_supplied(p, supplied, tip, brackets)
+@_handler("supplied") # [not @reason='subaudible']
+def _parse_supplied(p, supplied):
+	brackets, tip = _supplied_tbl.get(supplied["reason"], _supplied_tbl["lost"])
+	return _emit_supplied(p, supplied, tip, brackets)
 
-def emit_supplied(p, supplied, tip, brackets):
+def _emit_supplied(p, supplied, tip, brackets):
 	ldelim, rdelim = brackets
 	p.push(tree.Tree())
 	# XXX must omit <note> in all cases where we construct a tooltip
@@ -577,7 +577,7 @@ def emit_supplied(p, supplied, tip, brackets):
 	p.join()
 
 # § Premodern insertion
-add_place_tbl = {
+_add_place_tbl = {
 	"inline": "Scribal addition within the same line or in the immediate vicinity of the locus",
 	"below": "Scribal addition below the line",
 	"above": "Scribal addition above the line",
@@ -588,10 +588,10 @@ add_place_tbl = {
 	"overstrike": "Scribal addition made in the space where a previous string of text has been erased",
 	"unspecified": "Scribal addition: no location information available",
 }
-@handler("add")
-def parse_add(p, node, deleted=None):
+@_handler("add")
+def _parse_add(p, node, deleted=None):
 	p.push(tree.Tree())
-	tip = add_place_tbl.get(node["place"], add_place_tbl["unspecified"])
+	tip = _add_place_tbl.get(node["place"], _add_place_tbl["unspecified"])
 	p.append(tip)
 	if deleted:
 		p.append(" (overwritten text: ")
@@ -609,16 +609,16 @@ def parse_add(p, node, deleted=None):
 	p.join()
 
 # § Premodern deletion
-del_rend_tbl = {
+_del_rend_tbl = {
 	"strikeout": "Scribal deletion: text struck through or cross-hatched",
-	"ui": XML('Scribal deletion: combined application of vowel markers <span class="italics">u</span> and <span class="italics">i</span> to characters to be deleted'),
+	"ui": _XML('Scribal deletion: combined application of vowel markers <span class="italics">u</span> and <span class="italics">i</span> to characters to be deleted'),
 	"other": "Scribal deletion",
 	"corrected": "Scribal deletion: corrected text",
 }
-@handler("del")
-def parse_del(p, node, added=None):
+@_handler("del")
+def _parse_del(p, node, added=None):
 	p.push(tree.Tree())
-	tip = del_rend_tbl.get(node["rend"], del_rend_tbl["other"])
+	tip = _del_rend_tbl.get(node["rend"], _del_rend_tbl["other"])
 	p.append(copy.copy(tip))
 	if added:
 		p.append(" (replacement text: ")
@@ -636,18 +636,18 @@ def parse_del(p, node, added=None):
 	p.join()
 
 # § Premodern correction
-@handler("subst")
-def parse_subst(p, subst):
+@_handler("subst")
+def _parse_subst(p, subst):
 	# For search, should just keep the text of <add>
 	add = subst.first("add")
 	dele = subst.first("del")
 	if not add or not dele:
 		return p.dispatch_children(subst)
-	parse_del(p, dele, add)
-	parse_add(p, add, dele)
+	_parse_del(p, dele, add)
+	_parse_add(p, add, dele)
 
-@handler("sic")
-def parse_sic(p, sic, corr=None):
+@_handler("sic")
+def _parse_sic(p, sic, corr=None):
 	p.push(tree.Tree())
 	p.append("Incorrect text")
 	if corr:
@@ -664,8 +664,8 @@ def parse_sic(p, sic, corr=None):
 	p.append_display("?")
 	p.join()
 
-@handler("corr")
-def parse_corr(p, corr, sic=None):
+@_handler("corr")
+def _parse_corr(p, corr, sic=None):
 	p.push(tree.Tree())
 	p.append("Emended text")
 	if sic:
@@ -682,8 +682,8 @@ def parse_corr(p, corr, sic=None):
 	p.append_display('⟩')
 	p.join()
 
-@handler("orig")
-def parse_orig(p, orig, reg=None):
+@_handler("orig")
+def _parse_orig(p, orig, reg=None):
 	p.push(tree.Tree())
 	p.append("Non-standard text")
 	if reg:
@@ -700,8 +700,8 @@ def parse_orig(p, orig, reg=None):
 	p.append_display("!")
 	p.join()
 
-@handler("reg")
-def parse_reg(p, reg, orig=None):
+@_handler("reg")
+def _parse_reg(p, reg, orig=None):
 	p.push(tree.Tree())
 	p.append("Standardised text")
 	if orig:
@@ -718,8 +718,8 @@ def parse_reg(p, reg, orig=None):
 	p.append_display("⟩")
 	p.join()
 
-@handler("unclear")
-def parse_unclear(p, node, standalone=True):
+@_handler("unclear")
+def _parse_unclear(p, node, standalone=True):
 	p.push(tree.Tree())
 	if node["cert"] == "low":
 		p.append("Tentative reading")
@@ -741,8 +741,8 @@ def parse_unclear(p, node, standalone=True):
 		p.append_display(")")
 	p.join()
 
-@handler("choice")
-def parse_choice(p, node):
+@_handler("choice")
+def _parse_choice(p, node):
 	"""We expect one of the following:
 
 	#1 <choice>(<unclear>...</unclear>)+</choice>
@@ -766,29 +766,29 @@ def parse_choice(p, node):
 	"""
 	children = node.find("*")
 	if all(child.name == "unclear" for child in children):
-		make_multiple_unclear(p, children)
+		_make_multiple_unclear(p, children)
 	elif len(children) != 2:
 		p.dispatch_children(node)
 	elif (sic := node.first("sic")) and (corr := node.first("corr")):
 		p.push(tree.Tree())
-		parse_sic(p, sic, corr)
+		_parse_sic(p, sic, corr)
 		one = p.pop()
 		p.push(tree.Tree())
-		parse_corr(p, corr, sic)
+		_parse_corr(p, corr, sic)
 		two = p.pop()
-		make_choice_pair(p, one, two)
+		_make_choice_pair(p, one, two)
 	elif (orig := node.first("orig")) and (reg := node.first("reg")):
 		p.push(tree.Tree())
-		parse_orig(p, orig, reg)
+		_parse_orig(p, orig, reg)
 		one = p.pop()
 		p.push(tree.Tree())
-		parse_reg(p, reg, orig)
+		_parse_reg(p, reg, orig)
 		two = p.pop()
-		make_choice_pair(p, one, two)
+		_make_choice_pair(p, one, two)
 	else:
 		p.dispatch_children(node)
 
-def make_multiple_unclear(p, nodes: list[tree.Node]):
+def _make_multiple_unclear(p, nodes: list[tree.Node]):
 	"""Output:
 
 	<split>
@@ -812,7 +812,7 @@ def make_multiple_unclear(p, nodes: list[tree.Node]):
 	p.join()
 	p.join("split")
 
-def make_choice_pair(p, one, two):
+def _make_choice_pair(p, one, two):
 	"""
 	<views>
 		<physical>one</physical>
@@ -850,8 +850,8 @@ def make_choice_pair(p, one, two):
 	p.join("views")
 
 # EGD "Editorial deletion (suppression)"
-@handler("surplus")
-def parse_surplus(p, node):
+@_handler("surplus")
+def _parse_surplus(p, node):
 	p.push(tree.Tag("span", class_="surplus", tip="Superfluous text erroneously added by the scribe"))
 	p.append_display("{")
 	p.dispatch_children(node)
@@ -863,22 +863,22 @@ def parse_surplus(p, node):
 # For <note> elements anywhere but in the apparatus, where <note> has a peculiar
 # purpose.
 # XXX handle nested notes here, or fix them afterwards? fix them afterwards
-@handler("note")
-def parse_note(p, note):
+@_handler("note")
+def _parse_note(p, note):
 	out = p.push(tree.Tag("note"))
 	if (resps := note["resp"]):
-		append_names(p, resps.split())
+		_append_names(p, resps.split())
 		p.append(": ")
 	elif (refs := note["source"]):
-		append_sources(p, refs.split())
+		_append_sources(p, refs.split())
 		p.append(": ")
 	p.dispatch_children(note)
 	p.join()
 	p.document.notes.append(out)
 
 # Put <foreign> in italics, unless @rend="roman"
-@handler("foreign")
-def parse_foreign(p, foreign):
+@_handler("foreign")
+def _parse_foreign(p, foreign):
 	class_ = "italics"
 	for word in foreign["rend"].lower().split():
 		match word:
@@ -892,28 +892,28 @@ def parse_foreign(p, foreign):
 
 ################################# Milestones ###################################
 
-def get_n(node):
+def _get_n(node):
 	n = node["n"]
 	if not n:
 		return ""
 	n = n.replace("_", " ").replace("-", "\N{en dash}")
 	return n
 
-def milestone_break(node):
+def _milestone_break(node):
 	return common.to_boolean(node["break"], True)
 
-def append_milestone_label(p, node, unit):
+def _append_milestone_label(p, node, unit):
 	span = tree.Tag("span", tip=f"{unit.title()} start")
 	p.push(span)
 	p.append("⟨")
 	if unit == "line":
-		if (n := get_n(node)):
+		if (n := _get_n(node)):
 			p.append(n)
 		else:
 			p.append("Line")
 	else:
 		p.append(unit.title())
-		if (n := get_n(node)):
+		if (n := _get_n(node)):
 			p.append(" ")
 			p.append(n)
 	# If a <label> follows immediately, associate it with the milestone.
@@ -928,30 +928,30 @@ def append_milestone_label(p, node, unit):
 	p.append("⟩")
 	p.join()
 
-@handler("milestone")
-def parse_milestone(p, node):
-	break_ = milestone_break(node)
+@_handler("milestone")
+def _parse_milestone(p, node):
+	break_ = _milestone_break(node)
 	match node["type"]:
 		case "pagelike":
 			type = "npage"
 		case "gridlike" | _:
 			type = "ncell"
 	p.push(tree.Tag(type, break_=common.from_boolean(break_)))
-	append_milestone_label(p, node, node["unit"] or "column")
+	_append_milestone_label(p, node, node["unit"] or "column")
 	if node["type"] == "pagelike":
-		append_fws(p, node)
+		_append_fws(p, node)
 	p.join()
 
-@handler("lb")
-def parse_lb(p, node):
-	break_ = milestone_break(node)
+@_handler("lb")
+def _parse_lb(p, node):
+	break_ = _milestone_break(node)
 	p.push(tree.Tag("nline", break_=common.from_boolean(break_)))
-	append_milestone_label(p, node, "line")
+	_append_milestone_label(p, node, "line")
 	p.join()
 
 # <fw> is for pagelike milestones only.
 # See https://www.tei-c.org/release/doc/tei-p5-doc/en/html/PH.html#PHSK
-fw_places = {
+_fw_places = {
 	"bot-left": "bottom left",
 	"bot-right": "bottom right",
 	"bottom": "bottom",
@@ -961,15 +961,15 @@ fw_places = {
 	"top-left": "top left",
 	"top-right": "top right",
 }
-@handler("fw")
-def parse_fw(p, fw):
+@_handler("fw")
+def _parse_fw(p, fw):
 	p.push(tree.Tag("span", class_="fw", tip="Foliation"))
 	# XXX need different formatting for phys/log/full
 	p.append("⟨")
 	if (place := fw["place"]):
 		# If the value is not in our table, keep it, even
 		# though it's wrong.
-		place = fw_places.get(place, place)
+		place = _fw_places.get(place, place)
 	else:
 		place = "top"
 	p.append(place)
@@ -981,19 +981,19 @@ def parse_fw(p, fw):
 	p.append("⟩")
 	p.join()
 
-def append_fws(p, pb):
+def _append_fws(p, pb):
 	node = pb.first("stuck-following-sibling::label") or pb
 	while (fw := node.first("stuck-following-sibling::fw")):
 		p.dispatch(fw)
 		p.visited.add(fw)
 		node = fw
 
-@handler("pb")
-def parse_pb(p, node):
-	break_ = milestone_break(node)
+@_handler("pb")
+def _parse_pb(p, node):
+	break_ = _milestone_break(node)
 	p.push(tree.Tag("npage", break_=common.from_boolean(break_)))
-	append_milestone_label(p, node, "page")
-	append_fws(p, node)
+	_append_milestone_label(p, node, "page")
+	_append_fws(p, node)
 	p.join()
 
 # > milestones
@@ -1005,7 +1005,7 @@ def parse_pb(p, node):
 #	<space type="(binding-hole|descender|ascender|defect|feature)"/>
 #	<space type="unclassified"/>
 #	<space type="unclassified" quantity=... unit="character"/>
-space_types = {
+_space_types = {
 	"semantic": {
 		"text": "_",
 		"tip": "semantic space",
@@ -1039,10 +1039,10 @@ space_types = {
 		"tip": "significant space that does not fit other categories",
 	}
 }
-@handler("space")
-def parse_space(p, space):
+@_handler("space")
+def _parse_space(p, space):
 	type = space["type"]
-	if type not in space_types:
+	if type not in _space_types:
 		type = "semantic"
 	quant = 0
 	unit = ""
@@ -1056,7 +1056,7 @@ def parse_space(p, space):
 		unit = space["unit"]
 		if unit != "character":
 			unit = "character"
-	info = space_types[type]
+	info = _space_types[type]
 	tip = info["tip"]
 	text = info["text"]
 	if type in ("semantic", "vacat", "unclassified"):
@@ -1071,14 +1071,14 @@ def parse_space(p, space):
 
 # <abbreviations
 
-@handler("abbr")
-def parse_abbr(p, node):
+@_handler("abbr")
+def _parse_abbr(p, node):
 	p.push(tree.Tag("span", class_="abbr", tip="Abbreviated text"))
 	p.dispatch_children(node)
 	p.join()
 
-@handler("ex")
-def parse_ex(p, node):
+@_handler("ex")
+def _parse_ex(p, node):
 	if node["cert"] == "low":
 		tip = "Abbreviation expansion (uncertain)"
 	else:
@@ -1089,8 +1089,8 @@ def parse_ex(p, node):
 	p.append_display(")")
 	p.join()
 
-@handler("am")
-def parse_am(p, am):
+@_handler("am")
+def _parse_am(p, am):
 	p.push(tree.Tag("span", class_="abbr-mark", tip="Abbreviation mark"))
 	p.dispatch_children(am)
 	p.join()
@@ -1098,8 +1098,8 @@ def parse_am(p, am):
 # We expect:
 #	<expan>((<abbr>(text|<am>...</am>)</abbr>)|(<ex>...</ex>))+</expan>
 # XXX This is not good (can't deal with <note>, etc.). Need to straighten this out.
-@handler("expan")
-def parse_expan(p, node):
+@_handler("expan")
+def _parse_expan(p, node):
 	def iter_abbr_without_am(cur):
 		match cur:
 			case tree.Tag("am"):
@@ -1131,8 +1131,8 @@ def parse_expan(p, node):
 
 # >abbreviations
 
-@handler("seg[stuck-child::gap]")
-def parse_other_seg(p, seg):
+@_handler("seg[stuck-child::gap]")
+def _parse_other_seg(p, seg):
 	# We expect something like:
 	# <seg met="+++-++"><gap reason="lost" quantity="6" unit="character"/></seg>
 	# In this case, use the same tooltip we would use for <gap>, but display
@@ -1140,15 +1140,15 @@ def parse_other_seg(p, seg):
 	# XXX what about search? For now let's just convert prosodic pattern
 	met = seg["met"]
 	if not met:
-		return parse_seg(p, seg)
+		return _parse_seg(p, seg)
 	if prosody.is_pattern(met):
 		met = prosody.render_pattern(met)
 	elif (entry := p.get_prosody_entry(met)):
 		met, _, _ = entry
 	else:
-		return parse_seg(p, seg)
+		return _parse_seg(p, seg)
 	p.push(tree.Tag("span"))
-	_, _, tip, _ = parse_gap(p, seg.first("stuck-child::gap"))
+	phys_repl, log_repl, search_repl, tip = _parse_gap(p, seg.first("stuck-child::gap"))
 	if tip:
 		p.top["tip"] = tip
 	p.append_display("[")
@@ -1158,8 +1158,8 @@ def parse_other_seg(p, seg):
 
 # There is @type=aksara|component which we are not dealing with but that is
 # apparently useless.
-@handler("seg") # seg[not stuck-child::gap]
-def parse_seg(p, seg):
+@_handler("seg") # seg[not stuck-child::gap]
+def _parse_seg(p, seg):
 	p.push(tree.Tag("span"))
 	rend = seg["rend"].split()
 	if "pun" in rend:
@@ -1185,16 +1185,16 @@ def parse_seg(p, seg):
 # special placeholder character (if @unit='character')
 
 # XXX not general enough; might be better to take into account the langguage instead
-@handler("div[@type='translation']//gap[@reason='ellipsis']")
-def handle_gap_ellipsis(p, gap):
+@_handler("div[@type='translation']//gap[@reason='ellipsis']")
+def _handle_gap_ellipsis(p, gap):
 	p.push(tree.Tag("span", tip="Untranslated segment"))
 	p.append("\N{horizontal ellipsis}")
 	p.join()
 
-GAP_CHAR = "."
-GAP_DEFAULT_REPL = 5 * GAP_CHAR
+_GAP_CHAR = "."
+_GAP_DEFAULT_REPL = 5 * _GAP_CHAR
 
-def parse_gap(p, gap) -> tuple[str, str, str, str]:
+def _parse_gap(p, gap) -> tuple[str, str, str, str]:
 	"Return values are: phys_repl, log_repl, search_repl, tooltip."
 	# @reason="undefined" is the most generic choice, so we default to it
 	# if @reason is not given.
@@ -1226,13 +1226,13 @@ def parse_gap(p, gap) -> tuple[str, str, str, str]:
 			else:
 				# reason = "undefined" (lost or illegible)
 				repl += f"{quantity}*"
-			search_repl = GAP_CHAR * quantity
+			search_repl = _GAP_CHAR * quantity
 		elif unit == "character component":
 			repl += quantity * "."
-			search_repl = GAP_CHAR # better than nothing.
+			search_repl = _GAP_CHAR # better than nothing.
 		else:
 			repl += "%d %s %s" % (quantity, reason, common.numberize(unit, quantity))
-			search_repl = GAP_DEFAULT_REPL
+			search_repl = _GAP_DEFAULT_REPL
 		repl += "]"
 		phys_repl = "["
 		if precision == "low" and unit != "character":
@@ -1253,7 +1253,7 @@ def parse_gap(p, gap) -> tuple[str, str, str, str]:
 			repl = "[…]"
 		else:
 			repl = "[unknown number of %s %s]" % (reason, common.numberize(unit, +333))
-		search_repl = GAP_DEFAULT_REPL
+		search_repl = _GAP_DEFAULT_REPL
 		tip = "Unknown number of %s %s" % (reason, common.numberize(unit, +333))
 	return phys_repl or repl, repl, search_repl, tip
 
@@ -1262,9 +1262,9 @@ def parse_gap(p, gap) -> tuple[str, str, str, str]:
 # @unit="character" is for akṣaras
 # EGD: The EpiDoc element <gap/> ff (full section 5.4)
 # EGD: "Scribal Omission without Editorial Restoration"
-@handler("gap")
-def handle_gap(p, gap):
-	phys_repl, log_repl, search_repl, tip = parse_gap(p, gap)
+@_handler("gap")
+def _handle_gap(p, gap):
+	phys_repl, log_repl, search_repl, tip = _parse_gap(p, gap)
 	assert not isinstance(log_repl, tree.Node)
 	p.push(tree.Tag("views"))
 	for display, node in (("physical", phys_repl), ("logical", log_repl),
@@ -1286,7 +1286,7 @@ def handle_gap(p, gap):
 		p.join()
 	p.join("views")
 
-composed_fractions = {
+_composed_fractions = {
 	(0, 3): "\N{vulgar fraction zero thirds}",
 	(1, 2): "\N{vulgar fraction one half}",
 	(1, 3): "\N{vulgar fraction one third}",
@@ -1340,12 +1340,12 @@ for k, v in sorted(rev.items()):
 # We try to use a uniform representation for fractions. If there is a
 # precomposed code point for the given fraction, we use it, otherwise we use
 # <sup>9</sup> + fraction slash + <sub>8</sub>.
-@handler("g[@type='numeral']")
-def parse_g_numeral(p, node):
+@_handler("g[@type='numeral']")
+def _parse_g_numeral(p, node):
 	frac = re.match("([0-9]+)[/\N{fraction slash}]([0-9]+)", node.text())
 	if frac:
 		num, den = int(frac.group(1)), int(frac.group(2))
-		composed = composed_fractions.get((num, den))
+		composed = _composed_fractions.get((num, den))
 		if composed:
 			p.append(composed)
 		else:
@@ -1360,8 +1360,8 @@ def parse_g_numeral(p, node):
 		p.dispatch_children(node)
 
 # g[not @type='numeral']
-@handler("g")
-def parse_g(p, node):
+@_handler("g")
+def _parse_g(p, node):
 	# <g type="...">\.</g> for punctuation marks
 	# <g type="...">§+</g> for space fillers
 	# <g type="..."></g> in the other cases viz. for symbols whose function
@@ -1390,7 +1390,7 @@ def parse_g(p, node):
 	p.join()
 	p.join("split")
 
-hi_table = {
+_hi_table = {
 	"italic": tree.Tag("span", class_="italics"),
 	"bold": tree.Tag("span", class_="bold"),
 	"superscript": tree.Tag("span", class_="sup"),
@@ -1398,11 +1398,11 @@ hi_table = {
 	"check": tree.Tag("span", class_="check"),
 	"grantha": tree.Tag("span", class_="grantha", tip="Grantha text"),
 }
-@handler("hi")
-def parse_hi(p, hi):
+@_handler("hi")
+def _parse_hi(p, hi):
 	n = 0
 	for rend in common.unique(hi["rend"].split()):
-		node = hi_table.get(rend)
+		node = _hi_table.get(rend)
 		if node:
 			p.push(node.copy())
 			n += 1
@@ -1412,8 +1412,8 @@ def parse_hi(p, hi):
 
 # < para-like
 
-def make_meter_heading(p, met):
-	ret = _make_meter_heading(p, met)
+def _make_meter_heading(p, met):
+	ret = __make_meter_heading(p, met)
 	match ret:
 		case tree.Node() | None:
 			pass
@@ -1421,7 +1421,7 @@ def make_meter_heading(p, met):
 			raise Exception
 	return ret
 
-def _make_meter_heading(p, met) -> tree.Node | None:
+def __make_meter_heading(p, met) -> tree.Node | None:
 	if not met:
 		return
 	if prosody.is_pattern(met):
@@ -1453,10 +1453,10 @@ def _make_meter_heading(p, met) -> tree.Node | None:
 	p.join()
 	return p.pop()
 
-@handler("lg")
-@handler("p[@rend='stanza']")
-@handler("ab[@rend='stanza']")
-def parse_lg(p, lg):
+@_handler("lg")
+@_handler("p[@rend='stanza']")
+@_handler("ab[@rend='stanza']")
+def _parse_lg(p, lg):
 	"""The guide does not talk about ab[@rend='stanza'], but we still try
 	to process it if it appears in an edition.
 	"""
@@ -1468,7 +1468,7 @@ def parse_lg(p, lg):
 	if (tmp := lg.first("stuck-child::certainty[@match='../@met' and @locus='value']")):
 		p.visited.add(tmp)
 		unsure = True
-	met = make_meter_heading(p, lg["met"])
+	met = _make_meter_heading(p, lg["met"])
 	if n or met:
 		p.push_lang(languages.Descriptor("eng", "latin")) # TODO and editorial!
 		p.push(tree.Tag("head"))
@@ -1518,17 +1518,17 @@ def parse_lg(p, lg):
 
 # As far as we're concerned, <ab> is just a <p>, so we treat them identically.
 # We deal with stanzas in another handler.
-@handler("ab")
-@handler("p")
-def parse_p(p, para):
+@_handler("ab")
+@_handler("p")
+def _parse_p(p, para):
 	# If the para contains <l> elements, most likely the user forgot to add
 	# @rend='stanza'. <l> elements should only appear within a stanza. Thus
 	# we assume the user meant @rend='stanza' and parse the paragraph as a
 	# verse.
 	if para.first("l"):
-		return parse_lg(p, para)
+		return _parse_lg(p, para)
 	p.push(tree.Tag("para"))
-	if (n := get_n(para)):
+	if (n := _get_n(para)):
 		# See e.g. http://localhost:8023/display/DHARMA_INSSII0400223
 		# Should be displayed like <lb/> is in the edition.
 		p.push(tree.Tag("span", class_="lb", tip="Line start"))
@@ -1538,7 +1538,7 @@ def parse_p(p, para):
 	p.dispatch_children(para)
 	p.join()
 
-def append_meter_description(p, met):
+def _append_meter_description(p, met):
 	if prosody.is_pattern(met):
 		p.append(prosody.render_pattern(met))
 	elif (entry := p.get_prosody_entry(met)):
@@ -1550,19 +1550,18 @@ def append_meter_description(p, met):
 	else:
 		p.append(met)
 
-@handler("l")
-def parse_l(p, l):
+@_handler("l")
+def _parse_l(p, l):
 	p.push(tree.Tree())
 	if (real := l["real"]):
 		p.append("Irregular meter: ")
-		append_meter_description(p, real)
+		_append_meter_description(p, real)
 		if (met := l["met"]):
 			p.append("; based on ")
-			append_meter_description(p, met)
+			_append_meter_description(p, met)
 	elif (met := l["met"]):
 		p.append("Meter: ")
-		append_meter_description(p, met)
-	p.push(tree.Tag("verse-line", n=get_n(l), tip=p.pop().xml()))
+	p.push(tree.Tag("verse-line", n=_get_n(l), tip=p.pop().xml()))
 	p.dispatch_children(l)
 	p.join()
 
@@ -1592,8 +1591,8 @@ réduire les espaces entre ce qui précède et suit du para + entre les items
 # <dl> within <p>, so no special treatment is needed in this case. Still, it
 # might be better to use the same structure for both.
 
-@handler("list[@rend='description' or label]")
-def parse_description_list(p, lst):
+@_handler("list[@rend='description' or label]")
+def _parse_description_list(p, lst):
 	p.push(tree.Tag("dlist"))
 	# We expect a series of (label, item). Only these elements are supposed
 	# to occur within a list. But still try to deal with other elements.
@@ -1623,8 +1622,8 @@ def parse_description_list(p, lst):
 		p.append(tree.Tag("value"))
 	p.join("dlist")
 
-@handler("list")
-def parse_list(p, lst):
+@_handler("list")
+def _parse_list(p, lst):
 	rend = lst["rend"]
 	if rend not in ("plain", "bulleted", "numbered"):
 		rend = "plain"
@@ -1646,8 +1645,8 @@ def parse_list(p, lst):
 # stuck with that. Apparently, this was borrowed from epiDoc, see:
 # https://epidoc.stoa.org/gl/latest/supp-bibliography.html
 # Still doesn't make it a good idea.
-@handler("listBibl")
-def parse_listBibl(p, node):
+@_handler("listBibl")
+def _parse_listBibl(p, node):
 	# We expect @type to be one of "primary" or "secondary", but
 	# still accept other values. In the latter case, we just put the @type
 	# in capitals, so it kinda works with custom values.
@@ -1660,14 +1659,14 @@ def parse_listBibl(p, node):
 	p.join()
 
 # Title of the edited text (in the teiHeader).
-@handler("titleStmt/title")
-def parse_title_in_header(p, title):
+@_handler("titleStmt/title")
+def _parse_title_in_header(p, title):
 	p.dispatch_children(title)
 
 # Titles within the document body (per contrast with the title of the edition).
 # EGD 10.4.2. Encoding titles.
-@handler("title")
-def parse_title(p, title):
+@_handler("title")
+def _parse_title(p, title):
 	p.push(tree.Tag("span", tip="Work title"))
 	if title["level"] == "a":
 		p.append("“")
@@ -1681,9 +1680,9 @@ def parse_title(p, title):
 		p.join()
 	p.join()
 
-@handler("q")
-@handler("quote")
-def parse_quote(p, q):
+@_handler("q")
+@_handler("quote")
+def _parse_quote(p, q):
 	if q["rend"] == "block":
 		p.push(tree.Tag("quote"))
 		# XXX <quote> cannot appear within a <p> in HTML!
@@ -1699,8 +1698,8 @@ def parse_quote(p, q):
 		p.join()
 		p.append("”")
 
-@handler("cit")
-def parse_cit(p, cit):
+@_handler("cit")
+def _parse_cit(p, cit):
 	# <cit>
 	#    <quote>the text</quote>
 	#    <bibl><ptr target="bib:Agrawala1983_01"/></bibl>
@@ -1729,10 +1728,10 @@ def parse_cit(p, cit):
 		p.join()
 		p.append("”")
 		p.append(" (")
-		p.dispatch(bibl)
+		_parse_bibl_ref(p, bibl)
 		p.append(")")
 
-def append_unique_name(items, ident, name):
+def _append_unique_name(items, ident, name):
 	for i, (cand_ident, cand_name) in enumerate(items):
 		if ident is None:
 			if cand_name == name:
@@ -1748,7 +1747,7 @@ def append_unique_name(items, ident, name):
 # We don't attempty to preserve the structure <forename>+<surname> for
 # searching, because we can also have just <name>, so it's simpler to use
 # a simple string.
-def gather_people(stmt, *paths):
+def _gather_people(stmt, *paths):
 	nodes = [node for path in paths for node in stmt.find(path)]
 	# Sort by order of appearance in the file
 	nodes.sort(key=lambda node: node.location.start)
@@ -1765,7 +1764,7 @@ def gather_people(stmt, *paths):
 		# however, use the name given in the XML file.
 		name = people.plain(ident)
 		if name:
-			append_unique_name(ret, ident, name)
+			_append_unique_name(ret, ident, name)
 			continue
 		# We should have either <forename>+<surname> or just <name>. But
 		# also prepare for <surname>+<forename> or a plain string.
@@ -1777,13 +1776,13 @@ def gather_people(stmt, *paths):
 		name = common.normalize_space(name)
 		if not name:
 			continue
-		append_unique_name(ret, None, name)
+		_append_unique_name(ret, None, name)
 	return ret
 
 # We only expect this to appear at /TEI/teiHeader/fileDesc/titleStmt (and a
 # single occurrence).
-@handler("titleStmt")
-def parse_titleStmt(p, stmt):
+@_handler("titleStmt")
+def _parse_titleStmt(p, stmt):
 	# Text title.
 	# We should only have a single <title> elements, but, if there are many,
 	# join them into a single string.
@@ -1794,50 +1793,50 @@ def parse_titleStmt(p, stmt):
 		p.dispatch(title)
 		p.document.title.append(p.pop())
 	# Author of the text (only for critical editions).
-	p.document.authors = gather_people(stmt, "author")
+	p.document.authors = _gather_people(stmt, "author")
 	# Editor(s) of the text.
 	# The only allowed form is respStmt/persName, but also prepare for a few
 	# other forms that are valid TEI but not valid DHARMA.
-	p.document.editors = gather_people(stmt, "respStmt/persName", "editor", "principal", "respStmt/name")
+	p.document.editors = _gather_people(stmt, "respStmt/persName", "editor", "principal", "respStmt/name")
 
-@handler("roleName")
-@handler("measure")
-@handler("date")
-@handler("placeName")
-@handler("persName")
-@handler("text")
-@handler("term")
-@handler("gloss")
-def parse_just_dispatch_all(p, node):
+@_handler("roleName")
+@_handler("measure")
+@_handler("date")
+@_handler("placeName")
+@_handler("persName")
+@_handler("text")
+@_handler("term")
+@_handler("gloss")
+def _parse_just_dispatch_all(p, node):
 	p.dispatch_children(node)
 
-@handler("TEI") # /TEI
-@handler("teiHeader") # /TEI/teiHeader
-@handler("fileDesc") # /TEI/teiHeader/fileDesc
-@handler("sourceDesc") # /TEI/teiHeader/fileDesc/sourceDesc
-@handler("msDesc") # /TEI/teiHeader/fileDesc/sourceDesc/msDesc
-@handler("msContents") # /TEI/teiHeader/fileDesc/sourceDesc/msDesc/msContents
-@handler("text") # /TEI/text
-@handler("body") # /TEI/text/body
-@handler("physDesc")
-def parse_just_dispatch(p, node):
+@_handler("TEI") # /TEI
+@_handler("teiHeader") # /TEI/teiHeader
+@_handler("fileDesc") # /TEI/teiHeader/fileDesc
+@_handler("sourceDesc") # /TEI/teiHeader/fileDesc/sourceDesc
+@_handler("msDesc") # /TEI/teiHeader/fileDesc/sourceDesc/msDesc
+@_handler("msContents") # /TEI/teiHeader/fileDesc/sourceDesc/msDesc/msContents
+@_handler("text") # /TEI/text
+@_handler("body") # /TEI/text/body
+@_handler("physDesc")
+def _parse_just_dispatch(p, node):
 	p.dispatch_children(node)
 
 # These elements and their children should be ignored.
-@handler("editionStmt")
-@handler("facsimile") # for images, will see later on
-@handler("handShift")
-@handler("publicationStmt") # /TEI/teiHeader/fileDesc/publicationStmt
-@handler("msIdentifier") # /TEI/teiHeader/fileDesc/sourceDesc/msDesc/msIdentifier
-@handler("encodingDesc") # /TEI/teiHeader/encodingDesc
-@handler("revisionDesc") # /TEI/teiHeader/revisionDesc
-def parse_ignore(p, node):
+@_handler("editionStmt")
+@_handler("facsimile") # for images, will see later on
+@_handler("handShift")
+@_handler("publicationStmt") # /TEI/teiHeader/fileDesc/publicationStmt
+@_handler("msIdentifier") # /TEI/teiHeader/fileDesc/sourceDesc/msDesc/msIdentifier
+@_handler("encodingDesc") # /TEI/teiHeader/encodingDesc
+@_handler("revisionDesc") # /TEI/teiHeader/revisionDesc
+def _parse_ignore(p, node):
 	pass
 
 # We expect a single occurrence at
 # /TEI/teiHeader/fileDesc/sourceDesc/msDesc/physDesc/handDesc
-@handler("handDesc")
-def parse_handDesc(p, desc):
+@_handler("handDesc")
+def _parse_handDesc(p, desc):
 	# TODO the guide should really disallow summary and just allow a
 	# sequence of paragraphs.
 	root = desc.first("summary") or desc
@@ -1847,8 +1846,8 @@ def parse_handDesc(p, desc):
 
 # We expect a single occurrence at
 # /TEI/teiHeader/fileDesc/sourceDesc/msDesc/msContents/summary
-@handler("summary")
-def parse_contents_summary(p, summ):
+@_handler("summary")
+def _parse_contents_summary(p, summ):
 	# We're supposed to have either a series of <p>, or a piece of text
 	# without divisions. If we have no <p>, create one and wrap the
 	# whole contents into it.
@@ -1856,7 +1855,7 @@ def parse_contents_summary(p, summ):
 	p.dispatch_children(summ)
 	p.document.summary = p.pop()
 
-def fetch_resp(resp):
+def _fetch_resp(resp):
 	resp = people.plain(resp.removeprefix("part:")) or resp
 	return html.escape(resp)
 
@@ -1866,7 +1865,7 @@ def fetch_resp(resp):
 # go where a reference will point, which requires us to know which entries are
 # present in the file-specific bibliography and which are not. (The latter
 # need to be presented within the project-wide bibliography.)
-def gather_biblio(p):
+def _gather_biblio(p):
 	for bibl in p.tree.find(".//listBibl/bibl[ptr]"):
 		ptr = bibl.first("ptr")
 		short_title = ptr["target"].removeprefix("bib:")
@@ -1887,16 +1886,16 @@ def gather_biblio(p):
 			entry = biblio.lookup_entry(short_title)
 			p.bib_entries[short_title] = entry
 
-@handler("div[regex('edition|apparatus|commentary|bibliography', @type)]")
-def parse_main_div(p, div):
+@_handler("div[regex('edition|apparatus|commentary|bibliography', @type)]")
+def _parse_main_div(p, div):
 	p.push(tree.Tag(div["type"]))
-	add_div_heading(p, div, div["type"].title())
+	_add_div_heading(p, div, div["type"].title())
 	p.dispatch_children(div)
 	assert hasattr(p.document, div["type"])
 	setattr(p.document, div["type"], p.pop())
 
-@handler("div[@type='translation']")
-def parse_div_translation(p, div):
+@_handler("div[@type='translation']")
+def _parse_div_translation(p, div):
 	def make_translation_heading():
 		resps = div["resps"]
 		if resps:
@@ -1924,21 +1923,21 @@ def parse_div_translation(p, div):
 			# bibliography.
 			p.append(" by ")
 			finish_list = not resps
-			append_sources(p, sources.split(), finish_list)
+			_append_sources(p, sources.split(), finish_list)
 			if resps:
 				p.append(", ")
-				append_names(p, resps)
+				_append_names(p, resps)
 		elif resps:
 			p.append(" by ")
-			append_names(p, resps)
+			_append_names(p, resps)
 	p.push(tree.Tag("translation"))
-	add_div_heading(p, div, make_translation_heading)
+	_add_div_heading(p, div, make_translation_heading)
 	p.dispatch_children(div)
 	p.document.translation.append(p.pop())
 
-@handler("div[@type='textpart']")
-@handler("div")
-def parse_div_textpart(p, div):
+@_handler("div[@type='textpart']")
+@_handler("div")
+def _parse_div_textpart(p, div):
 	"""For div[@type='textpart']. We treat divs without a @type as if they
 	had @type='textpart'.
 
@@ -1951,14 +1950,14 @@ def parse_div_textpart(p, div):
 	def make_textpart_heading():
 		subtype = div["subtype"] or "part"
 		p.append(common.sentence_case(subtype))
-		if (n := get_n(div)):
+		if (n := _get_n(div)):
 			p.append(f" {n}")
 	p.push(tree.Tag("div"))
-	add_div_heading(p, div, make_textpart_heading)
+	_add_div_heading(p, div, make_textpart_heading)
 	p.dispatch_children(div)
 	p.join() # </div>
 
-def add_div_heading(p, div, dflt):
+def _add_div_heading(p, div, dflt):
 	p.push(tree.Tag("head"))
 	if (head := div.first("stuck-child::head")):
 		# User-specified heading, use it.
@@ -1979,11 +1978,11 @@ def add_div_heading(p, div, dflt):
 		p.pop_lang()
 		note = div.first("stuck-child::note")
 	if note:
-		p.dispatch(note)
+		_parse_note(p, note)
 		p.visited.add(note)
 	p.join() # </head>
 
-def append_names(p, resps):
+def _append_names(p, resps):
 	for i, resp in enumerate(resps):
 		resp = resp.removeprefix("part:")
 		if i == 0:
@@ -1992,9 +1991,9 @@ def append_names(p, resps):
 			p.append(", ")
 		else:
 			p.append(" and ")
-		p.append(fetch_resp(resp))
+		p.append(_fetch_resp(resp))
 
-def append_sources(p, bib_refs, finish_list=True):
+def _append_sources(p, bib_refs, finish_list=True):
 	refs = []
 	for ref in bib_refs:
 		ref = ref.removeprefix("bib:")
@@ -2009,8 +2008,8 @@ def append_sources(p, bib_refs, finish_list=True):
 			p.append(" and ")
 		p.append(p.bib_reference(ref))
 
-@handler("*")
-def parse_remainder(self, node):
+@_handler("*")
+def _parse_remainder(self, node):
 	print(f"UNKNOWN {node!r}", file=sys.stderr)
 	self.append(node.text())
 
@@ -2023,7 +2022,7 @@ def process_file(file) -> tree.Tree:
 
 def process_tree(t, only_body=False, handlers=HANDLERS) -> tree.Tree:
 	languages.annotate_for_ingestion(t)
-	p = Parser(t, handlers=handlers)
+	p = _Parser(t, handlers=handlers)
 	# When we are parsing the file, not to display it but to extract
 	# metadata for the catalog, we only need to parse the teiHeader and
 	# can ignore the text body. Furthermore, we need to remove footnotes
@@ -2040,7 +2039,7 @@ def process_tree(t, only_body=False, handlers=HANDLERS) -> tree.Tree:
 	# we can't even parse the div[@type='bibliography'] before other stuff
 	# in the file, because this div might itself reference bibliography
 	# entries. We thus need to go directly for the listBibl/bibl items.
-	gather_biblio(p)
+	_gather_biblio(p)
 	r = tree.Tree()
 	p.push(r)
 	p.dispatch(t.root)
