@@ -40,25 +40,25 @@ hel<span class=".hyphen"/>lo
 # TODO: or just don't justify the text when it looks like it won't fit correctly
 # (not enough spaces and hyphens), or maybe don't use justification at all.
 """
-def hyphenate(s):
-	buf = ""
-	brk = False
-	for t in re.split(r"(\s+|-)", s):
-		if t.isspace() or t == "-" or "\N{soft hyphen}" in t or len(t) <= 6:
-			buf += t
-			continue
-		for g in graphemes(t):
-			gn = unicodedata.normalize("NFD", g).casefold()
-			if gn[0] in vowels:
-				brk = True
-				buf += g
-			else:
-				if brk:
-					buf += "\N{soft hyphen}"
-					brk = False
-				buf += g
-		buf = buf.rstrip("\N{soft hyphen}")
-	return buf
+# def hyphenate(s):
+# 	buf = ""
+# 	brk = False
+# 	for t in re.split(r"(\s+|-)", s):
+# 		if t.isspace() or t == "-" or "\N{soft hyphen}" in t or len(t) <= 6:
+# 			buf += t
+# 			continue
+# 		for g in graphemes(t):
+# 			gn = unicodedata.normalize("NFD", g).casefold()
+# 			if gn[0] in vowels:
+# 				brk = True
+# 				buf += g
+# 			else:
+# 				if brk:
+# 					buf += "\N{soft hyphen}"
+# 					brk = False
+# 				buf += g
+# 		buf = buf.rstrip("\N{soft hyphen}")
+# 	return buf
 
 def char_name(c):
 	try:
