@@ -46,7 +46,7 @@ https://hackage-content.haskell.org/package/pandoc-types-1.23.1.1/docs/Text-Pand
 import re, sys
 from dharma import tree, common, languages
 
-def fix_search(t: tree.Tree):
+def _fix_search(t: tree.Tree):
 	import search
 	for node in t.find(".//search"):
 		assert isinstance(node, tree.Tag)
@@ -56,7 +56,7 @@ def fix_search(t: tree.Tree):
 
 ########################## Language extraction #################################
 
-def extract_edition_languages(root: tree.Branch):
+def _extract_edition_languages(root: tree.Branch):
 	"""Produces two maps of the form...
 
 		{lang: {script, script...}, lang: {script, script...}...}
@@ -88,7 +88,7 @@ def extract_edition_languages(root: tree.Branch):
 			scripts.setdefault(script, set()).add(lang)
 	return langs, scripts, lang_names, script_names
 
-def add_edition_languages(t):
+def _add_edition_languages(t):
 	"""Add language and script use info to the tree. Need to create a
 	structure like this:
 
@@ -128,7 +128,7 @@ def add_edition_languages(t):
 	Or maybe it would be better to write a generic serialization function if
 	we need to use maps, etc. for something else.
 	"""
-	langs, scripts, lang_names, script_names = extract_edition_languages(t)
+	langs, scripts, lang_names, script_names = _extract_edition_languages(t)
 	lang_nodes = {}
 	for lang in langs:
 		node = tree.Tag("language")
@@ -166,7 +166,7 @@ def add_edition_languages(t):
 
 ########## Normalization of whitespace + removal of empty elements #############
 
-def fix_spaces(doc: tree.Tree):
+def _fix_spaces(doc: tree.Tree):
 	"""Whitespace normalization and removal of empty elements.
 
 	There are three cases.
@@ -192,76 +192,76 @@ def fix_spaces(doc: tree.Tree):
 	Finally, we delete all empty elements except the tree's root viz.
 	<document> and milestones (<npage>, <nline>, <ncell>).
 	"""
-	fix_spaces_in_element(doc.root)
+	_fix_spaces_in_element(doc.root)
 
-def fix_spaces_in_element(root: tree.Tag):
+def _fix_spaces_in_element(root: tree.Tag):
 	# We need to process subtrees first: spaces might pop up from them.
 	nodes = []
 	for node in root:
 		if isinstance(node, tree.Tag):
 			nodes.append(node)
 	for node in nodes:
-		fix_spaces_in_element(node)
+		_fix_spaces_in_element(node)
 	root.coalesce(recursive=False)
 	# Now we can process strings.
 	nodes.clear()
 	for node in root:
 		if isinstance(node, (tree.Tag, tree.String)):
 			nodes.append(node)
-	adjust_spaces(root, nodes)
-	delete_if_empty(root)
+	_adjust_spaces(root, nodes)
+	_delete_if_empty(root)
 
-def should_trim_before(name):
+def _should_trim_before(name):
 	"Whether we should delete spaces before the given element."
 	return name not in ("span", "link", "display", "split", "views")
 
-def should_trim_after(name):
+def _should_trim_after(name):
 	"Like `should_trim_before()`, but for spaces after the given element."
 	return name not in ("span", "link", "display", "split", "views", "note")
 
-def bubble_up_start_spaces(name):
+def _bubble_up_start_spaces(name):
 	"""If true, spaces at the beginning of this element should be moved up
 	the tree, otherwise they should just be removed. For instance, if we
 	have `<para>foo<span> bar</span></para>` and
-	`bubble_up_start_spaces("span")` is true, the output will be `<para>foo
+	`_bubble_up_start_spaces("span")` is true, the output will be `<para>foo
 	<span>bar</span></para>`; but if `bubble_up_start_spaces("span")` is
 	false, the output will be `<para>foo<span>bar</span></para>`.
 	"""
 	return name in ("span", "link", "display", "split")
 
-def bubble_up_end_spaces(name):
+def _bubble_up_end_spaces(name):
 	"""Like `bubble_up_start_spaces()`, but for spaces at the end of this
 	element."""
-	return bubble_up_start_spaces(name)
+	return _bubble_up_start_spaces(name)
 
-def adjust_spaces(root, nodes):
+def _adjust_spaces(root, nodes):
 	for i, node in enumerate(nodes):
 		if not isinstance(node, tree.String):
 			continue
-		repl = squeeze(node.data)
+		repl = _squeeze(node.data)
 		assert len(repl) > 0
 		if i < len(nodes) - 1 and repl and repl[-1] == " " \
 			and isinstance(nodes[i + 1], tree.Tag) \
-			and should_trim_before(nodes[i + 1].name):
+			and _should_trim_before(nodes[i + 1].name):
 			repl = repl.rstrip()
 		if i > 0 and repl and repl[0] == " " \
 			and isinstance(nodes[i - 1], tree.Tag) \
-			and should_trim_after(nodes[i - 1].name):
+			and _should_trim_after(nodes[i - 1].name):
 			repl = repl.lstrip()
 		if i == 0 and repl and repl[0] == " ":
 			repl = repl.lstrip()
-			if bubble_up_start_spaces(root.name):
-				add_space_before(root)
+			if _bubble_up_start_spaces(root.name):
+				_add_space_before(root)
 		if i == len(nodes) - 1 and repl and repl[-1] == " ":
 			repl = repl.rstrip()
-			if bubble_up_end_spaces(root.name):
-				add_space_after(root)
+			if _bubble_up_end_spaces(root.name):
+				_add_space_after(root)
 		if not repl:
 			node.delete()
 		elif repl != node.data:
 			node.replace_with(repl)
 
-def add_space_before(root: tree.Tag):
+def _add_space_before(root: tree.Tag):
 	"""Adds a space character right before a given node. If there is already
 	one, this does nothing."""
 	parent = root.parent
@@ -279,7 +279,7 @@ def add_space_before(root: tree.Tag):
 		# We have '<foo><root>', transform it to '<foo> <root>'
 		parent.insert(i, " ")
 
-def add_space_after(root: tree.Tag):
+def _add_space_after(root: tree.Tag):
 	"""Like `add_space_before()`, but inserts a space after the node
 	instead."""
 	parent = root.parent
@@ -297,7 +297,7 @@ def add_space_after(root: tree.Tag):
 		# We have '<root> <foo>', transform it to '<root> <foo>'
 		parent.insert(i + 1, " ")
 
-def delete_if_empty(root: tree.Tag):
+def _delete_if_empty(root: tree.Tag):
 	"""Deletes empty elements recursively, starting at the given one, and
 	including the given one.
 
@@ -321,15 +321,15 @@ def delete_if_empty(root: tree.Tag):
 		root[0].name == "head":
 		root.delete()
 
-def squeeze(s):
+def _squeeze(s):
 	return re.sub(r"\s+", " ", s)
 
 
 ################################ Milestones ####################################
 
-def check_milestones_valid(t, milestones):
+def _check_milestones_valid(t, milestones):
 	if __debug__:
-		tmp = significant_milestones(t)
+		tmp = _significant_milestones(t)
 		tmpl = [id(x) for x in tmp]
 		for x in milestones:
 			if not id(x) in tmpl:
@@ -344,7 +344,7 @@ def check_milestones_valid(t, milestones):
 				print([x.xml() for x in tmp], file=sys.stderr)
 				raise Exception
 
-def fix_milestones(t):
+def _fix_milestones(t):
 	"""The point of these transformations (besides display-related stuff)
 	is to ensure all editions have the same milestones structure.
 
@@ -356,7 +356,7 @@ def fix_milestones(t):
 	cells as needed to cover the whole text. "Phantom" milestones have an
 	attribute @phantom='true', all other milestones have @phantom='false'.
 	"""
-	milestones = significant_milestones(t)
+	milestones = _significant_milestones(t)
 	# Make sure all milestones have a @phantom and a @break.
 	significants = set(milestones)
 	for mile in t.find(".//*[name()='npage' or name()='nline' or name()='ncell']"):
@@ -366,14 +366,14 @@ def fix_milestones(t):
 		mile["significant"] = mile in significants and "true" or "false"
 	if not milestones:
 		return
-	fix_milestones_location(t, milestones)
-	check_milestones_valid(t, milestones)
-	add_phantom_milestones(t, milestones)
-	check_milestones_valid(t, milestones)
-	add_milestones_breaks(t, milestones)
-	check_milestones_valid(t, milestones)
+	_fix_milestones_location(t, milestones)
+	_check_milestones_valid(t, milestones)
+	_add_phantom_milestones(t, milestones)
+	_check_milestones_valid(t, milestones)
+	_add_milestones_breaks(t, milestones)
+	_check_milestones_valid(t, milestones)
 
-def significant_milestones(t: tree.Tree):
+def _significant_milestones(t: tree.Tree):
 	"""Enumerates significant milestones.
 
 	A milestone is significant if it occurs within the edition division and
@@ -401,33 +401,33 @@ def significant_milestones(t: tree.Tree):
 
 # Elements within which a milestone can appear. Note that these should *not*
 # overlap.
-milestone_accepting = ("para", "verse-line")
+_milestone_accepting = ("para", "verse-line")
 
-def fix_milestone_location(mile: tree.Tag):
+def _fix_milestone_location(mile: tree.Tag):
 	parent = mile.parent
 	assert isinstance(parent, tree.Tag)
 	match parent.name:
 		case "para" | "verse-line" | "span" | "link":
 			return
 		case "key" | "value" | "item" | "quote":
-			shift_milestones_to_nearby_block(mile)
+			_shift_milestones_to_nearby_block(mile)
 		case "summary" | "hand" | "edition" | "apparatus" \
 			| "translation" | "commentary" | "bibliography" | "div":
 			tmp = tree.Tag("para", lang=parent["lang"])
 			mile.insert_after(tmp)
 			tmp.append(mile)
 		case "verse":
-			shift_milestones_in_verse(mile)
+			_shift_milestones_in_verse(mile)
 		case "elist":
-			shift_milestones_in_elist(mile)
+			_shift_milestones_in_elist(mile)
 		case "dlist":
-			shift_milestones_in_dlist(mile)
+			_shift_milestones_in_dlist(mile)
 		case _:
 			sys.stdout.write(mile.tree.xml())
 			raise Exception(f"unexpected: milestone {mile!r} parent {mile.parent!r}")
-	return fix_milestone_location(mile)
+	return _fix_milestone_location(mile)
 
-def fix_milestones_location(t, milestones):
+def _fix_milestones_location(t, milestones):
 	"""Move milestones in appropriate spots.
 
         If the milestone appears at the beginning or at the end of an inline
@@ -494,26 +494,26 @@ def fix_milestones_location(t, milestones):
         the edityion)
 	"""
 	milestones_set = set(milestones)
-	move_up_milestones(t.root, milestones_set)
-	check_milestones_valid(t, milestones)
+	_move_up_milestones(t.root, milestones_set)
+	_check_milestones_valid(t, milestones)
 	# Milestones that are not in a milestone-accepting element. If the
 	# milestone's parent is a division, wrap the milestone within a <p>.
 	# XXX not enough, need to do that with other elements.
 	for mile in milestones:
-		fix_milestone_location(mile)
+		_fix_milestone_location(mile)
 
-def is_milestone(node):
+def _is_milestone(node):
 	if not isinstance(node, tree.Tag):
 		return False
 	return node.name in ("npage", "nline", "ncell")
 
-def shift_milestones(parent, skip):
+def _shift_milestones(parent, skip):
 	# Move all milestones at the end of parent to the end of the last
 	# container in parent
 	k = len(parent)
 	while k > skip:
 		k -= 1
-		if not is_milestone(parent[k]):
+		if not _is_milestone(parent[k]):
 			break
 	else:
 		# "parent" should contain at least one container where we can
@@ -526,23 +526,23 @@ def shift_milestones(parent, skip):
 	# Move remaining milestones to the start of the following container.
 	k = skip
 	while k < len(parent):
-		if is_milestone(parent[k]):
+		if _is_milestone(parent[k]):
 			k += 1
 			continue
 		where = parent[k]
 		while k > skip:
 			k -= 1
-			if not is_milestone(parent[k]):
+			if not _is_milestone(parent[k]):
 				break
 			where.prepend(parent[k])
 		k += 2
 
-def shift_milestones_to_nearby_block(mile: tree.Tag):
+def _shift_milestones_to_nearby_block(mile: tree.Tag):
 	parent = mile.parent
 	assert isinstance(parent, tree.Tag)
-	shift_milestones(parent, 0)
+	_shift_milestones(parent, 0)
 
-def shift_milestones_in_verse(mile: tree.Tag):
+def _shift_milestones_in_verse(mile: tree.Tag):
 	parent = mile.parent
 	assert isinstance(parent, tree.Tag)
 	assert all(isinstance(elem, tree.Tag) for elem in parent)
@@ -557,9 +557,9 @@ def shift_milestones_in_verse(mile: tree.Tag):
 	else:
 		skip = 0
 	assert all(elem.name in ("npage", "nline", "ncell", "verse-line") for elem in parent[skip:]), parent.xml()
-	return shift_milestones(parent, skip)
+	return _shift_milestones(parent, skip)
 
-def shift_milestones_in_elist(mile):
+def _shift_milestones_in_elist(mile):
 	parent = mile.parent
 	assert all(isinstance(elem, tree.Tag) for elem in parent)
 	# We should have at least one <item>, for holding the milestone.
@@ -567,9 +567,9 @@ def shift_milestones_in_elist(mile):
 	if not any(elem.name == "item" for elem in parent):
 		parent.append(tree.Tag("item", lang=parent["lang"]))
 	assert all(elem.name in ("npage", "nline", "ncell", "item") for elem in parent)
-	return shift_milestones(parent, 0)
+	return _shift_milestones(parent, 0)
 
-def shift_milestones_in_dlist(mile):
+def _shift_milestones_in_dlist(mile):
 	parent = mile.parent
 	assert all(isinstance(elem, tree.Tag) for elem in parent)
 	# We should have at least one <key>/<value> pair, for holding the
@@ -578,16 +578,16 @@ def shift_milestones_in_dlist(mile):
 		parent.append(tree.Tag("key", lang=parent["lang"]))
 		parent.append(tree.Tag("value", lang=parent["lang"]))
 	assert all(elem.name in ("npage", "nline", "ncell", "key", "value") for elem in parent)
-	return shift_milestones(parent, 0)
+	return _shift_milestones(parent, 0)
 
-def move_up_milestones(root: tree.Tag, milestones):
+def _move_up_milestones(root: tree.Tag, milestones):
 	assert isinstance(root, tree.Tag)
 	for node in list(root):
 		if not isinstance(node, tree.Tag):
 			continue
 		if node.name in ("npage", "nline", "ncell"):
 			continue
-		move_up_milestones(node, milestones)
+		_move_up_milestones(node, milestones)
 	if root.name not in ("span", "link"):
 		return
 	# We have an inline element (<span> or <link>). Move all milestones
@@ -609,12 +609,12 @@ def move_up_milestones(root: tree.Tag, milestones):
 		root.insert_after(root[j - 1])
 		j -= 1
 
-def first_milestone_accepting_node(doc):
+def _first_milestone_accepting_node(doc):
 	def inner(root):
 		for node in root:
 			if not isinstance(node, tree.Tag):
 				continue
-			if node.name in milestone_accepting:
+			if node.name in _milestone_accepting:
 				return node
 			ret = inner(node)
 			if ret:
@@ -625,11 +625,11 @@ def first_milestone_accepting_node(doc):
 	assert ret
 	return ret
 
-def phantom_milestone(type: str):
+def _phantom_milestone(type: str):
 	assert type in ("npage", "nline", "ncell")
 	return tree.Tag(type, break_="true", phantom="true", significant="true")
 
-def add_phantom_milestones(doc: tree.Tree, milestones):
+def _add_phantom_milestones(doc: tree.Tree, milestones):
 	"""Allocate phantom milestones to fill up the edition.
 
 	We have to allocate phantom pages/lines/cells, when (a) the encoding is
@@ -652,7 +652,7 @@ def add_phantom_milestones(doc: tree.Tree, milestones):
 	textpart heading in the middle. might want to index separately the TOC
 	(with all headings) and the text (without interruption).
 	"""
-	insert = first_milestone_accepting_node(doc)
+	insert = _first_milestone_accepting_node(doc)
 	i = 0
 	units = ("npage", "nline", "ncell")
 	while i < 3:
@@ -661,7 +661,7 @@ def add_phantom_milestones(doc: tree.Tree, milestones):
 			assert len(milestones) > i
 			assert insert[i] is milestones[i]
 		else:
-			mile = phantom_milestone(unit)
+			mile = _phantom_milestone(unit)
 			insert.insert(i, mile)
 			milestones.insert(i, mile)
 		i += 1
@@ -672,14 +672,14 @@ def add_phantom_milestones(doc: tree.Tree, milestones):
 			if (tmp := mile.first("following-sibling::*")) and tmp.name == "nline":
 				mile = tmp
 			else:
-				tmp = phantom_milestone("nline")
+				tmp = _phantom_milestone("nline")
 				mile.insert_after(tmp)
 				mile = tmp
 				milestones.insert(i + 1, tmp)
 			if (tmp := mile.first("following-sibling::*")) and tmp.name == "ncell":
 				mile = tmp
 			else:
-				tmp = phantom_milestone("ncell")
+				tmp = _phantom_milestone("ncell")
 				mile.insert_after(tmp)
 				mile = tmp
 				milestones.insert(i + 2, tmp)
@@ -688,7 +688,7 @@ def add_phantom_milestones(doc: tree.Tree, milestones):
 			if (tmp := mile.first("following-sibling::*")) and tmp.name == "ncell":
 				pass
 			else:
-				tmp = phantom_milestone("ncell")
+				tmp = _phantom_milestone("ncell")
 				mile.insert_after(tmp)
 				milestones.insert(i + 1, tmp)
 			i += 2
@@ -697,7 +697,7 @@ def add_phantom_milestones(doc: tree.Tree, milestones):
 		else:
 			raise Exception
 
-def add_milestones_breaks(doc, milestones):
+def _add_milestones_breaks(doc, milestones):
 	"""Add missing @break to each milestone and make @break consistent.
 
 	The following rules are observed.
@@ -747,25 +747,25 @@ def add_milestones_breaks(doc, milestones):
 		else:
 			raise Exception
 	cell = milestones[-1]
-	if milestone_is_terminal(doc, cell):
+	if _milestone_is_terminal(doc, cell):
 		cell["break"] = "true"
 		if (line := cell.first("stuck-preceding-sibling::nline")):
 			line["break"] = "true"
 			if (page := line.first("stuck-preceding-sibling::npage")):
 				page["break"] = "true"
 
-def milestone_is_terminal(doc, mile):
+def _milestone_is_terminal(doc, mile):
 	"""Whether this milestone (which must be a cell) occurs at the very end
 	of the text"""
 	assert mile.name == "ncell"
 	last = None
 	for node in doc.find("//*"):
-		if node.name not in milestone_accepting:
+		if node.name not in _milestone_accepting:
 			continue
 		last = node
 	return last is mile
 
-def milestone_at_block_start(node):
+def _milestone_at_block_start(node):
 	while True:
 		parent = node.parent
 		assert isinstance(parent, tree.Tag)
@@ -776,7 +776,7 @@ def milestone_at_block_start(node):
 			return True
 		node = parent
 
-def milestone_at_block_end(node):
+def _milestone_at_block_end(node):
 	while True:
 		parent = node.parent
 		assert isinstance(parent, tree.Tag)
@@ -787,7 +787,7 @@ def milestone_at_block_end(node):
 			return True
 		node = parent
 
-def fix_milestones_spaces(t: tree.Branch, physical=False):
+def _fix_milestones_spaces(t: tree.Branch, physical=False):
 	"""Adds spaces around milestones, where needed. If physical is False,
 	only adds spaces if @break=true; otherwise, take all milestones into
 	account.
@@ -810,9 +810,9 @@ def fix_milestones_spaces(t: tree.Branch, physical=False):
 		else:
 			if not common.to_boolean(node["break"], True):
 				continue
-		if not milestone_at_block_start(node):
+		if not _milestone_at_block_start(node):
 			node.prepend(" ")
-		if not milestone_at_block_end(node):
+		if not _milestone_at_block_end(node):
 			node.append(" ")
 
 
@@ -822,7 +822,7 @@ def fix_milestones_spaces(t: tree.Branch, physical=False):
 # wrap lines within <para>
 # split these elements if needed: a, para
 
-def unwrap_for_physical(root: tree.Node):
+def _unwrap_for_physical(root: tree.Node):
 	"""Unwraps or deletes tags that are not necessary for the physical
 	display.
 	"""
@@ -835,33 +835,33 @@ def unwrap_for_physical(root: tree.Node):
 				# text.
 				pass
 			case "display":
-				unwrap_for_physical(node)
+				_unwrap_for_physical(node)
 				node.unwrap()
 			case "split":
 				display = node.first("display")
 				assert display
-				unwrap_for_physical(display)
+				_unwrap_for_physical(display)
 			case "views":
 				# We deal with this elsewhere.
 				pass
 			case "div" | "head" | "span" | "link" | "npage" | "nline" | "ncell":
-				unwrap_for_physical(node)
+				_unwrap_for_physical(node)
 			case "dlist" | "elist" | "quote" | "key" | "value" | "item":
-				unwrap_for_physical(node)
+				_unwrap_for_physical(node)
 				node.unwrap()
 			case "verse":
 				if (head := node.first("stuck-child::head")):
 					head.delete()
-				unwrap_for_physical(node)
+				_unwrap_for_physical(node)
 				node.unwrap()
 			case "source":
 				node.delete()
 			case "para":
-				unwrap_for_physical(node)
+				_unwrap_for_physical(node)
 				node.prepend(" ")
 				node.unwrap()
 			case "verse-line":
-				unwrap_for_physical(node)
+				_unwrap_for_physical(node)
 				if common.to_boolean(node["break"]):
 					node.prepend(" ")
 				node.unwrap()
@@ -874,7 +874,7 @@ def unwrap_for_physical(root: tree.Node):
 # a new page-like division. But people also use textparts independently of
 # page-like milestones. We can't tell what the user means, so do nothing
 # special for now.
-def wrap_for_physical(root, page=None, line=None):
+def _wrap_for_physical(root, page=None, line=None):
 	for node in list(root):
 		if not isinstance(node, tree.Tag):
 			if not page:
@@ -888,7 +888,7 @@ def wrap_for_physical(root, page=None, line=None):
 		match node.name:
 			case "div":
 				page = line = None
-				wrap_for_physical(node, page, line)
+				_wrap_for_physical(node, page, line)
 			case "head":
 				page = line = None
 			case "npage":
@@ -923,7 +923,7 @@ def wrap_for_physical(root, page=None, line=None):
 # 3) is not the first npage/nline/ncell in the <edition>
 # it is only created in wrap-for-physical, so do necessary stuff here.
 
-def add_hyphens_to_lines(t):
+def _add_hyphens_to_lines(t):
 	# We need to add a hyphen break after all the milestone @break=no,
 	# whether or not there is a hyphen break at the end of the line.
 	# (We also have preceding hyphens sometimes, but this is not OK I
@@ -947,7 +947,7 @@ def add_hyphens_to_lines(t):
 			lines[i - 1].append(span)
 		i += 1
 
-def split_around_milestone(inline, mile):
+def _split_around_milestone(inline, mile):
 	"""We only perform a split on the first milestone. Thus, if there are
 	several same-level milestones in a single span, this only takes into
 	account the one given as argument (and the line/cell that immediately
@@ -1013,7 +1013,7 @@ def split_around_milestone(inline, mile):
 	cell.insert_after(right)
 	inline.delete()
 
-def fix_physical_inlines(t):
+def _fix_physical_inlines(t):
 	milestones = t.find(".//*[@significant and (name()='npage' or name()='nline' or name()='ncell')]")
 	for mile in milestones:
 		if mile.name == "ncell":
@@ -1030,21 +1030,21 @@ def fix_physical_inlines(t):
 				inline = parent
 			else:
 				break
-		split_around_milestone(inline, mile)
+		_split_around_milestone(inline, mile)
 
-def to_physical(t):
-	unwrap_for_physical(t)
-	fix_spaces(t)
-	fix_physical_inlines(t)
-	wrap_for_physical(t)
-	fix_milestones_spaces(t, physical=True)
-	add_hyphens_to_lines(t)
+def _to_physical(t):
+	_unwrap_for_physical(t)
+	_fix_spaces(t)
+	_fix_physical_inlines(t)
+	_wrap_for_physical(t)
+	_fix_milestones_spaces(t, physical=True)
+	_add_hyphens_to_lines(t)
 	for node in t.find(".//span[@class='corr' and @standalone='false']"):
 		node.delete()
 	for node in t.find(".//span[@class='reg' and @standalone='false']"):
 		node.delete()
 
-def complete_verse_lines(t: tree.Tree):
+def _complete_verse_lines(t: tree.Tree):
 	"""Add a hyphen before verse-line elements that have @break='false', and
 	add a @break='true' attribute to all the others."""
 	for line in t.find(".//verse-line"):
@@ -1059,13 +1059,13 @@ def complete_verse_lines(t: tree.Tree):
 		span.append("-")
 		prev_line.append(span)
 
-def to_logical(t):
+def _to_logical(t):
 	for node in t.find(".//span[@class='sic' and @standalone='false']"):
 		node.delete()
 	for node in t.find(".//span[@class='orig' and @standalone='false']"):
 		node.delete()
 
-def number_notes(t: tree.Tree):
+def _number_notes(t: tree.Tree):
 	"""We number notes before we create the three displays, to make it
 	easier later on to figure out which notes are duplicates."""
 	notes = t.find(".//note", sort=True)
@@ -1073,7 +1073,7 @@ def number_notes(t: tree.Tree):
 		assert isinstance(note, tree.Tag)
 		note["n"] = str(i)
 
-def is_inline(node):
+def _is_inline(node):
 	if isinstance(node, tree.String):
 		return True
 	if not isinstance(node, tree.Tag):
@@ -1081,35 +1081,35 @@ def is_inline(node):
 	return node.name in ("span", "link", "note", "npage", "nline", "ncell",
 		"display", "views", "split")
 
-def cover_inlines_with_paras(root):
+def _cover_inlines_with_paras(root):
 	i = 0
 	while i < len(root):
-		if not is_inline(root[i]):
+		if not _is_inline(root[i]):
 			i += 1
 			continue
 		j = i + 1
-		while j < len(root) and is_inline(root[j]):
+		while j < len(root) and _is_inline(root[j]):
 			j += 1
 		para = tree.Tag("para", lang=root["lang"])
 		para.extend(root[i:j])
 		root.insert(i, para)
 		i += 1
 
-def cover_inlines_with_verse_lines(root):
+def _cover_inlines_with_verse_lines(root):
 	i = 0
 	while i < len(root):
-		if not is_inline(root[i]) or is_milestone(root[i]):
+		if not _is_inline(root[i]) or _is_milestone(root[i]):
 			i += 1
 			continue
 		j = i + 1
-		while j < len(root) and is_inline(root[j]) and not is_milestone(root[j]):
+		while j < len(root) and _is_inline(root[j]) and not _is_milestone(root[j]):
 			j += 1
 		para = tree.Tag("verse-line", lang=root["lang"])
 		para.extend(root[i:j])
 		root.insert(i, para)
 		i += 1
 
-def wrap_inlines_in_paragraphs(root):
+def _wrap_inlines_in_paragraphs(root):
 	"Wraps within paragraphs inline children of divisions-like elements."
 	for node in root:
 		if not isinstance(node, tree.Tag):
@@ -1117,12 +1117,12 @@ def wrap_inlines_in_paragraphs(root):
 		if node.name in ("summary", "hand", "note", "edition",
 			"apparatus", "translation", "commentary",
 			"bibliography", "div", "item", "key", "value", "quote"):
-			cover_inlines_with_paras(node)
+			_cover_inlines_with_paras(node)
 		elif node.name == "verse":
-			cover_inlines_with_verse_lines(node)
-		wrap_inlines_in_paragraphs(node)
+			_cover_inlines_with_verse_lines(node)
+		_wrap_inlines_in_paragraphs(node)
 
-def add_phantom_divisions(root: tree.Branch):
+def _add_phantom_divisions(root: tree.Branch):
 	"Wraps within divisions isolated paragraphs."
 	for node in root:
 		if not isinstance(node, tree.Tag):
@@ -1131,18 +1131,18 @@ def add_phantom_divisions(root: tree.Branch):
 			node["phantom"] = "false"
 		if node.name in ("edition", "apparatus", "translation",
 			"commentary", "bibliography", "div"):
-			cover_contents_with_div(node)
-		add_phantom_divisions(node)
+			_cover_contents_with_div(node)
+		_add_phantom_divisions(node)
 
-def contains_div(root):
+def _contains_div(root):
 	for child in root:
 		match child:
 			case tree.Tag("div"):
 				return True
 	return False
 
-def cover_contents_with_div(root: tree.Tag):
-	if not contains_div(root):
+def _cover_contents_with_div(root: tree.Tag):
+	if not _contains_div(root):
 		return
 	cur_div = None
 	for node in list(root):
@@ -1171,7 +1171,7 @@ def cover_contents_with_div(root: tree.Tag):
 
 # XXX need more stuff for parsing <verse>, not sure we're exhaustive.
 
-def fix_blocks_nesting(t: tree.Tree):
+def _fix_blocks_nesting(t: tree.Tree):
 	"""Fix most blocks nesting problems. If people followed the guide, these
 	should not arise.
 
@@ -1184,14 +1184,14 @@ def fix_blocks_nesting(t: tree.Tree):
 	"""
 	def inner(root):
 		assert isinstance(root, tree.Tag)
-		if (is_inline(root) and root.name != "note") or root.name in ("para", "verse", "verse-line"):
-			unwrap_child_blocks(root)
+		if (_is_inline(root) and root.name != "note") or root.name in ("para", "verse", "verse-line"):
+			_unwrap_child_blocks(root)
 		for child in root:
 			if isinstance(child, tree.Tag):
 				inner(child)
 	inner(t.root)
 
-def unwrap_child_blocks(root: tree.Tag):
+def _unwrap_child_blocks(root: tree.Tag):
 	"""Unwraps block elements that are children of the given element, and
 	unwraps or deletes as well their inner structural elements (source, key,
 	value, item...).
@@ -1242,7 +1242,7 @@ def unwrap_child_blocks(root: tree.Tag):
 			case _:
 				i += 1
 
-def fix_blocks_within_paras(t: tree.Tree):
+def _fix_blocks_within_paras(t: tree.Tree):
 	"""The guide prescribes to wrap lists and quotes within paragraphs, but
 	we do not want this in the internal representation. Most importantly,
 	because this does not produce valid HTML; but also because we need a
@@ -1254,9 +1254,9 @@ def fix_blocks_within_paras(t: tree.Tree):
 	of paragraphs, on the other.
 	"""
 	for node in t.find(".//para/*[regex('^elist|dlist|quote$', name())]"):
-		move_up_from_para(node)
+		_move_up_from_para(node)
 
-def move_up_from_para(node):
+def _move_up_from_para(node):
 	para = node.parent
 	assert isinstance(para, tree.Tag) and para.name == "para"
 	left = tree.Tag(para.name, **para.attrs)
@@ -1273,7 +1273,7 @@ def move_up_from_para(node):
 	if len(right) > 0:
 		node.insert_after(right)
 
-def expand_views(root: tree.Branch, keep_view=None):
+def _expand_views(root: tree.Branch, keep_view=None):
 	"""Expands "views" element. They have the form:
 
 		<views>
@@ -1301,35 +1301,35 @@ def expand_views(root: tree.Branch, keep_view=None):
 	for node in root.find("*"):
 		assert isinstance(node, tree.Tag)
 		if node.name != "views":
-			expand_views(node, keep_view)
+			_expand_views(node, keep_view)
 			continue
 		# Note that we don't expect "views" elements to nest.
 		for view in views:
 			target = node.first(view)
 			assert isinstance(target, tree.Tag)
 			if view == keep:
-				expand_views(target, keep_view)
+				_expand_views(target, keep_view)
 				target.unwrap()
 			else:
 				target.delete()
 		node.unwrap()
 
-def process_edition(t: tree.Tree, edition: tree.Tag):
+def _process_edition(t: tree.Tree, edition: tree.Tag):
 	full = edition.copy()
 	full.name = "full"
 	if (head := full.first("head")):
 		head.delete()
 	physical = full.copy()
 	physical.name = "physical"
-	to_physical(physical)
-	fix_milestones_spaces(full)
+	_to_physical(physical)
+	_fix_milestones_spaces(full)
 	logical = full.copy()
 	logical.name = "logical"
-	to_logical(logical)
+	_to_logical(logical)
 	head = edition.first("head")
 	assert isinstance(edition, tree.Branch)
 	edition.clear()
-	fix_milestones_spaces(t)
+	_fix_milestones_spaces(t)
 	if head:
 		edition.append(head)
 	edition.append(physical)
@@ -1348,22 +1348,22 @@ def process_edition(t: tree.Tree, edition: tree.Tag):
 def process(t: tree.Tree):
 	# XXX enable this
 	#node = node.copy().replace("'", "’")
-	fix_search(t)
+	_fix_search(t)
 	languages.complete_internal(t)
 	# Structural stuff.
-	fix_blocks_within_paras(t)
-	fix_blocks_nesting(t)
-	wrap_inlines_in_paragraphs(t)
-	add_phantom_divisions(t)
+	_fix_blocks_within_paras(t)
+	_fix_blocks_nesting(t)
+	_wrap_inlines_in_paragraphs(t)
+	_add_phantom_divisions(t)
 	# Rest
-	fix_spaces(t)
-	fix_milestones(t)
-	number_notes(t)
+	_fix_spaces(t)
+	_fix_milestones(t)
+	_number_notes(t)
 	# And create the three displays.
 	if (edition := t.first("/document/edition")):
 		assert isinstance(edition, tree.Tag)
-		process_edition(t, edition)
-	expand_views(t)
+		_process_edition(t, edition)
+	_expand_views(t)
 	for node in t.find(".//*[@significant and (name()='npage' or name()='nline' or name()='ncell')]"):
 		assert isinstance(node, tree.Tag)
 		del node["milestone-keep"]
@@ -1374,12 +1374,12 @@ def process(t: tree.Tree):
 		else:
 			assert node["name"] == "logical"
 			del node["name"]
-	complete_verse_lines(t)
+	_complete_verse_lines(t)
 	languages.finish_internal(t)
-	put_grantha_in_bold(t)
+	# TODO _put_grantha_in_bold(t)
 	# And extract languages from the logical division.
 	if (root := t.first("/document/edition/logical")):
-		add_edition_languages(root)
+		_add_edition_languages(root)
 
 def fetch_file_data(ident):
 	# XXX should do this from the File() object, not from the db, because
@@ -1498,7 +1498,7 @@ if __name__ == "__main__":
 	def main():
 		path = os.path.abspath(sys.argv[1])
 		f = texts.File("/", path)
-		t = ingest.process_file(f).serialize()
+		t = ingest.process_file(f)
 		process(t)
 		make_pretty_printable(t)
 		sys.stdout.write(t.xml(add_xml_prefix=False))
