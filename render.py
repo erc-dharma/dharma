@@ -23,7 +23,7 @@ def render_page_head(self, node):
 
 @handler("line")
 def render_page_line(self, node):
-	self.push(tree.Tag(f"p", class_="line"))
+	self.push(tree.Tag("p", class_="line"))
 	self.dispatch_children(node)
 	self.join()
 
@@ -191,12 +191,9 @@ def render_hand(self, node):
 @handler("bibliography")
 def render_section(self, node):
 	self.heading_level += 1
-	# XXX not necessarily correct! should use the actual @xml:lang
-	# everywhere.
-	lang = "en"
-	if node.name == "edition":
-		lang = "und"
-	self.push("div", class_=node.name, lang=lang)
+	# Use the language attribute populated during enrichment, with fallbacks.
+	lang = node["lang"] or ("und" if node.name == "edition" else "en")
+	self.push(tree.Tag("div", class_=node.name, lang=lang))
 	self.dispatch_children(node)
 	self.join()
 	self.heading_level -= 1
@@ -213,12 +210,12 @@ def push_heading(self, level: int, class_: list[str] = []):
 	# heading_level > 6, but this is unlikely to happen, so we just act is
 	# if they had a level 6.
 	level = min(self.heading_level, 6)
-	self.push(tree.Tag(f"h{level}", class_="".join(class_)))
+	self.push(tree.Tag(f"h{level}", class_=" ".join(class_)))
 
 @handler("apparatus")
 def render_apparatus(self, node):
 	self.heading_level += 1
-	self.push("div", class_="apparatus")
+	self.push(tree.Tag("div", class_="apparatus"))
 	# Heading
 	if (head := node.first("head")):
 		push_heading(self, self.heading_level, class_=["collapsible"])
@@ -237,7 +234,7 @@ def render_apparatus(self, node):
 @handler("physical")
 @handler("full")
 def render_edition_display(self, node):
-	self.push("div", class_=node.name, id=node.name, data_display=node.name)
+	self.push(tree.Tag("div", class_=node.name, id=node.name, data_display=node.name))
 	if node.name != self.display:
 		self.top["class"] += " hidden"
 	self.dispatch_children(node)
@@ -245,12 +242,12 @@ def render_edition_display(self, node):
 
 @handler("logical")
 def render_logical_display(self, node):
-	self.push("div", class_=node.name, id=node.name, data_display=node.name)
+	self.push(tree.Tag("div", class_=node.name, id=node.name, data_display=node.name))
 	if node.name != self.display:
 		self.top["class"] += " hidden"
 	self.dispatch_children(node)
 	self.join()
-	self.push("div", class_="logical")
+	self.push(tree.Tag("div", class_="logical"))
 	self.dispatch_children(node)
 	self.document.logical = self.pop()
 
@@ -377,15 +374,15 @@ def render_link(self, node):
 
 @handler("verse")
 def render_verse(self, node):
-	self.push("div", class_="verse")
+	self.push(tree.Tag("div", class_="verse"))
 	if (head := node.first("stuck-child::head")):
-		self.push("div", class_="verse-heading")
+		self.push(tree.Tag("div", class_="verse-heading"))
 		self.dispatch_children(head)
 		self.join()
-	self.push("div", class_="verse-lines")
+	self.push(tree.Tag("div", class_="verse-lines"))
 	for line in node.find("verse-line"):
-		self.push("div", class_="verse-line")
-		self.push("p")
+		self.push(tree.Tag("div", class_="verse-line"))
+		self.push(tree.Tag("p"))
 		self.dispatch_children(line)
 		self.join()
 		self.push("span", data_tip="Verse line number")
