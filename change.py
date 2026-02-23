@@ -12,9 +12,7 @@ leading period, which is used to distinguish commands from repository names.
 The `.all` command triggers a full update. In other words, it tries to update
 the bibliography as well as all repositories.
 
-The `.bib` command updates just the bibliography. TODO Updating the bibliography
-should trigger a reprocessing of all files that mention the modified entries but
-we are not doing that.
+The `.bib` command updates just the bibliography.
 
 The `.global` command updates global, project-wide data (namely stuff in the
 `project-documentation` directory) and all the data that have these global data
@@ -27,9 +25,6 @@ used for debugging and experimentation. The reason we have it is that the recons
 The `.rebuild` command triggers an update of the catalog. It does not check
 whether repositories are up-to-date. This is meant to be used for reprocessing
 all texts for search.
-
-TODO rename commands with a leading period, to prevent clashes with repository
-names.
 
 We do not implement any buffering for passing messages, because pipe buffers are
 big enough for our purposes.
@@ -212,11 +207,11 @@ def update_db(repo):
 # the db. Otherwise would have to write introspection code. Other reason: at
 # some point, we want to have a downloadable read-only db. Ideally, it should
 # be possible to run the code without having to set up repositories.
-def update_project(rebuild_catalog=True):
+def update_project() -> bool:
 	changes = Changes("project-documentation")
 	changes.check_db()
 	if changes.done:
-		return
+		return False
 	changes.check_repo()
 	modified = set(file.path for files in (changes.insert, changes.update,
 		changes.delete) for file in files)
@@ -242,8 +237,9 @@ def update_project(rebuild_catalog=True):
 		# in the same order.
 		for module in sorted(to_update, key=lambda m: m.__name__):
 			module.update()
-		if rebuild_catalog:
-			catalog.rebuild()
+		modified = True
+	else:
+		modified = False
 	repo = "project-documentation"
 	commit_hash, commit_date = latest_commit_in_repo(repo)
 	db = common.db("texts")
@@ -253,6 +249,7 @@ def update_project(rebuild_catalog=True):
 		(commit_hash, commit_date, common.CODE_HASH, repo))
 	# XXX we also need to store schemas in the db, but for this we need to
 	# derive them at runtime
+	return modified
 
 def backup_biblio():
 	common.command("bash", "-x", common.path_of("backup_biblio.sh"),
@@ -261,7 +258,8 @@ def backup_biblio():
 def handle_changes(name):
 	update_repo(name)
 	if name == "project-documentation":
-		update_project()
+		if update_project():
+			catalog.rebuild()
 	else:
 		update_db(name)
 	db = common.db("texts")
@@ -312,13 +310,16 @@ def update_everything():
 	# project-documentation (it contains a list of all dharma repos); and
 	# all other repos in whatever order.
 	start = time.time()
+	rebuild_catalog = False
 	logging.info("updating everything...")
 	logging.info("updating biblio...")
-	biblio.update()
+	if biblio.update():
+		rebuild_catalog = True
 	logging.info("updated biblio")
 	name = "project-documentation"
 	logging.info(f"updating {name!r}")
-	handle_changes(name)
+	if update_project():
+		rebuild_catalog = True
 	logging.info(f"updated {name!r}")
 	repos = all_useful_repos()
 	repos.remove(name)
@@ -326,6 +327,8 @@ def update_everything():
 		logging.info(f"updating {name!r}")
 		handle_changes(name)
 		logging.info(f"updated {name!r}")
+	if rebuild_catalog:
+		catalog.rebuild()
 	backup_biblio()
 	logging.info(f"updated everything in {time.time() - start}s")
 
@@ -333,7 +336,8 @@ def update_everything():
 def update_biblio():
 	start = time.time()
 	logging.info("updating biblio...")
-	biblio.update()
+	if biblio.update():
+		catalog.rebuild()
 	backup_biblio()
 	logging.info(f"updated biblio in {time.time() - start}s")
 
@@ -355,7 +359,8 @@ def update_repository(name):
 @common.transaction("texts")
 def update_global_partial():
 	logging.info("updating global data (without rebuilding the db)")
-	update_project(rebuild_catalog=False)
+	update_project()
+	# But don't rebuild the catalog.
 	logging.info("done")
 
 def read_changes(fd):

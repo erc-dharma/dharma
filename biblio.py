@@ -1,12 +1,11 @@
-# BUG We sometimes miss updates, why?
-# I am sure we are sometimes missing deletions, but I haven't checked whether
-# we are also missing new entries. Due to one-off error with versions no.?
-# Or the isloation level in sqlite? Or just zotero itself?
-# Other option:
-# We should force a full bibliography update from time to time just in
-# case, as we are doing for the catalog.
-
-# BUG dans la biblio, manque Civanantam2018_01 (cité dans inscription DHARMA_INSPallava00029)
+"""
+Routines for displaying and updating the bibliography.
+"""
+# BUG We sometimes miss updates, why? I am sure we are sometimes missing
+# deletions, but I haven't checked whether we are also missing new entries. Due
+# to one-off error with versions no.? Or the isloation level in sqlite? Or just
+# zotero itself? Other option: We should force a full bibliography update from
+# time to time just in case, as we are doing for the catalog.
 
 # For the conversion zotero->tei, this code is used:
 # https://github.com/zotero/translators/blob/master/TEI.js
@@ -122,27 +121,35 @@ def insert_entry(db, entry):
 		data) values(?, ?, ?, ?)""", (short_title, entry["key"],
 		sort_key, entry["data"]))
 
-def update():
+def update() -> bool:
+	"""Updates the bibliography. Returns a boolean indicating whether the
+	bibliography was modified."""
+	modified = False
 	db = common.db("texts")
 	(min_version,) = db.execute("""select value from metadata
 		where key = 'biblio_latest_version'""").fetchone()
 	if min_version <= 0:
+		min_version = 0
 		# Empty out the biblio, in case the version number has been
 		# changed manually and reset to 0.
 		db.execute("delete from biblio")
 		db.execute("delete from biblio_data")
+		modified = True
 	ret = []
 	for entry in zotero_modified(min_version, ret):
 		insert_entry(db, entry)
+		modified = True
 	assert len(ret) == 1
 	max_version = ret.pop()
 	for key in zotero_deleted(min_version):
 		db.execute("delete from biblio where key = ?", (key,))
 		db.execute("delete from biblio_data where key = ?", (key,))
+		modified = True
 	db.execute("""update metadata set value = ?
 	    where key = 'biblio_latest_version'""", (max_version,))
 	db.execute("""replace into metadata
 	    values('last_updated', strftime('%s', 'now'))""")
+	return modified
 
 anonymous = "No name"
 
