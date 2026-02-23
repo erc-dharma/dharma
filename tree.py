@@ -89,6 +89,7 @@ will be used for evaluating the given expression.
 # several root elements or without a root element.
 
 import os, re, io, collections, sys, fnmatch, tokenize, traceback
+from typing import *
 from xml.parsers import expat
 from xml.sax.saxutils import escape as quote_string
 from pegen.tokenizer import Tokenizer
@@ -1837,33 +1838,53 @@ def html_format(node: Node | str, skip_root=False, color=True,
 	return fmt.text()
 
 class Serializer:
-	"Helper for building XML trees."
+	"""
+	Helper for building XML trees.
 
+	This is basically just a stack with helper methods. The stack itself
+	should only store `Branch` nodes. It always contains at least one item,
+	namely a `Tree` node.
+
+	The stack can be manipulated with `push()` and `pop()`. There are also
+	`append()` and `extend()` methods which append items to the `Branch` at
+	the top of the stack. Finally, there is a `join()` method that basically
+	does `append(pop())`.
+	"""
 	def __init__(self):
-		self.clear()
+		self.tree = Tree()
+		"Output tree."
+		self.stack: list[Branch] = [self.tree]
+		"Stack to work with."
 
 	def clear(self):
 		self.tree = Tree()
 		self.stack = [self.tree]
 
 	def push(self, node: Node | str, **attrs):
-		if isinstance(node, Node):
-			assert not attrs
-			node = node.copy()
-		else:
-			node = Tag(node, **attrs)
+		match node:
+			case Branch():
+				assert not attrs
+				node = node.copy()
+			case Node():
+				raise Exception
+			case str():
+				node = Tag(node, **attrs)
+			case _:
+				raise Exception
+		assert isinstance(node, Branch)
 		self.stack.append(node)
 
 	@property
-	def top(self):
+	def top(self) -> Branch:
+		"The `Branch` at the top of the stack."
 		return self.stack[-1]
 
-	def pop(self):
+	def pop(self) -> Branch:
 		assert len(self.stack) > 1 # Should never pop the root tree.
 		return self.stack.pop()
 
-	def join(self, expect=None):
-		"""Pop one node from the stack and append it to the node now
+	def join(self, expect=None) -> None:
+		"""Pops one node from the stack and appends it to the node now
 		at the top of the stack.
 
 		`expect` is optional. If given, it should either be the node at
@@ -1882,12 +1903,11 @@ class Serializer:
 				raise Exception(f"bad value {expect!r}")
 		self.append(item)
 
-	def append(self, node: Node | str):
+	def append(self, node: Node | str) -> None:
 		match node:
 			case Tree():
-				node = node.copy()
 				for child in node:
-					self.stack[-1].append(child)
+					self.stack[-1].append(child.copy())
 			case Node():
 				node = node.copy()
 				self.stack[-1].append(node)
@@ -1896,7 +1916,7 @@ class Serializer:
 			case _:
 				raise Exception
 
-	def extend(self, node_iter):
+	def extend(self, node_iter: Iterable[Node | str]) -> None:
 		for node in list(node_iter):
 			self.append(node)
 

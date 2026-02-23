@@ -622,6 +622,7 @@ creator_types = ["author", "editor", "bookAuthor"]
 def render_journal_article(rec, w):
 	w.entry_front(rec)
 	w.quoted(rec["title"])
+	print(w.tree.xml())
 	if rec["_shorthand"]:
 		w.by_authors(rec)
 	if rec["publicationTitle"] or rec["journalAbbreviation"]:
@@ -1452,5 +1453,12 @@ def load_biblio_from_file():
 		entry = common.from_json(line)
 		insert_entry(db, entry)
 
+@common.transaction("texts")
+def display_entry(short_title):
+	rec = lookup_entry(short_title)
+	ret = format_entry(rec, location=[], siglum=None)
+	print(ret.xml(add_xml_prefix=False))
+
 if __name__ == "__main__":
-	load_biblio_from_file()
+	#load_biblio_from_file()
+	display_entry(sys.argv[1])
