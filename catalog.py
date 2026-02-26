@@ -135,7 +135,7 @@ def insert(file: texts.File):
 		data["editors"] = []
 		data["editors_ids"] = []
 		data["summary"] = None
-		html_doc = render.HTMLDocument()
+		html_doc = render.Document()
 	data["name"] = file.name
 	data["repo"] = file.repo
 	data["status"] = file.status
