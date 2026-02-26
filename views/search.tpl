@@ -6,6 +6,8 @@ Texts
 
 % block body
 
+<p><a href="/search/help">Search Help</a></p>
+
 <form action="{{url_for('render_search_page')}}" method="get">
 <ul>
    <li>

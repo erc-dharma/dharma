@@ -577,6 +577,10 @@ def display_development_of_tamil_fractions():
 def display_chola_fractional_calculations():
 	return flask.render_template("chola-fractional-calculations.tpl")
 
+@app.get("/search/help")
+def display_search_help():
+	return flask.render_template("search_help.tpl")
+
 @app.get("/cmd/count-biblio-short-title")
 @common.transaction("texts")
 def count_biblio_short_title():
