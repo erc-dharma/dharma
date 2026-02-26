@@ -22,6 +22,12 @@ class And(Node):
 			self.children[i] = child._complete_fields(name)
 		return self
 
+	def serialize(self):
+		return {
+			"op": "and",
+			"args": [c.serialize() for c in self.children],
+		}
+
 class Or(Node):
 
 	def __init__(self, *children):
@@ -41,6 +47,12 @@ class Or(Node):
 			self.children[i] = child._complete_fields(name)
 		return self
 
+	def serialize(self):
+		return {
+			"op": "or",
+			"args": [c.serialize() for c in self.children],
+		}
+
 class Not(Node):
 
 	def __init__(self, child=None):
@@ -56,10 +68,14 @@ class Not(Node):
 		self.child = self.child._complete_fields(name)
 		return self
 
+	def serialize(self):
+		return {"op": "not", "arg": self.child.serialize()}
+
 class Field(Node):
 
 	def __init__(self, name, child=None):
 		self.name = name
+		"Field name, or the empty string if no name is given."
 		self.child = child
 
 	def __repr__(self):
@@ -72,6 +88,13 @@ class Field(Node):
 			return self
 		return self.child._complete_fields(self.name)
 
+	def serialize(self):
+		return {
+			"op": "field",
+			"field": self.name,
+			"value": self.child,
+		}
+
 class _Null(Node):
 
 	def __repr__(self):
@@ -79,6 +102,9 @@ class _Null(Node):
 
 	def _complete_fields(self, name):
 		return self
+
+	def serialize(self):
+		return {"op": "null"}
 
 Null = _Null()
 

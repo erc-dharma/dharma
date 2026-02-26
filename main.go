@@ -74,6 +74,14 @@ type SearchResponse struct {
 	Matches interface{} `json:"matches"`
 }
 
+type QueryNode struct {
+	Op    string      `json:"op"`
+	Args  []QueryNode `json:"args,omitempty"`
+	Arg   *QueryNode  `json:"arg,omitempty"`
+	Field string      `json:"field,omitempty"`
+	Value string      `json:"value,omitempty"`
+}
+
 var (
 	corpus          []Document
 	lastDataVersion int
@@ -196,14 +204,18 @@ func processMatch(w http.ResponseWriter, ident, q string, fields []string, prett
 		return
 	}
 	res := matchDocument(*targetDoc, q)
-	// Fetch original TEI content from the files table
-	err = tx.QueryRow("select data from files where name = ?", ident).Scan(&res.Original)
-	if err != nil {
-		log.Printf("Error fetching original TEI: %v", err)
-	}
+	fetchOriginalTEI(tx, ident, &res)
 	results := []SearchResult{res}
 	enrichMatches(tx, results, []Document{*targetDoc}, fields)
 	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty)
+}
+
+func fetchOriginalTEI(tx *sql.Tx, ident string, res *SearchResult) {
+	// Fetch original TEI content from the files table
+	err := tx.QueryRow("select data from files where name = ?", ident).Scan(&res.Original)
+	if err != nil {
+		log.Printf("Error fetching original TEI: %v", err)
+	}
 }
 
 func findDocument(ident string) *Document {
@@ -453,43 +465,115 @@ func parseMatrix(jsonStr string) [][]string {
 	return mat
 }
 
-func filterDocs(q string) []Document {
-	// Filter the corpus returning documents matching the query
+func parseQuery(qStr string) QueryNode {
+	// Parse JSON query AST
+	var q QueryNode
+	json.Unmarshal([]byte(qStr), &q)
+	return q
+}
+
+func filterDocs(qStr string) []Document {
+	// Filter the corpus returning documents matching the query tree
 	mu.RLock()
 	snap := corpus
 	mu.RUnlock()
-	if q == "" {
+	if qStr == "" {
 		docs := make([]Document, len(snap))
 		copy(docs, snap)
 		return docs
 	}
+	q := parseQuery(qStr)
 	var docs []Document
 	for _, doc := range snap {
-		if docMatches(doc, q) {
+		if matchQuery(doc, q) {
 			docs = append(docs, doc)
 		}
 	}
 	return docs
 }
 
-func docMatches(d Document, q string) bool {
-	// Verify if any document field contains the query term
-	if strings.Contains(d.Ident, q) || strings.Contains(d.Logical, q) {
-		return true
+func matchQuery(d Document, q QueryNode) bool {
+	// Evaluate the document against the query AST
+	switch q.Op {
+	case "and":
+		return evalAnd(d, q.Args)
+	case "or":
+		return evalOr(d, q.Args)
+	case "not":
+		return !matchQuery(d, *q.Arg)
+	case "field":
+		return matchField(d, q.Field, q.Value)
 	}
-	if strings.Contains(d.Summary, q) || strings.Contains(d.RepoID, q) {
-		return true
+	return true
+}
+
+func evalAnd(d Document, args []QueryNode) bool {
+	// Evaluate an AND node
+	for _, arg := range args {
+		if !matchQuery(d, arg) {
+			return false
+		}
 	}
-	if strings.Contains(d.RepoName, q) || strings.Contains(d.Hand, q) {
-		return true
-	}
-	if listMatches(d.Title, q) || listMatches(d.Author, q) || listMatches(d.Editor, q) {
-		return true
-	}
-	if matrixMatches(d.Lang, q) || matrixMatches(d.Script, q) {
-		return true
+	return len(args) > 0
+}
+
+func evalOr(d Document, args []QueryNode) bool {
+	// Evaluate an OR node
+	for _, arg := range args {
+		if matchQuery(d, arg) {
+			return true
+		}
 	}
 	return false
+}
+
+func matchField(d Document, field, val string) bool {
+	// Check if a specific field matches the value
+	switch field {
+	case "ident":
+		return strings.Contains(d.Ident, val)
+	case "logical":
+		return strings.Contains(d.Logical, val)
+	case "title":
+		return listMatches(d.Title, val)
+	case "summary":
+		return strings.Contains(d.Summary, val)
+	case "repo_id":
+		return strings.Contains(d.RepoID, val)
+	case "repo_name":
+		return strings.Contains(d.RepoName, val)
+	case "hand":
+		return strings.Contains(d.Hand, val)
+	case "author":
+		return listMatches(d.Author, val)
+	case "editor":
+		return listMatches(d.Editor, val)
+	case "lang":
+		return matrixMatches(d.Lang, val)
+	case "script":
+		return matrixMatches(d.Script, val)
+	}
+	return docMatchesAll(d, val)
+}
+
+func docMatchesAll(d Document, val string) bool {
+	// Verify if any document field contains the value
+	if strings.Contains(d.Ident, val) || strings.Contains(d.Logical, val) {
+		return true
+	}
+	if strings.Contains(d.Summary, val) || strings.Contains(d.RepoID, val) {
+		return true
+	}
+	if strings.Contains(d.RepoName, val) || strings.Contains(d.Hand, val) {
+		return true
+	}
+	if listMatches(d.Title, val) || listMatches(d.Author, val) {
+		return true
+	}
+	if listMatches(d.Editor, val) || matrixMatches(d.Lang, val) {
+		return true
+	}
+	return matrixMatches(d.Script, val)
 }
 
 func listMatches(list []string, q string) bool {
@@ -573,14 +657,15 @@ func filterFields(matches []SearchResult, fields []string) []map[string]interfac
 	for i, m := range matches {
 		filtered[i] = make(map[string]interface{})
 		for _, f := range fields {
-			assignField(filtered[i], m, f)
+			assignBasicField(filtered[i], m, f)
+			assignExtraField(filtered[i], m, f)
 		}
 	}
 	return filtered
 }
 
-func assignField(mMap map[string]interface{}, m SearchResult, f string) {
-	// Copy a single field from the result struct to the map
+func assignBasicField(mMap map[string]interface{}, m SearchResult, f string) {
+	// Copy primary descriptive fields from the result struct
 	switch f {
 	case "ident":
 		mMap["ident"] = m.Ident
@@ -596,6 +681,12 @@ func assignField(mMap map[string]interface{}, m SearchResult, f string) {
 		mMap["repo_name"] = m.RepoName
 	case "hand":
 		mMap["hand"] = m.Hand
+	}
+}
+
+func assignExtraField(mMap map[string]interface{}, m SearchResult, f string) {
+	// Copy remaining specific fields from the result struct
+	switch f {
 	case "author":
 		mMap["author"] = m.Author
 	case "editor":
@@ -611,7 +702,7 @@ func assignField(mMap map[string]interface{}, m SearchResult, f string) {
 	}
 }
 
-func matchDocument(doc Document, q string) SearchResult {
+func matchDocument(doc Document, qStr string) SearchResult {
 	// Duplicate the document and apply highlights if necessary
 	res := SearchResult{
 		Ident: doc.Ident, Logical: doc.Logical,
@@ -620,26 +711,50 @@ func matchDocument(doc Document, q string) SearchResult {
 		Author: cloneList(doc.Author), Editor: cloneList(doc.Editor),
 		Lang: cloneMatrix(doc.Lang), Script: cloneMatrix(doc.Script),
 	}
-	if q == "" {
+	if qStr == "" {
 		return res
 	}
-	applyHighlights(&res, doc, q)
+	applyHighlights(&res, doc, qStr)
 	return res
 }
 
-func applyHighlights(res *SearchResult, doc Document, q string) {
+func extractTerms(q QueryNode) []string {
+	// Extract terms for highlighting
+	if q.Op == "field" {
+		return []string{q.Value}
+	}
+	var terms []string
+	if q.Op == "and" || q.Op == "or" {
+		for _, arg := range q.Args {
+			terms = append(terms, extractTerms(arg)...)
+		}
+	}
+	return terms
+}
+
+func applyHighlights(res *SearchResult, doc Document, qStr string) {
 	// Inject highlight markers across all relevant fields
-	processField(&res.Logical, doc.Logical, q)
-	processField(&res.Ident, doc.Ident, q)
-	processField(&res.Summary, doc.Summary, q)
-	processField(&res.RepoID, doc.RepoID, q)
-	processField(&res.RepoName, doc.RepoName, q)
-	processField(&res.Hand, doc.Hand, q)
-	processStringList(res.Title, doc.Title, q)
-	processStringList(res.Author, doc.Author, q)
-	processStringList(res.Editor, doc.Editor, q)
-	processStringMatrix(res.Lang, doc.Lang, q)
-	processStringMatrix(res.Script, doc.Script, q)
+	q := parseQuery(qStr)
+	terms := extractTerms(q)
+	if len(terms) == 0 {
+		return
+	}
+	highlightFields(res, doc, terms)
+}
+
+func highlightFields(res *SearchResult, doc Document, terms []string) {
+	// Apply highlights combining all query terms
+	processFieldTerms(&res.Logical, doc.Logical, terms)
+	processFieldTerms(&res.Ident, doc.Ident, terms)
+	processFieldTerms(&res.Summary, doc.Summary, terms)
+	processFieldTerms(&res.RepoID, doc.RepoID, terms)
+	processFieldTerms(&res.RepoName, doc.RepoName, terms)
+	processFieldTerms(&res.Hand, doc.Hand, terms)
+	processListTerms(res.Title, doc.Title, terms)
+	processListTerms(res.Author, doc.Author, terms)
+	processListTerms(res.Editor, doc.Editor, terms)
+	processMatrixTerms(res.Lang, doc.Lang, terms)
+	processMatrixTerms(res.Script, doc.Script, terms)
 }
 
 func cloneList(src []string) []string {
@@ -659,33 +774,36 @@ func cloneMatrix(src [][]string) [][]string {
 	return dst
 }
 
-func processField(target *string, source, q string) bool {
+func processFieldTerms(target *string, source string, terms []string) bool {
 	// Detect occurrences and update the target string with markers
-	intervals := findOccurrences(source, q)
-	if len(intervals) > 0 {
-		*target = injectMarkers(source, intervals)
+	var allIntervals [][2]int
+	for _, term := range terms {
+		allIntervals = append(allIntervals, findOccurrences(source, term)...)
+	}
+	if len(allIntervals) > 0 {
+		*target = injectMarkers(source, allIntervals)
 		return true
 	}
 	return false
 }
 
-func processStringList(targets []string, sources []string, q string) bool {
+func processListTerms(targets []string, sources []string, terms []string) bool {
 	// Apply highlight processing to a list of strings
 	matched := false
 	for i, item := range sources {
-		if processField(&targets[i], item, q) {
+		if processFieldTerms(&targets[i], item, terms) {
 			matched = true
 		}
 	}
 	return matched
 }
 
-func processStringMatrix(targets [][]string, sources [][]string, q string) bool {
+func processMatrixTerms(targets [][]string, sources [][]string, terms []string) bool {
 	// Apply highlight processing to a matrix of strings
 	matched := false
 	for i, row := range sources {
 		for j, item := range row {
-			if processField(&targets[i][j], item, q) {
+			if processFieldTerms(&targets[i][j], item, terms) {
 				matched = true
 			}
 		}

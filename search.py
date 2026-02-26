@@ -1,7 +1,7 @@
 import sys
 import unicodedata
 import requests
-from dharma import common, ingest, tree, enrich
+from dharma import common, ingest, tree, enrich, query
 import icu
 
 # Unicode Private Use Area characters for search markers
@@ -675,26 +675,32 @@ SEARCH_CONFIG = {
 	}
 }
 
-def query_search_service(query, offset=0, limit=20, sort="title"):
+def query_search_service(query_str, offset=0, limit=20, sort="title"):
 	# Query the backend search service and process occurrences
-	norm_query = unicodedata.normalize('NFC', query)
-	params = {"q": norm_query, "offset": offset, "limit": limit, "sort": sort}
+	norm_query = unicodedata.normalize('NFC', query_str)
+	ast = query.parse_query(norm_query)
+	q_json = common.to_json(ast.serialize())
+	params = {"q": q_json, "offset": offset, "limit": limit, "sort": sort}
 	resp = requests.get(GO_SERVER_URL, params=params)
 	resp.raise_for_status()
 	data = resp.json()
 	processed_matches = process_matches(data.get("matches", []))
 	return {
-		"query": query,
+		"query": query_str,
 		"match_count": data.get("count", 0),
 		"matches": processed_matches,
 		"sort": data.get("sort", sort)
 	}
 
-def query_match_document(ident, query="") \
+def query_match_document(ident, query_str="") \
 	-> tuple[None, None] | tuple[tree.Tree, tree.Tree]:
 	# Retrieve and highlight a full document without applying snippet pruning
-	norm_query = unicodedata.normalize('NFC', query) if query else ""
-	params = {"ident": ident, "q": norm_query}
+	q_json = ""
+	if query_str:
+		norm_query = unicodedata.normalize('NFC', query_str)
+		ast = query.parse_query(norm_query)
+		q_json = common.to_json(ast.serialize())
+	params = {"ident": ident, "q": q_json}
 	url = GO_SERVER_URL.replace("/search", "/match")
 	resp = requests.get(url, params=params)
 	resp.raise_for_status()
@@ -706,7 +712,7 @@ def query_match_document(ident, query="") \
 	item = matches[0]
 	xml_str = item["source"]
 	doc = tree.parse_string(xml_str)
-	if norm_query:
+	if query_str:
 		highlight_document(doc, item)
 	original = tree.parse_string(item["original"])
 	return doc, original
