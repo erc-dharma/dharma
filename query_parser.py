@@ -154,7 +154,7 @@ class GeneratedParser(Parser):
             and
             (self.expect('ENDMARKER'))
         ):
-            return r . _complete_fields ( "_default" );
+            return r . _complete_fields ( "" );
         self._reset(mark)
         return None;
 

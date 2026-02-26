@@ -133,7 +133,7 @@ def mkmerge(*elems):
 
 '''
 
-start: r=Exprs $ { r._complete_fields("_default") }
+start: r=Exprs $ { r._complete_fields("") }
 
 Exprs: r=Expr* { mkmerge(*r) }
 

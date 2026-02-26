@@ -87,5 +87,6 @@ if __name__ == "__main__":
 		for tok in tokenize_query(args.query):
 			print(tok)
 	else:
+		import json
 		r = parse_query(args.query)
-		print(r)
+		print(json.dumps(r.serialize(), ensure_ascii=False, indent=4))
