@@ -13,6 +13,7 @@ BLOCK_TAGS = {"para", "verse", "quote", "dlist", "elist"}
 # Structural parents allowed for a snippet root
 VALID_PARENTS = {"div", "logical", "hand"}
 
+# TODO delete that, should be done in the go code.
 def translate_char(c):
 	# Translate specific characters for search normalization
 	match c:

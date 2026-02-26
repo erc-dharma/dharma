@@ -1359,6 +1359,8 @@ def _parse_g_numeral(p, node):
 	else:
 		p.dispatch_children(node)
 
+GAIJI_PLACEHOLDER = "■"
+
 # g[not @type='numeral']
 @_handler("g")
 def _parse_g(p, node):
@@ -1386,7 +1388,7 @@ def _parse_g(p, node):
 		p.join()
 	p.join()
 	p.push(tree.Tag("search"))
-	p.append(info["search"] or "■")
+	p.append(info["search"] or GAIJI_PLACEHOLDER)
 	p.join()
 	p.join("split")
 

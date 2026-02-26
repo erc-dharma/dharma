@@ -1,9 +1,6 @@
 # TODO
 
-ne pas afficher dans la toc les descendants d'éléments qui ont skip-toc.
-
-prendre tous les blocks avec @snippet=true, découper des passages alentours.
-
+REPR Dharma TG p. 17 (PDF 18)
 
 
 
