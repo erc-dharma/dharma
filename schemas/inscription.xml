@@ -1076,6 +1076,13 @@
                     </attList>
                 </elementSpec>
                 <elementSpec ident="unclear" module="core" mode="change">
+                    <content>
+                        <alternate minOccurs="0" maxOccurs="unbounded">
+                            <textNode/>
+                            <elementRef key="g"/>
+                            <elementRef key="hi"/>
+                        </alternate>
+                    </content>
                     <attList>
                         <attDef ident="agent" mode="delete"/>
                         <attDef ident="ana" mode="delete"/>
