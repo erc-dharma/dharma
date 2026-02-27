@@ -1014,16 +1014,16 @@ def _split_around_milestone(inline, mile):
 	inline.delete()
 
 def _fix_physical_inlines(t):
-	milestones = t.find(".//*[@significant and (name()='npage' or name()='nline' or name()='ncell')]")
-	for mile in milestones:
-		if mile.name == "ncell":
-			# Cells should remain inlines
-			continue
+	# Dynamically process inline milestones until none are left
+	while True:
+		mile = None
+		for node in t.find(".//*[@significant and (name()='npage' or name()='nline')]"):
+			if isinstance(node.parent, tree.Tag) and node.parent.name in ("span", "link"):
+				mile = node
+				break
+		if mile is None:
+			break
 		inline = mile.parent
-		if not isinstance(inline, tree.Tag):
-			continue
-		if inline.name not in ("span", "link"):
-			continue
 		while True:
 			parent = inline.parent
 			if isinstance(parent, tree.Tag) and parent.name in ("span", "link"):
