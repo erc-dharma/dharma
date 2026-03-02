@@ -39,7 +39,7 @@ def main(sock):
 	while True:
 		ret = read_message(sock)
 		assert ret["event"] in ("topicUpdated", "topicAdded", "topicRemoved")
-		change.notify("bib")
+		change.notify(".bib")
 
 if __name__ == "__main__":
 	exit = False
