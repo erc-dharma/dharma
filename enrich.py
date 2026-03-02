@@ -1033,6 +1033,8 @@ def _fix_physical_inlines(t):
 		_split_around_milestone(inline, mile)
 
 def _to_physical(t):
+	# Expand views early to expose hidden milestones
+	_expand_views(t, "physical")
 	_unwrap_for_physical(t)
 	_fix_spaces(t)
 	_fix_physical_inlines(t)
