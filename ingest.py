@@ -204,6 +204,13 @@ class _Parser(tree.Serializer):
 		self.append(text)
 		self.join()
 
+	def append_surround(self, text):
+		self.push(tree.Tag("display"))
+		self.push(tree.Tag("span", class_="surrounding"))
+		self.append(text)
+		self.join()
+		self.join()
+
 	def _get_bib_entry(self, short_title):
 		external = False
 		entry = self.bib_entries.get(short_title)
@@ -573,11 +580,11 @@ def _emit_supplied(p, supplied, tip, brackets):
 			p.append("; restoration based on previous edition (not assessable)")
 	tip = p.pop().xml()
 	p.push(tree.Tag("span", class_="supplied", tip=tip))
-	p.append_display(ldelim)
+	p.append_surround(ldelim)
 	p.dispatch_children(supplied)
 	if supplied["cert"] == "low":
-		p.append_display("?")
-	p.append_display(rdelim)
+		p.append_surround("?")
+	p.append_surround(rdelim)
 	p.join()
 
 # § Premodern insertion
@@ -607,9 +614,9 @@ def _parse_add(p, node, deleted=None):
 		p.append(")")
 	tip = p.pop().xml()
 	p.push(tree.Tag("span", class_="add", tip=tip))
-	p.append_display("⟨⟨")
+	p.append_surround("⟨⟨")
 	p.dispatch_children(node)
-	p.append_display("⟩⟩")
+	p.append_surround("⟩⟩")
 	p.join()
 
 # § Premodern deletion
@@ -634,9 +641,9 @@ def _parse_del(p, node, added=None):
 		p.append(")")
 	tip = p.pop().xml()
 	p.push(tree.Tag("span", class_="del", tip=tip))
-	p.append_display("⟦")
+	p.append_surround("⟦")
 	p.dispatch_children(node)
-	p.append_display("⟧")
+	p.append_surround("⟧")
 	p.join()
 
 # § Premodern correction
@@ -663,9 +670,9 @@ def _parse_sic(p, sic, corr=None):
 		p.join()
 		p.append(")")
 	p.push(tree.Tag("span", class_="sic", tip=p.pop().xml()))
-	p.append_display("¿")
+	p.append_surround("¿")
 	p.dispatch_children(sic)
-	p.append_display("?")
+	p.append_surround("?")
 	p.join()
 
 @_handler("corr")
@@ -681,9 +688,9 @@ def _parse_corr(p, corr, sic=None):
 		p.join()
 		p.append(")")
 	p.push(tree.Tag("span", class_="corr", tip=p.pop().xml()))
-	p.append_display('⟨')
+	p.append_surround("⟨")
 	p.dispatch_children(corr)
-	p.append_display('⟩')
+	p.append_surround("⟩")
 	p.join()
 
 @_handler("orig")
@@ -699,9 +706,9 @@ def _parse_orig(p, orig, reg=None):
 		p.join()
 		p.append(")")
 	p.push(tree.Tag("span", class_="orig", tip=p.pop().xml()))
-	p.append_display("¡")
+	p.append_surround("¡")
 	p.dispatch_children(orig)
-	p.append_display("!")
+	p.append_surround("!")
 	p.join()
 
 @_handler("reg")
@@ -717,9 +724,9 @@ def _parse_reg(p, reg, orig=None):
 		p.join()
 		p.append(")")
 	p.push(tree.Tag("span", class_="reg", tip=p.pop().xml()))
-	p.append_display("⟨")
+	p.append_surround("⟨")
 	p.dispatch_children(reg)
-	p.append_display("⟩")
+	p.append_surround("⟩")
 	p.join()
 
 @_handler("unclear")
@@ -737,12 +744,12 @@ def _parse_unclear(p, node, standalone=True):
 		p.append(")")
 	p.push(tree.Tag("span", class_="unclear", tip=p.pop().xml()))
 	if standalone:
-		p.append_display("(")
+		p.append_surround("(")
 	p.dispatch_children(node)
 	if node["cert"] == "low":
-		p.append_display("?")
+		p.append_surround("?")
 	if standalone:
-		p.append_display(")")
+		p.append_surround(")")
 	p.join()
 
 @_handler("choice")
@@ -803,12 +810,18 @@ def _make_multiple_unclear(p, nodes: list[tree.Node]):
 	p.push(tree.Tag("split"))
 	p.push(tree.Tag("display"))
 	p.push(tree.Tag("span", tip="Unclear (several possible readings)"))
+	p.push(tree.Tag("span", class_="surrounding"))
 	p.append("(")
+	p.join()
 	for i, node in enumerate(nodes):
 		p.dispatch_children(node)
 		if i < len(nodes) - 1:
+			p.push(tree.Tag("span", class_="surrounding"))
 			p.append("/")
+			p.join()
+	p.push(tree.Tag("span", class_="surrounding"))
 	p.append(")")
+	p.join()
 	p.join()
 	p.join("display")
 	p.push(tree.Tag("search"))
@@ -857,9 +870,9 @@ def _make_choice_pair(p, one, two):
 @_handler("surplus")
 def _parse_surplus(p, node):
 	p.push(tree.Tag("span", class_="surplus", tip="Superfluous text erroneously added by the scribe"))
-	p.append_display("{")
+	p.append_surround("{")
 	p.dispatch_children(node)
-	p.append_display("}")
+	p.append_surround("}")
 	p.join()
 
 # > editorial
@@ -1088,9 +1101,9 @@ def _parse_ex(p, node):
 	else:
 		tip = "Abbreviation expansion"
 	p.push(tree.Tag("span", class_="abbr-expansion", tip=tip))
-	p.append_display("(")
+	p.append_surround("(")
 	p.dispatch_children(node)
-	p.append_display(")")
+	p.append_surround(")")
 	p.join()
 
 @_handler("am")
@@ -1155,9 +1168,9 @@ def _parse_other_seg(p, seg):
 	phys_repl, log_repl, search_repl, tip = _parse_gap(p, seg.first("stuck-child::gap"))
 	if tip:
 		p.top["tip"] = tip
-	p.append_display("[")
+	p.append_surround("[")
 	p.append(met)
-	p.append_display("]")
+	p.append_surround("]")
 	p.join()
 
 # There is @type=aksara|component which we are not dealing with but that is
@@ -1168,20 +1181,20 @@ def _parse_seg(p, seg):
 	rend = seg["rend"].split()
 	if "pun" in rend:
 		p.push(tree.Tag("span", class_="pun", tip=_XML('Pun (<span class="italics">ślesa</span>').xml()))
-		p.append_display("{")
+		p.append_surround("{")
 	if "check" in rend:
 		p.push(tree.Tag("span", class_="check", tip="To be checked"))
 	if seg["cert"] == "low":
 		p.push(tree.Tag("span", tip="Uncertain segment"))
-		p.append_display("¿")
+		p.append_surround("¿")
 	p.dispatch_children(seg)
 	if seg["cert"] == "low":
-		p.append_display("?")
+		p.append_surround("?")
 		p.join()
 	if "check" in rend:
 		p.join()
 	if "pun" in rend:
-		p.append_display("}")
+		p.append_surround("}")
 		p.join()
 	p.join()
 

@@ -676,6 +676,12 @@ dl.list > dd {
 	font-style: italic;
 }
 
+// This class is for delimitors that surround some text, as '¿' and '?' in
+// ¿dva?ndrāditya.
+.surrounding {
+	font-weight: normal;
+}
+
 /* Quotations */
 .quote > p > cite {
 	all: unset;

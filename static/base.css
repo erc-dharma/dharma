@@ -584,6 +584,9 @@ dl.list > dd {
 .title {
   font-style: italic; }
 
+.surrounding {
+  font-weight: normal; }
+
 /* Quotations */
 .quote > p > cite {
   all: unset; }
