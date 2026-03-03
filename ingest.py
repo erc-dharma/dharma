@@ -343,7 +343,11 @@ def _parse_listbibl_bibl(p, bibl):
 	short_title, location = _extract_bibl_ref(bibl, ref)
 	if not short_title:
 		return
-	p.append(p.bib_entry(short_title, location=location))
+	para = p.bib_entry(short_title, location=location)
+	p.push(para)
+	for note in bibl.find("note"):
+		p.dispatch(note)
+	p.join()
 
 _bibl_rend_formats = ("default", "omitname", "ibid", "siglum")
 
@@ -359,7 +363,7 @@ def _parse_bibl_ref(p, bibl):
 	short_title, location = _extract_bibl_ref(bibl, ref)
 	p.append(p.bib_reference(short_title, rend=rend, contents=list(ref),
 		location=location))
-	if (note := bibl.first("note")):
+	for note in bibl.find("note"):
 		p.dispatch(note)
 
 @_handler("ref")
