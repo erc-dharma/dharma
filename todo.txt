@@ -1,8 +1,24 @@
 # TODO
 
+handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml
+
+## search
+
 REPR Dharma TG p. 17 (PDF 18)
 
+ignorer espaces+hyphens
+ajouter support de la recherche levenshtein
 
+make the biblio searchable
+only display fields with matches
+je crois qu'on gère pas enjamb
+
+## other stuff
+
+tfa-tamil-outside-TN-epigraphy: ~DHARMA_INSTamilOutsideTN10002.xml ; manque une réf. biblio à Pillai
+KanapathiPillai1962_01
+
+hi rend=grantha à uniformiser avec rendition.  et ne mettre du gras que si le parent est en tamoul.
 
 
 
