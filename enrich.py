@@ -64,7 +64,7 @@ def _extract_edition_languages(root: tree.Branch):
 	"""
 	langs = {}
 	scripts = set()
-	for node in root.find("descendant-or-self::*[@lang and not @editorial]"):
+	for node in root.find("descendant-or-self::*[@lang and @editorial != 'true']"):
 		assert isinstance(node, tree.Tag)
 		lang, script = node["lang"].split()
 		langs.setdefault(lang, set()).add(script)
