@@ -232,6 +232,14 @@ class Node:
 		"The path of this node. See the `locate` method."
 		raise NotImplementedError
 
+	def comment_out(self, **kwargs):
+		"""Comments out a node viz. replaces it with a commented out XML
+		representation of it. Keyword arguments are the same as the ones
+		of the `.xml()` method."""
+		tmp = self.xml(**kwargs)
+		self.replace_with(Comment(tmp))
+		return self
+
 	@property
 	def mixed(self) -> bool:
 		"""Whether this node has both `Tag` and non-blank `String`
