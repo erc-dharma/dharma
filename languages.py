@@ -486,6 +486,8 @@ def add_editorial_info(node, parent_editorial=False):
 	Dutch). Furthermore, it was annoying to systematically classify
 	languages in two categories. The current solution seems preferable.
 	"""
+	if node.notes.get("editorial") is not None:
+		return
 	match node:
 		case tree.Tree():
 			node.notes["editorial"] = parent_editorial

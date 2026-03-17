@@ -99,37 +99,6 @@ class _Document:
 		_add_lang_to_parents(f.tree)
 		return f.tree
 
-def _add_lang_to_parents(node: tree.Node):
-	match node:
-		case tree.Tag():
-			pass # see below
-		case tree.Tree():
-			for child in node:
-				_add_lang_to_parents(child)
-			return
-		case _:
-			return
-	lang = None
-	editorial = None
-	for child in list(node):
-		if isinstance(child, tree.String) and not child.isspace():
-			if editorial is None:
-				editorial = child.notes.get("editorial", False)
-			elif editorial != child.notes.get("editorial", False):
-				raise Exception
-			if lang is None:
-				lang = child.notes["lang"]
-			elif lang != child.notes["lang"]:
-				span = tree.Tag("span")
-				child.replace_with(span)
-				span.append(child)
-	if lang:
-		node["lang"] = lang
-	if editorial:
-		node["editorial"] = "true"
-	for child in node:
-		_add_lang_to_parents(child)
-
 def _XML(s):
 	r = tree.parse_string(f"<root>{s}</root>")
 	r.root.unwrap()
@@ -188,7 +157,7 @@ class _Parser(tree.Serializer):
 	def append(self, node: tree.Node | str):
 		match node:
 			case tree.Node():
-				languages.add_lang_info(node.tree, self.lang_stack[-1])
+				languages.add_lang_info(node, self.lang_stack[-1])
 				languages.add_editorial_info(node, self.editorial_stack[-1])
 			case str():
 				node = tree.String(node)
@@ -197,6 +166,19 @@ class _Parser(tree.Serializer):
 			case _:
 				raise Exception
 		super().append(node)
+
+	def push(self, node: tree.Node | str, **attrs):
+		match node:
+			case tree.Node():
+				languages.add_lang_info(node, self.lang_stack[-1])
+				languages.add_editorial_info(node, self.editorial_stack[-1])
+			case str():
+				node = tree.Tag(node, **attrs)
+				node.notes["lang"] = self.lang_stack[-1]
+				node.notes["editorial"] = self.editorial_stack[-1]
+			case _:
+				raise Exception
+		super().push(node)
 
 	def append_display(self, text):
 		tag = tree.Tag("display")
@@ -919,31 +901,44 @@ def _get_n(node):
 def _milestone_break(node):
 	return common.to_boolean(node["break"], True)
 
+def _add_lang_to_parents(node: tree.Node):
+	if isinstance(node, tree.Tree):
+		for child in node: _add_lang_to_parents(child)
+		return
+	if not isinstance(node, tree.Tag): return
+	editorial = node.notes.get("editorial", False)
+	lang = None
+	for child in list(node):
+		if isinstance(child, tree.String) and not child.isspace():
+			if child.notes.get("editorial", False): editorial = True
+			if lang is None: lang = child.notes["lang"]
+			elif lang != child.notes["lang"]:
+				span = tree.Tag("span")
+				child.replace_with(span)
+				span.append(child)
+	if lang:
+		node["lang"] = lang
+		if editorial: node["editorial"] = "true"
+	for child in node: _add_lang_to_parents(child)
+
 def _append_milestone_label(p, node, unit):
-	span = tree.Tag("span", tip=f"{unit.title()} start")
-	p.push(span)
+	p.push_editorial(True)
+	p.push(tree.Tag("span", tip=f"{unit.title()} start"))
 	p.append("⟨")
 	if unit == "line":
-		if (n := _get_n(node)):
-			p.append(n)
-		else:
-			p.append("Line")
+		p.append(_get_n(node) if _get_n(node) else "Line")
 	else:
-		p.append(unit.title())
-		if (n := _get_n(node)):
-			p.append(" ")
-			p.append(n)
+		p.append(unit.title() + (f" {_get_n(node)}" if _get_n(node) else ""))
 	# If a <label> follows immediately, associate it with the milestone.
 	# But not if this <label> is a list element, because in this case it
 	# has a different meaning.
 	if (label := node.first("stuck-following-sibling::label[not parent::list]")):
 		p.append(": ")
-		p.push(tree.Tag("span"))
-		p.dispatch_children(label)
-		p.join()
+		p.dispatch(label)
 		p.visited.add(label)
 	p.append("⟩")
 	p.join()
+	p.pop_editorial()
 
 @_handler("milestone")
 def _parse_milestone(p, node):
