@@ -1,6 +1,12 @@
 # TODO
 
-handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml
+écritures pas assignées correctement sur DHARMA_INSSIIv17p0i0227.
+
+regarder dharmalekha.info/languages; on a des "english", etc. qui ne devraient pas apparaître
+
+handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml (language display)
+
+17
 
 ## search
 
@@ -11,7 +17,7 @@ ajouter support de la recherche levenshtein
 
 make the biblio searchable
 only display fields with matches
-je crois qu'on gère pas enjamb
+je crois qu'on gère pas enjamb, à vérifier
 
 ## other stuff
 
