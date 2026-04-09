@@ -5,7 +5,7 @@ This is only a preliminary step. The output XML document must be passed to the
 """
 
 import os, sys, re, html, urllib.parse, posixpath, copy
-from dharma import common, prosody, people, tree, gaiji, biblio, languages
+from dharma import common, prosody, people, tree, glyphs, biblio, languages
 from dharma import enrich
 
 class _Document:
@@ -1373,35 +1373,74 @@ def _parse_g_numeral(p, node):
 
 GAIJI_PLACEHOLDER = "■"
 
+def _make_gaiji(g):
+	is_placeholder = False
+	if g["type"] in ("pc", "connector", "ideogram", "alphabetic", "symbol",
+		""):
+		ident = g["ref"].removeprefix("tax:") or "unclassified"
+		text = g.text()
+	else:
+		# Legacy encoding.
+		ident = g["type"]
+		text = ""
+	info = glyphs.get(ident)
+	if not text and info:
+		text = info["text"]
+	if not text and info and info["names"]:
+		text = info["names"][0]["name"]
+		is_placeholder = True
+	if not text:
+		text = g["type"]
+		is_placeholder = True
+	if not text:
+		text = "symbol"
+		is_placeholder = True
+	match g["type"]:
+		case "pc":
+			tip = "Punctuation mark"
+		case "connector":
+			tip = "Connector mark"
+		case "ideogram":
+			tip = "Ideogram"
+		case "alphabetic":
+			tip = "Alphabetic grapheme"
+		case "symbol" | _:
+			tip = "Symbol"
+	if info:
+		if info["names"]:
+			tip += ": "
+			for i, name in enumerate(info["names"]):
+				if i > 0:
+					tip += ", "
+				tip += name["name"]
+				if name["lang"]:
+					tip += "(" + name["lang"] + ")"
+		else:
+			tip += ": " + info["idents"][0]
+		if info["description"]:
+			tip += " \N{en dash} " + info["description"]
+	elif g["ref"]:
+		tip += " with missing reference"
+	return text, is_placeholder, tip
+
 # g[not @type='numeral']
 @_handler("g")
 def _parse_g(p, node):
-	# <g type="...">\.</g> for punctuation marks
-	# <g type="...">§+</g> for space fillers
-	# <g type="..."></g> in the other cases viz. for symbols whose function
-	# is unclear.
-	text = node.text()
-	info = gaiji.get(node["type"])
-	if text == ".":
-		tip = f"Punctuation symbol: {info['description']}"
-	elif re.fullmatch("§+", text):
-		tip = f"Space-filler symbol: {info['description']}"
-	else:
-		tip = f"Symbol: {info['description']}"
-	p.push(tree.Tag("split"))
-	p.push(tree.Tag("display"))
-	if info["text"]:
-		p.push(tree.Tag("span", tip=tip, class_="symbol"))
-		p.append(info["text"])
+	text, is_placeholder, tip = _make_gaiji(node)
+	p.push("split")
+	p.push("display")
+	if is_placeholder:
+		p.push("span", tip=tip, class_="symbol-placeholder")
+		p.append(f"<{text}>")
 		p.join()
 	else:
-		p.push(tree.Tag("span", tip=tip, class_="symbol-placeholder"))
-		p.append(f"<{info['name']}>") # XXX should not include that in search
+		p.push("span", tip=tip, class_="symbol")
+		p.append(text)
 		p.join()
-	p.join()
-	p.push(tree.Tag("search"))
-	p.append(info["search"] or GAIJI_PLACEHOLDER)
-	p.join()
+	p.join("display")
+	p.push("search")
+	p.append(GAIJI_PLACEHOLDER)
+	p.join("search")
 	p.join("split")
 
 _hi_table = {

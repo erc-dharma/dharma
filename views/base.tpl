@@ -38,6 +38,7 @@
       <ul class="hidden">
          <li><a href="/editorial-conventions">Editorial Conventions</a></li>
          <li><a href="/prosody">Prosodic Patterns</a></li>
+	 <li><a href="/glyphs">Glyph Taxonomy</a></li>
       </ul>
    </li>
    <li class="submenu">
@@ -52,7 +53,7 @@
       <i class="fa-solid fa-grip-lines-vertical"></i> Parallels</a>
    </li>
    <li class="submenu">
-      <a href="#">Project Internal <i class="fa-solid fa-caret-down"></i></a>
+      <a href="#">Internal <i class="fa-solid fa-caret-down"></i></a>
       <ul class="hidden">
          <li>
             <a href="{{url_for('show_texts_errors')}}">

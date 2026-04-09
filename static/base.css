@@ -544,9 +544,13 @@ dl.list > dd {
   font-weight: initial;
   font-style: initial; }
 
+.symbol {
+  color: purple; }
+
 .symbol-placeholder {
   border: solid 1px;
-  border-radius: 0.3em; }
+  border-radius: 0.3em;
+  color: purple; }
 
 .lb {
   color: gray;
@@ -754,3 +758,7 @@ fieldset {
 
 .snippets {
   background-color: white; }
+
+.glyph-record img {
+  max-height: 10rem;
+  width: auto; }

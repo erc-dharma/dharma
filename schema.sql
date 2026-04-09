@@ -540,14 +540,27 @@ create table if not exists prosody(
 	entry_id integer not null check(typeof(entry_id) = 'integer')
 );
 
-create table if not exists gaiji(
-	name text primary key check(typeof(name) = 'text' and length(name) > 0),
+create table if not exists glyphs(
+	id integer primary key,
+	-- Array of 1 or more identifiers, e.g. ["danda", "dandaPlain"].
+	-- Identifiers are the part after the taxonomy URL prefix.
+	idents json check(typeof(idents) = 'text'
+		and json_valid(idents) and json_type(idents) = 'array'
+		and json_array_length(idents) > 0),
+	-- Array of 0 or more names, e.g. ["vertical bar"].
+	names json check(typeof(names) = 'text'
+		and json_valid(names) and json_type(names) = 'array'),
+	-- Placeholder text (optional).
 	text text check(text is null
 		or typeof(text) = 'text' and length(text) > 0),
 	description text check(description is null
-		or typeof(description) = 'text' and length(description) > 0),
-	search text check(search is null
-		or typeof(search) = 'text' and length(search) > 0)
+		or typeof(description) = 'text' and length(description) > 0)
+);
+
+create table if not exists glyphs_by_ident(
+	ident text primary key check(typeof(ident) = 'text'),
+	id integer check(typeof(id) = 'integer'),
+	foreign key(id) references glyphs(id)
 );
 
 -- All bibliographic records from Zotero. Includes data that we do not care

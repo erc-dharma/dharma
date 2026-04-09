@@ -44,7 +44,7 @@ git fetch --unshallow
 
 import os, sys, time, select, errno, logging, fcntl, argparse, traceback
 from dharma import common, texts, biblio, catalog, people, languages
-from dharma import gaiji, prosody, repos
+from dharma import glyphs, prosody, repos
 
 SKIP_PULL = False
 
@@ -223,7 +223,7 @@ def update_project() -> bool:
 	# a full corpus update if none of these files have been modified. We
 	# could do something more fine-grained, but I'm not sure the extra
 	# complexity would be worth it.
-	modules = {people, languages, gaiji, prosody, repos}
+	modules = {people, languages, glyphs, prosody, repos}
 	files = {}
 	for module in modules:
 		for file in module.dependencies:

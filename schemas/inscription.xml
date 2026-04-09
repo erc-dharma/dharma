@@ -2165,13 +2165,7 @@
                 <elementSpec ident="g" module="gaiji" mode="change">
                     <!--TODO fill with names-->
                     <content>
-                        <alternate>
-                            <!-- for <g type="numeral" -->
-                            <dataRef name="string" restriction="([0-9]+)|([0-9]+/[1-9][0-9]*)|(I+)"/>
-                            <!-- for the rest -->
-                            <dataRef name="string" restriction="\."/>
-                            <dataRef name="string" restriction="§*"/>
-                        </alternate>
+                        <dataRef name="string"/>
                     </content>
                     <attList>
                         <attDef ident="ana" mode="delete"/>
@@ -2184,7 +2178,6 @@
                         <attDef ident="n" mode="delete"/>
                         <attDef ident="next" mode="delete"/>
                         <attDef ident="prev" mode="delete"/>
-                        <attDef ident="ref" mode="delete"/>
                         <attDef ident="rend" mode="delete"/>
                         <attDef ident="rendition" mode="delete"/>
                         <attDef ident="resp" mode="delete"/>
@@ -2192,21 +2185,23 @@
                         <attDef ident="select" mode="delete"/>
                         <attDef ident="source" mode="delete"/>
                         <attDef ident="style" mode="delete"/>
+                        <attDef ident="subtype" mode="delete"/>
                         <attDef ident="synch" mode="delete"/>
                         <attDef ident="xml:base" mode="delete"/>
                         <attDef ident="xml:id" mode="delete"/>
                         <attDef ident="xml:lang" mode="delete"/>
                         <attDef ident="xml:space" mode="delete"/>
-                        <attDef ident="type" mode="change" usage="req">
-                            <datatype>
-                                <rng:choice>
-                                    <rng:value>numeral</rng:value>
-                                    <rng:text/>
-                                </rng:choice>
-                            </datatype>
-                            <!-- g/@type must remain open -->
+                        <attDef ident="type" mode="change" usage="opt">
+                            <valList type="open" mode="replace">
+                                <!-- g/@type must remain open for the old encoding scheme to keep working-->
+                                <valItem ident="alphabetic"/>
+                                <valItem ident="connector"/>
+                                <valItem ident="ideogram"/>
+                                <valItem ident="numeral"/>
+                                <valItem ident="symbol"/>
+                                <valItem ident="pc"/>
+                            </valList>
                         </attDef>
-                        <attDef ident="subtype" mode="delete"/>
                     </attList>
                 </elementSpec>
                 <elementSpec ident="gloss" module="core" mode="change">

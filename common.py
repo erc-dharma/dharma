@@ -142,14 +142,15 @@ class Database:
 			from files join owners on files.name = owners.name
 			where files.name = ? group by owners.git_name""",
 			(name,)).fetchone()
-		if not name:
-			raise Exception("not found")
+		if not row:
+			raise Exception(f"not found in db: {name!r}")
 		from dharma import texts #XXX circular import
-		return texts.File(row["repo"], row["path"],
+		ret = texts.File(repo=row["repo"], path=row["path"],
 			mtime=row["mtime"],
 			last_modified=(row["last_modified_commit"], row["last_modified"]),
 			data=row["data"],
 			owners=json.loads(row["file_owners"]))
+		return ret
 
 class Cursor(apsw.Cursor):
 
@@ -268,7 +269,7 @@ class Row:
 def _read_only_db():
 	name = os.path.basename(sys.argv[0])
 	return name not in ("change.py", "repos.py", "languages.py",
-		"prosody.py", "biblio.py")
+		"prosody.py", "biblio.py", "glyphs.py")
 
 # We can only have one transaction active per database object, so we allocate
 # new database objects for each thread. In a given thread, there is no point

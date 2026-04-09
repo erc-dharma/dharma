@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup # pip install bs4
 
 from dharma import common, change, ngrams, catalog, validate, ingest, tree
 from dharma import biblio, texts, editorial, prosody, render, languages
-from dharma import enrich, search, snip
+from dharma import enrich, search, snip, glyphs
 
 # We don't use the name "templates" for the template folder because we also
 # put other stuff in the same directory, not just templates.
@@ -173,6 +173,12 @@ def show_repo(ident):
 	if exists:
 		return flask.redirect(f"/repositories#repo-{ident}")
 	return flask.abort(404)
+
+@app.get("/glyphs")
+@common.transaction("texts")
+def show_symbols():
+	body = glyphs.process()
+	return flask.render_template("glyphs.tpl", body=body)
 
 @app.get("/people")
 @common.transaction("texts")

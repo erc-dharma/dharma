@@ -1868,7 +1868,9 @@ class Serializer:
 		self.tree = Tree()
 		self.stack = [self.tree]
 
-	def push(self, node: Node | str, **attrs):
+	def push(self, node: Branch | str, **attrs):
+		"""The arguments either be: a single `Branch` (`Tag` or `Tree`);
+		or an element name, with optional attributes in **attrs."""
 		match node:
 			case Branch():
 				assert not attrs

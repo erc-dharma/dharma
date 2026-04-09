@@ -12,6 +12,8 @@ handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml (language display)
 
 REPR Dharma TG p. 17 (PDF 18)
 
+et rendre les champs affichés ou non selon qu'ils comprennent un match
+
 ignorer espaces+hyphens
 ajouter support de la recherche levenshtein
 

@@ -641,9 +641,13 @@ dl.list > dd {
 .milestone {
 	@include milestone;
 }
+.symbol {
+	color: purple;
+}
 .symbol-placeholder {
 	border: solid 1px;
 	border-radius: $border-radius;
+	color: purple;
 }
 .lb {
 	@include milestone;
@@ -867,4 +871,9 @@ fieldset {
 
 .snippets {
 	background-color: white;
+}
+
+.glyph-record img {
+	max-height: 10rem;
+	width: auto;
 }
