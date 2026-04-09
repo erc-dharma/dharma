@@ -1883,6 +1883,7 @@ def _parse_just_dispatch(p, node):
 @_handler("msIdentifier") # /TEI/teiHeader/fileDesc/sourceDesc/msDesc/msIdentifier
 @_handler("encodingDesc") # /TEI/teiHeader/encodingDesc
 @_handler("revisionDesc") # /TEI/teiHeader/revisionDesc
+@_handler("desc")
 def _parse_ignore(p, node):
 	pass
 
