@@ -1375,9 +1375,9 @@ GAIJI_PLACEHOLDER = "■"
 
 def _make_gaiji(g):
 	is_placeholder = False
-	if g["type"] in ("pc", "connector", "ideogram", "alphabetic", "symbol",
+	if g["type"] in ("punctuation", "connector", "ideogram", "alphabetic", "symbol",
 		""):
-		ident = g["ref"].removeprefix("tax:") or "unclassified"
+		ident = g["ref"].removeprefix("sym:") or "unclassified"
 		text = g.text()
 	else:
 		# Legacy encoding.
@@ -1396,7 +1396,7 @@ def _make_gaiji(g):
 		text = "symbol"
 		is_placeholder = True
 	match g["type"]:
-		case "pc":
+		case "punctuation":
 			tip = "Punctuation mark"
 		case "connector":
 			tip = "Connector mark"
