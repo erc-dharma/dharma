@@ -56,10 +56,6 @@ templates_globals = {
 def inject_global_vars():
 	return templates_globals
 
-@app.get("/")
-def index():
-	return flask.render_template("index.tpl")
-
 @app.get("/fonts/<path:path>")
 def serve_fonts(path):
 	return flask.send_from_directory("static/fonts", path)
@@ -663,8 +659,8 @@ def render_markdown(f: texts.File):
 		contents=contents)
 
 def try_loading_markdown(web_path):
-	root = common.path_of("project-documentation")
-	path = werkzeug.security.safe_join(root, "website", web_path)
+	root = common.path_of("repos", "project-documentation")
+	path = werkzeug.security.safe_join(os.path.join(root, "website"), web_path)
 	if path is None:
 		return
 	relpath = os.path.relpath(path, root)
@@ -674,20 +670,38 @@ def try_loading_markdown(web_path):
 	except FileNotFoundError:
 		pass
 
+def serve_from_project_documentation(web_path):
+	root = os.path.join(common.path_of("repos", "project-documentation"), "website")
+	path = werkzeug.security.safe_join(root, web_path)
+	if path is None:
+		return
+	if not os.path.isfile(path):
+		return
+	return flask.send_file(path, conditional=True)
+
 # Catchall.
-# We try to serve a markdown file from project-documentation. Failing that, we
-# look into our "static" directory.
+# We first try to serve a markdown file from project-documentation. If this,
+# fails, we try to serve a file from project-documentation, and if this fails
+# again, we serve the file from the "static" directory.
 @app.get("/", defaults={"path": ""})
 @app.get("/<path:path>")
 def render_rest(path):
 	_, ext = os.path.splitext(path)
 	if not ext:
-		ret = try_loading_markdown(f"{path}.md")
-		if ret:
-			return ret
-		ret = try_loading_markdown(f"{path}/index.md")
-		if ret:
-			return ret
+		if path:
+			ret = try_loading_markdown(f"{path}.md")
+			if ret:
+				return ret
+			ret = try_loading_markdown(f"{path}/index.md")
+			if ret:
+				return ret
+		else:
+			ret = try_loading_markdown("index.md")
+			if ret:
+				return ret
+	ret = serve_from_project_documentation(path)
+	if ret:
+		return ret
 	return flask.send_from_directory("static", path)
 
 if __name__ == "__main__":
