@@ -19,33 +19,31 @@ a_or_u = chr(start + 12)
 long_schwa = chr(start + 13)
 Long_schwa = chr(start + 14)
 
+# This should be applied everywhere, whatever the field.
 main = {
+	"\N{RIGHT SINGLE QUOTATION MARK}": "'",
 	"œ": "oe",
 	"æ": "ae",
 	"đ": "d",
 }
 
-# Some of the transformations described below are performed to ensure that a
-# symbol is represented with a single code point. This is the case for digraphs
-# (ai, au, etc.) and for composed characters that do not have precomposed
-# equivalents (r̥, r̥̄, etc.). For search, we don't want to have to perform a
-# lookahead on each match to test whether a combining char follows. When
-# segmenting the text, we should still try not to cut it before a combining
-# char.
+# Some of the transformations described below are performed only to ensure that
+# a symbol is represented with a single code point in the search representation.
+# This is the case for digraphs (ai, au, etc.) and for composed characters that
+# do not have precomposed equivalents (r̥, r̥̄, etc.). For search, we don't want
+# to have to perform a lookahead on each match to test whether a combining char
+# follows. When segmenting the text, we should still try not to cut it before a
+# combining char.
 edition = {
-	# ":" is used between characters that form a digraph, as in pra:uga.
-	# Just letting the lexer eat the character is enough, we don't
-	# necessarily need to recognize a:i, a:u, etc.
-	":": "",
-	# Zero vowel marker (virāma), can be safely ignored.
-	"·"
+	# Apparently, the underscore should be treated as a space character.
+	"_": " ",
 	# In Tamil, the character "'" represents an elided "u" when it appears
 	# at the end of a word, thus:
 	#
 	#     kaṇṇāṟṟ’ iraṇṭāñ
 	#     uttirōttar’-abhivriddhi
 	#
-	# But when it appears at the beginning of a word, it represents the
+	# But when "'" appears at the beginning of a word, it represents the
 	# avagraha, thus:
 	#
 	#     durvvāso-’nukāribhyaḥ
@@ -55,16 +53,14 @@ edition = {
 	#
 	# We will resolve the ambiguity later on. The rule should be: if the
 	# next character is null, is a space, or is a hyphen, treat it as a "u",
-	# otherwise as a "a".
+	# otherwise as an "a".
 	"'": a_or_u,
 	"’": a_or_u,
+	# The following two always represent the avagraha.
 	"'!": "a",
 	"’!": "a",
 	# Hyphens signal the beginning/end of a word, like spaces. We might use
 	# this info for other purposes.
-	"-": "",
-	"¬": "",
-	"■": "",
 	"r̥": "ṛ",
 	"r̥̄": "ṝ",
 	"l̥": "ḷ",
@@ -76,6 +72,12 @@ edition = {
 	# Upadhmānīya and jihvāmūlīya. Just fold them to a visarga.
 	"ḫ": "ḥ",
 	"ẖ": "ḥ",
+	# These are equivalent.
+	"ă": "a",
+	"ĕ": "e",
+	"ĭ": "i",
+	"ŏ": "o",
+	"ŭ": "u",
 	# Digraphs.
 	"ai": ai,
 	"au": au,
@@ -94,8 +96,8 @@ edition = {
 	"\N{CYRILLIC SMALL LETTER SCHWA}": "ə",
 	"\N{CYRILLIC SMALL LETTER SCHWA}\N{COMBINING MACRON}": long_schwa,
 	"\N{CYRILLIC CAPITAL LETTER SCHWA}\N{COMBINING MACRON}": Long_schwa,
-	"ə̄": long_schwa,
-	"Ə̄": Long_schwa,
+	"\N{LATIN SMALL LETTER SCHWA}\N{COMBINING MACRON}": long_schwa,
+	"\N{LATIN CAPITAL LETTER SCHWA}\N{COMBINING MACRON}": Long_schwa,
 }
 
 # Maps voiced to unvoiced.
@@ -151,3 +153,35 @@ vowels = {
 	"ē": "e",
 	"ō": "o",
 }
+
+"""
+Arlo stuff:
+
+[ "a", "ā" ],
+[ "b", "bh" ],
+[ "c", "ch" ],
+[ "d", "dh", "ḍ", "ḍh" ],
+[ "ə", "ə̄", "ə:" ],<!-- I have added the equivalence with "ə:" — I hope the use of the colon here is unproblematic -->
+[ "e", "ai" ],
+[ "g", "gh" ],
+[ "h" ],
+[ "i", "ī" ],
+[ "j", "jh" ],
+[ "k", "kh" ],
+[ "l" ],
+[ "m", "ḿ" ],
+[ "n" ],
+[ "ṅ", "ṁ" ],
+[ "ñ" ],
+[ "o" ],
+[ "p", "ph" ],
+[ "r", "r̥" ],<!--I don't really understand why the author that table included this equivalence; in practise, in diplomatically edited OJ texts, r̥ and l̥ are nrpmalized to what rə/ər and lə in critical editions -->
+[ "s", "ś", "ṣ" ],
+[ "t", "th", "ṭ", "ṭh" ],
+[ "u", "ū" ],
+[ "v", "w" ],
+[ "y" ]
+[ "h", "ḥ" ]
+
+<!-- should the facts that capital letters A, I, U, E, Ai, O, Au in strict translteration are equivalent to their lower case versions in loos transliteration, and that R̥, L̥ are equivalent to r̥ or rə and to lə, respectively, also be expressed above?-->
+"""
