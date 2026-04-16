@@ -2178,6 +2178,11 @@
                         <attDef ident="n" mode="delete"/>
                         <attDef ident="next" mode="delete"/>
                         <attDef ident="prev" mode="delete"/>
+                        <attDef ident="ref" mode="replace" usage="opt">
+                            <datatype>
+                                <dataRef name="anyURI" restriction="sym:.*"/>
+                            </datatype>
+                        </attDef>
                         <attDef ident="rend" mode="delete"/>
                         <attDef ident="rendition" mode="delete"/>
                         <attDef ident="resp" mode="delete"/>

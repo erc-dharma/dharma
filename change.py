@@ -213,8 +213,8 @@ def update_project() -> bool:
 	if changes.done:
 		return False
 	changes.check_repo()
-	modified = set(file.path for files in (changes.insert, changes.update,
-		changes.delete) for file in files)
+	modified = set(file.path for files in (changes.insert, changes.update) for file in files)
+	modified |= set(changes.delete)
 	# Each of these modules has a .dependencies list of files that
 	# enumerates all files from project-documentation the module needs to
 	# read during an update. Each of these modules also has an update()

@@ -286,7 +286,7 @@ def process_record(record, records, idents):
 	})
 	for ident in rec_idents:
 		if ident in idents:
-			logging.error("duplicate ident {ident!r}")
+			logging.error(f"duplicate ident {ident!r}")
 			continue
 		idents[ident] = id
 

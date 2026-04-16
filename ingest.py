@@ -1378,17 +1378,16 @@ def _make_gaiji(g):
 	if g["type"] in ("punctuation", "connector", "ideogram", "alphabetic", "symbol",
 		""):
 		ident = g["ref"].removeprefix("sym:") or "unclassified"
-		text = g.text()
 	else:
 		# Legacy encoding.
 		ident = g["type"]
-		text = ""
 	info = glyphs.get(ident)
-	if not text and info:
-		text = info["text"]
+	text = info["text"] if info else ""
 	if not text and info and info["names"]:
 		text = info["names"][0]["name"]
 		is_placeholder = True
+	if not text:
+		text = g.text()
 	if not text:
 		text = g["type"]
 		is_placeholder = True
