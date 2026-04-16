@@ -1,31 +1,11 @@
-pour l'instant, fonctionne pas à la coupure des vers: cf. http://localhost:8023/search?q=Ud%C4%ABr%E1%B9%87%E1%B9%87a-loka-traya-do%E1%B9%A3a-vahni&sort=title et essayer http://localhost:8023/search?q=Ud%C4%ABr%E1%B9%87%E1%B9%87a-loka-traya-do%E1%B9%A3a-vahni-nir&sort=title ; devrait matcher mais fonctionne pas.
-
-====
-
-three modules: query tree; search system; highlighting+snippets selection system
-
-## to search representation
-
-need to store it in the db, would take too long to do that live. it should be
-parseable quickly in a low level language, so use a semi-binary encoding, maybe
-with length-prefixed strings. for now just use json, for easier debugging.
-
-	{
-		"title.representation1": "sometext",
-		"title.representation2": "someothertext",
-		"body.representation1": "blablabla",
-		...
-	}
-
-should be enough for now. this can be encoded more efficiently later on.
-
 ## the search system.
 
-for now (january 2026) editions (only the edited text) in plain text and in
-UTF-8 weigh 29M in total, for about 7M code points. we should just stick all the
-data in a single string and search that.
+On ferait sans doute mieux de convertir le texte une seule fois, vers une forme
+générique qui convient pour toutes les représentations de recherche (en
+consultant éventuellement la langue, le contexte, etc.), et ensuite seulement
+générer des représentations spécialisées.
 
-On ferait sans doute mieux de convertir le texte une seule fois, vers une forme générique, et ensuite seulement générer des représentations spécialisées
+faire peut-être la transformation initiale en python
 
 Avec ou sans tiret
 Avec ou sans capitales
@@ -34,142 +14,22 @@ Avec ou sans diacritiques
 use edlib.align("ātman", amalg, mode="HW"); only returns matches with the lowest
 edit distance.
 
-make it independent from all other stuff.
-
-should do the search stuff in a separate process, to be able to share the
-in-memory search data, and also to make debugging and testing easier. should be
-implemented as a sqlite extension, so that we don't need to worry about
-transactional logic within the search stuff. from within the search stuff,
-detect db modifications (https://www.sqlite.org/c3ref/update_hook.html; and also
-https://rogerbinns.github.io/apsw/example.html#update-hook) and reload the
-in-memory data when this happens. write the code in python (for simplicity and
-because we don't know yet what unicode/etc. libraries we will need to use). we
-must sticj the search stuff in a separate process, but in this case how to
-guarantee it views the same data as the client?
-
-it maps a set of fields to their search representation. a
-single field in the original might have several search representations. these
-several representations will need to be reconciled while returning query
-results. so we have:
-
-	title	-> title.representation1
-		-> title.representation2
-	body	-> body.representation1
-		-> body.representation2
-		-> body.representation3
-		...
-
-it should return raw offsets that index the search representation of a given
-field (title.representation1, etc.). need to use raw offsets instead of some
-kind of cursor because we want to be able to rewrite the search code in a
-lower-level language later on. so, it should be able to return a list of matches
-as a series of intervals, with the following data:
-
-	match start offset in the search representation of the field
-	match length
-	and also maybe later:
-	* an index indicating which word/phrase matched in the query; could be
-	  used for adding the search phrase in a tooltip
-	* maybe some other match attributes
-
-this info should be serializable, for easier inspection, and to make it possible
-later on to rewrite the search system in a more efficient language. just use
-xml for this.
-
-should be able to fully highlight the search representation, for debugging, and
-as a first step towards the real highlighting stuff. would also be useful to
-index texts that are not xml-encoded.
-
-## the highlighting+snippet selection system.
-
-it should translate these raw search offsets into Selection() objects that
-represent an interval into the XML tree. these selection objects should hold at
-least:
-
-	start node, start offset into this node
-	end node, end offset into thisnode
-
-the start node and end node should both be text nodes. we should be able to
-extract both the search string and the display string from selection objects,
-for debugging.
-
-note that selection objects might overlap.
-
-once we are done creating selection objects for all matching passages in a
-document, we can either display the whole document with matching passages
-highlighted; or display the whole document after the user clicks on a matching
-document.
-
-but we also must create snippets for the results page. to do that, create
-Snippet() objects that behave like Selection() objects. remains to determine how
-exactly to select snippets.
 
 
-## highlighting
-
-need a query tree for query evaluation. it should use cursor objects that work
-on the searchable text representation. for translating search offsets into
-original offsets, we need a tree cursor that iterates over child nodes of a
-given field while transforming it to the normalized text, grapheme by grapheme.
-the role of a tree cursor is to translate a search offset into a display offset.
-if we have different ways to normalize each field, we will need to allocate as
-many tree cursors, and we will need to merge their (display) intervals.
-
-how to represent an XML tree offset? we need to be able to merge adjacent and
-overlapping intervals. so we must use offsets that map to the string that will
-be generated. to make things simpler, could gather in an array the output
-string. the array would hold strings, possibly also <split> elements containing
-<display> and <search> element (if the beginning of <search> matches, we select
-the whole <display> element, no partial highlighting because impossible).
-
-... we should just use integer offsets (no objects), and do a final pass on the
-tree to select the corresponding segments. is that enough?
-
-once we've delimited matches in the tree, pass offsets to some generic function
-that will figure out if it can just highlight the stuff in a single go or if it
-should break it into several portions (because the match crosses a paragraph, a
-list element, etc.).
-
-what should the tree cursor look like? to make things simpler, it should iterate
-over an array of (string) nodes. then we can implement a seek() method. problem
-with the generator is that we will mess up iteration if we modify the tree
-immediately.
-
-ideally, the stuff for normalizing strings should advance by arbitrary intervals
-(so that we can use a lexer later on).
 
 
-=====
 
 
-===========
 
-it is likely that the result of highlighting and of search will differ, even
-though this should not happen, so we must be prepared to deal with this (and
-log the error somewhere).
 
-===========
 
-before highlighting a document in the internal representation, need to complete
-the document with all the data we might need for search (repository, file name,
-date of modification, etc.). we have an XML tree instead of a Document object as
-input because 1) we will need to process an XML tree for highlighting; and 2)
-because it is more convenient to use xpath for extracting nodes.
 
-must fetch all fields so that we have them readily accessible from within a
-class. basically, map each searchable field to a xpath expression for retrieving
-the field, and fetch the fields lazily. we should have a wrapper class
-over an xml internal document.
 
-to each field must also be mapped necessary info for tokenizing the field (data
-type, whether there can be several occurrences of the field, etc.). should have
-a global table that contains all the info.
 
-we must necessarily be able to search and highlight something else than text
-fields. as an optimization, at query time, we should use sqlite's functions,
-when available. so, basically, a query (sub)tree should be convertible to either
-a sql search expression or a cursor, depending on the context: a sql search
-expression for searching, a cursor for highlighting.
+
+
+
+
 
 ===========
 

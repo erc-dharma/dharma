@@ -1,5 +1,18 @@
 # TODO
 
+sur la page de résultats de recherche, afficher ou non les champs selon qu'ils
+comprennent un match. en fait, il faudrait que pour chaque champ on ait un
+descripteur "display" = always (always display this field) or = auto (only display this field if it contains a match) or = never (never display this field, even if there is a match).
+
+ignorer espaces+hyphens
+ajouter support de la recherche levenshtein
+
+make the biblio searchable
+only display fields with matches
+je crois qu'on gère pas enjamb, à vérifier
+
+###
+
 est-ce que ça fonctionne si on crée une page web repositories/tfa-...-epigraphy?
 
 écritures pas assignées correctement sur DHARMA_INSSIIv17p0i0227.
@@ -8,20 +21,6 @@ regarder dharmalekha.info/languages; on a des "english", etc. qui ne devraient p
 
 handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml (language display)
 
-17
-
-## search
-
-REPR Dharma TG p. 17 (PDF 18)
-
-et rendre les champs affichés ou non selon qu'ils comprennent un match
-
-ignorer espaces+hyphens
-ajouter support de la recherche levenshtein
-
-make the biblio searchable
-only display fields with matches
-je crois qu'on gère pas enjamb, à vérifier
 
 ## other stuff
 
