@@ -1347,9 +1347,18 @@ def _process_edition(t: tree.Tree, edition: tree.Tag):
 # also, don't really bother about redundant operations: better make it readable
 # and slower than the reverse.
 
+def _fix_smart_quotes(node):
+	match node:
+		case tree.String():
+			repl = node.data.replace("'", "’")
+			if repl != node.data:
+				node.replace_with(repl)
+		case tree.Branch():
+			for child in node:
+				_fix_smart_quotes(child)
+
 def process(t: tree.Tree):
-	# XXX enable this
-	#node = node.copy().replace("'", "’")
+	_fix_smart_quotes(t)
 	_fix_search(t)
 	languages.complete_internal(t)
 	# Structural stuff.
