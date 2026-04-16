@@ -2,10 +2,6 @@
 
 est-ce que ça fonctionne si on crée une page web repositories/tfa-...-epigraphy?
 
-reprendre les g[@type] (ou @subtype quand type="symbol")
-
-set up page display system within project-documenttion
-
 écritures pas assignées correctement sur DHARMA_INSSIIv17p0i0227.
 
 regarder dharmalekha.info/languages; on a des "english", etc. qui ne devraient pas apparaître
