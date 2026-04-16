@@ -1,11 +1,4 @@
-/*
-DHARMA Search Server
-
-Purpose:
-This program runs a standalone HTTP server designed to perform high-performance searches
-over a text corpus stored in a read-only SQLite database. It supports linguistic sorting,
-pagination, field filtering, and keyword highlighting.
-*/
+// Search server
 
 package main
 
