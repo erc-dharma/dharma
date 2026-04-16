@@ -1,9 +1,5 @@
 pour l'instant, fonctionne pas à la coupure des vers: cf. http://localhost:8023/search?q=Ud%C4%ABr%E1%B9%87%E1%B9%87a-loka-traya-do%E1%B9%A3a-vahni&sort=title et essayer http://localhost:8023/search?q=Ud%C4%ABr%E1%B9%87%E1%B9%87a-loka-traya-do%E1%B9%A3a-vahni-nir&sort=title ; devrait matcher mais fonctionne pas.
 
-aussi embêtant: quand on cherche http://localhost:8023/search?q=nirvv%C4%81pa&sort=title ; la parenthèse fermante du <unclear> n'est pas incluse. comment y remédier? could have a @stick="left"|"right" on <display> elements that are not within a search. @stick="left" if the <display> elements should stick to the preceding text, the reverse for @stick="right". then, in the highlighter, extend selections to nearby <display> with the appropriate @anchor, to the left and to the right.
-
-
-
 ====
 
 three modules: query tree; search system; highlighting+snippets selection system

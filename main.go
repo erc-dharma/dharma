@@ -538,10 +538,12 @@ func containsMatcher(text, term, mode string) bool {
 	switch mode {
 	case "strict":
 		return strings.Contains(text, term)
-	default:
+	case "normalized":
 		foldText, _ := foldString(text)
 		foldTerm, _ := foldString(term)
 		return strings.Contains(foldText, foldTerm)
+	default:
+		return strings.Contains(text, term)
 	}
 }
 
@@ -834,8 +836,10 @@ func findOccurrences(text, term, mode string) [][2]int {
 	switch mode {
 	case "strict":
 		return findOccurrencesStrict(text, term)
-	default:
+	case "normalized":
 		return findOccurrencesWithMapping(text, term, foldString)
+	default:
+		return findOccurrencesStrict(text, term)
 	}
 }
 

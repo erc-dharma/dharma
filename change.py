@@ -32,14 +32,6 @@ big enough for our purposes.
 We use the WAL mode in SQLite. Thus, writers don't block readers and vice-versa,
 but writers still do block each other, which is why we use just one and
 serialize writes.
-
-To save space, it is useful to make git repositories shallow. We do not examine
-git's history, so we only need the latest commit in practice. Relevant commands
-are:
-
-Make a shallow clone: git clone <url> --depth 1 Make an existing repository
-shallow: git pull --depth 1 && git gc --prune=now Make a repository unshallow:
-git fetch --unshallow
 """
 
 import os, sys, time, select, errno, logging, fcntl, argparse, traceback

@@ -19,7 +19,7 @@ clean:
 
 forever:
 	@$(MAKE) || true
-	@while inotifywait -qqre modify . @texts @dbs @docs @notes @repos; do \
+	@while inotifywait -qqre modify --exclude '.*sqlite.*' .; do \
 		$(MAKE) || true; \
 		pkill -USR2 -x search || true; \
 	done

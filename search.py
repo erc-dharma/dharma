@@ -865,10 +865,8 @@ def cli_search(query):
 	doc = snip.process(t)
 
 def main():
-	# Handle standard execution entry point from the command line
-	if len(sys.argv) > 1:
-		cli_search(sys.argv[1])
-	else: print("Please provide a query argument.")
+	doc = tree.parse_string(sys.stdin.read())
+	print(prepare_search_data(doc))
 
 if __name__ == "__main__":
 	main()

@@ -1059,7 +1059,9 @@ def _complete_verse_lines(t: tree.Tree):
 		assert prev_line.name == "verse-line"
 		span = tree.Tag("span", tip="Hyphen break")
 		span.append("-")
-		prev_line.append(span)
+		display = tree.Tag("display")
+		display.append(span)
+		prev_line.append(display)
 
 def _to_logical(t):
 	for node in t.find(".//span[@class='sic' and @standalone='false']"):
