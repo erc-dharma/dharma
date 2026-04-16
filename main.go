@@ -73,7 +73,19 @@ type QueryNode struct {
 	Arg   *QueryNode  `json:"arg,omitempty"`
 	Field string      `json:"field,omitempty"`
 	Value string      `json:"value,omitempty"`
+	Mode  string      `json:"mode,omitempty"`
 }
+
+// QueryTerm associates a search value with its specific matching mode.
+// It is used to apply the correct highlighting strategy for each term.
+type QueryTerm struct {
+	Value string
+	Mode  string
+}
+
+// StringMapper defines a function type for text transformations returning offsets.
+// It provides a generic interface for various normalization algorithms.
+type StringMapper func(string) (string, []int)
 
 var (
 	corpus          []Document
@@ -495,7 +507,7 @@ func matchQuery(d Document, q QueryNode) bool {
 	case "not":
 		return !matchQuery(d, *q.Arg)
 	case "field":
-		return matchField(d, q.Field, q.Value)
+		return matchField(d, q.Field, q.Value, q.Mode)
 	}
 	return true
 }
@@ -520,70 +532,83 @@ func evalOr(d Document, args []QueryNode) bool {
 	return false
 }
 
-func matchField(d Document, field, val string) bool {
-	// Check if a specific field matches the value
+// containsMatcher evaluates inclusion based on the chosen matching mode.
+// It ensures that string comparisons align with the text transformation strategy.
+func containsMatcher(text, term, mode string) bool {
+	switch mode {
+	case "strict":
+		return strings.Contains(text, term)
+	default:
+		foldText, _ := foldString(text)
+		foldTerm, _ := foldString(term)
+		return strings.Contains(foldText, foldTerm)
+	}
+}
+
+func matchField(d Document, field, val, mode string) bool {
+	// Check if a specific field matches the value considering the mode
 	switch field {
 	case "ident":
-		return strings.Contains(d.Ident, val)
+		return containsMatcher(d.Ident, val, mode)
 	case "logical":
-		return strings.Contains(d.Logical, val)
+		return containsMatcher(d.Logical, val, mode)
 	case "title":
-		return listMatches(d.Title, val)
+		return listMatches(d.Title, val, mode)
 	case "summary":
-		return strings.Contains(d.Summary, val)
+		return containsMatcher(d.Summary, val, mode)
 	case "repo_id":
-		return strings.Contains(d.RepoID, val)
+		return containsMatcher(d.RepoID, val, mode)
 	case "repo_name":
-		return strings.Contains(d.RepoName, val)
+		return containsMatcher(d.RepoName, val, mode)
 	case "hand":
-		return strings.Contains(d.Hand, val)
+		return containsMatcher(d.Hand, val, mode)
 	case "author":
-		return listMatches(d.Author, val)
+		return listMatches(d.Author, val, mode)
 	case "editor":
-		return listMatches(d.Editor, val)
+		return listMatches(d.Editor, val, mode)
 	case "lang":
-		return matrixMatches(d.Lang, val)
+		return matrixMatches(d.Lang, val, mode)
 	case "script":
-		return matrixMatches(d.Script, val)
+		return matrixMatches(d.Script, val, mode)
 	}
-	return docMatchesAll(d, val)
+	return docMatchesAll(d, val, mode)
 }
 
-func docMatchesAll(d Document, val string) bool {
-	// Verify if any document field contains the value
-	if strings.Contains(d.Ident, val) || strings.Contains(d.Logical, val) {
+func docMatchesAll(d Document, val, mode string) bool {
+	// Verify if any document field contains the value considering the mode
+	if containsMatcher(d.Ident, val, mode) || containsMatcher(d.Logical, val, mode) {
 		return true
 	}
-	if strings.Contains(d.Summary, val) || strings.Contains(d.RepoID, val) {
+	if containsMatcher(d.Summary, val, mode) || containsMatcher(d.RepoID, val, mode) {
 		return true
 	}
-	if strings.Contains(d.RepoName, val) || strings.Contains(d.Hand, val) {
+	if containsMatcher(d.RepoName, val, mode) || containsMatcher(d.Hand, val, mode) {
 		return true
 	}
-	if listMatches(d.Title, val) || listMatches(d.Author, val) {
+	if listMatches(d.Title, val, mode) || listMatches(d.Author, val, mode) {
 		return true
 	}
-	if listMatches(d.Editor, val) || matrixMatches(d.Lang, val) {
+	if listMatches(d.Editor, val, mode) || matrixMatches(d.Lang, val, mode) {
 		return true
 	}
-	return matrixMatches(d.Script, val)
+	return matrixMatches(d.Script, val, mode)
 }
 
-func listMatches(list []string, q string) bool {
-	// Verify if any item in the list contains the query term
+func listMatches(list []string, q, mode string) bool {
+	// Verify if any item in the list contains the query term considering the mode
 	for _, item := range list {
-		if strings.Contains(item, q) {
+		if containsMatcher(item, q, mode) {
 			return true
 		}
 	}
 	return false
 }
 
-func matrixMatches(mat [][]string, q string) bool {
-	// Verify if any cell in the matrix contains the query term
+func matrixMatches(mat [][]string, q, mode string) bool {
+	// Verify if any cell in the matrix contains the query term considering the mode
 	for _, row := range mat {
 		for _, item := range row {
-			if strings.Contains(item, q) {
+			if containsMatcher(item, q, mode) {
 				return true
 			}
 		}
@@ -711,12 +736,12 @@ func matchDocument(doc Document, qStr string) SearchResult {
 	return res
 }
 
-func extractTerms(q QueryNode) []string {
-	// Extract terms for highlighting
+func extractTerms(q QueryNode) []QueryTerm {
+	// Extract terms and their specific matching mode for highlighting
 	if q.Op == "field" {
-		return []string{q.Value}
+		return []QueryTerm{{Value: q.Value, Mode: q.Mode}}
 	}
-	var terms []string
+	var terms []QueryTerm
 	if q.Op == "and" || q.Op == "or" {
 		for _, arg := range q.Args {
 			terms = append(terms, extractTerms(arg)...)
@@ -735,7 +760,7 @@ func applyHighlights(res *SearchResult, doc Document, qStr string) {
 	highlightFields(res, doc, terms)
 }
 
-func highlightFields(res *SearchResult, doc Document, terms []string) {
+func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	// Apply highlights combining all query terms
 	processFieldTerms(&res.Logical, doc.Logical, terms)
 	processFieldTerms(&res.Ident, doc.Ident, terms)
@@ -767,11 +792,11 @@ func cloneMatrix(src [][]string) [][]string {
 	return dst
 }
 
-func processFieldTerms(target *string, source string, terms []string) bool {
+func processFieldTerms(target *string, source string, terms []QueryTerm) bool {
 	// Detect occurrences and update the target string with markers
 	var allIntervals [][2]int
 	for _, term := range terms {
-		allIntervals = append(allIntervals, findOccurrences(source, term)...)
+		allIntervals = append(allIntervals, findOccurrences(source, term.Value, term.Mode)...)
 	}
 	if len(allIntervals) > 0 {
 		*target = injectMarkers(source, allIntervals)
@@ -780,7 +805,7 @@ func processFieldTerms(target *string, source string, terms []string) bool {
 	return false
 }
 
-func processListTerms(targets []string, sources []string, terms []string) bool {
+func processListTerms(targets []string, sources []string, terms []QueryTerm) bool {
 	// Apply highlight processing to a list of strings
 	matched := false
 	for i, item := range sources {
@@ -791,7 +816,7 @@ func processListTerms(targets []string, sources []string, terms []string) bool {
 	return matched
 }
 
-func processMatrixTerms(targets [][]string, sources [][]string, terms []string) bool {
+func processMatrixTerms(targets [][]string, sources [][]string, terms []QueryTerm) bool {
 	// Apply highlight processing to a matrix of strings
 	matched := false
 	for i, row := range sources {
@@ -804,8 +829,18 @@ func processMatrixTerms(targets [][]string, sources [][]string, terms []string) 
 	return matched
 }
 
-func findOccurrences(text, term string) [][2]int {
-	// Identify all start and end indices of the query term
+func findOccurrences(text, term, mode string) [][2]int {
+	// Route the occurrence search based on the matching mode
+	switch mode {
+	case "strict":
+		return findOccurrencesStrict(text, term)
+	default:
+		return findOccurrencesWithMapping(text, term, foldString)
+	}
+}
+
+func findOccurrencesStrict(text, term string) [][2]int {
+	// Identify start and end indices using native exact matching
 	var matches [][2]int
 	start := 0
 	termLen := len(term)
@@ -816,6 +851,27 @@ func findOccurrences(text, term string) [][2]int {
 		}
 		absStart := start + idx
 		matches = append(matches, [2]int{absStart, absStart + termLen})
+		start = absStart + 1
+	}
+	return matches
+}
+
+func findOccurrencesWithMapping(text, term string, mapper StringMapper) [][2]int {
+	// Identify start and end indices using a text mapping function
+	transText, offsets := mapper(text)
+	transTerm, _ := mapper(term)
+	var matches [][2]int
+	start := 0
+	termLen := len(transTerm)
+	for {
+		idx := strings.Index(transText[start:], transTerm)
+		if idx == -1 {
+			break
+		}
+		absStart := start + idx
+		origStart := offsets[absStart]
+		origEnd := offsets[absStart+termLen]
+		matches = append(matches, [2]int{origStart, origEnd})
 		start = absStart + 1
 	}
 	return matches

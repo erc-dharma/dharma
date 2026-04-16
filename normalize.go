@@ -2,6 +2,8 @@ package main
 
 import (
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/rivo/uniseg"
 	"golang.org/x/text/cases"
@@ -9,34 +11,30 @@ import (
 
 var folder = cases.Fold()
 
-// normalizeString processes text by grapheme cluster and builds a byte offset mapping.
-func normalizeString(text string) (string, []int) {
-	var norm strings.Builder
+// foldString processes text by grapheme cluster for case-insensitive matching.
+// It applies unicode case folding and builds a byte offset mapping to preserve original indices.
+// This allows accurate highlighting without altering the text with transliteration rules.
+func foldString(text string) (string, []int) {
+	var folded strings.Builder
 	offsets := make([]int, 0, len(text)*2)
 	state := -1
 	var cluster string
 	cursor := 0
 	for len(text) > 0 {
 		cluster, text, _, state = uniseg.StepString(text, state)
-		rep := applyRulesToCluster(cluster)
+		if utf8.RuneCountInString(cluster) == 1 {
+			r, _ := utf8.DecodeRuneInString(cluster)
+			if r == '-' || unicode.IsSpace(r) {
+				continue
+			}
+		}
+		rep := folder.String(cluster)
 		for j := 0; j < len(rep); j++ {
 			offsets = append(offsets, cursor)
 		}
-		norm.WriteString(rep)
+		folded.WriteString(rep)
 		cursor += len(cluster)
 	}
 	offsets = append(offsets, cursor)
-	return norm.String(), offsets
-}
-
-// applyRulesToCluster normalizes a cluster and applies transliteration equivalence classes.
-func applyRulesToCluster(cluster string) string {
-	cFolded := folder.String(cluster)
-	if strings.HasPrefix(cFolded, "kh") || strings.HasPrefix(cFolded, "gh") {
-		return "k" + cFolded[2:]
-	}
-	if strings.HasPrefix(cFolded, "g") {
-		return "k" + cFolded[1:]
-	}
-	return cFolded
+	return folded.String(), offsets
 }
