@@ -1377,7 +1377,7 @@ def _make_gaiji(g):
 	is_placeholder = False
 	if g["type"] in ("punctuation", "connector", "ideogram", "alphabetic", "symbol",
 		""):
-		ident = g["ref"].removeprefix("sym:") or "unclassified"
+		ident = g["ref"].removeprefix("sym:")
 	else:
 		# Legacy encoding.
 		ident = g["type"]
