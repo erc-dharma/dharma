@@ -179,8 +179,40 @@ def _handle_record(self, node):
 	self.join() # class_="card-data"
 	if rec["extra"]:
 		self.dispatch_children(rec["extra"])
+	if rec["images"]:
+		_add_images(self, rec["images"])
 	self.join() # class_="card-body"
 	self.join() # class_="card"
+
+def _add_images(self, images):
+	self.push("div")
+	self.push("p", class_="collapsible")
+	self.append("Images")
+	self.join()
+	self.push("div", class_="glyphs-images hidden")
+	for url, caption in images:
+		self.push("figure")
+		self.append(tree.Tag("img", src=url))
+		self.push("figcaption")
+		self.dispatch_children(caption)
+		self.join()
+		self.join("figure")
+	self.join()
+	self.join()
+
+def get_images(record):
+	field = get_first_value(record, "images")
+	if not field:
+		return []
+	figures = []
+	for figure in field.find("figure"):
+		graphic = figure.first("graphic")
+		if not graphic or not graphic["url"]:
+			continue
+		url = graphic["url"]
+		caption = figure.first("head")
+		figures.append((url, caption))
+	return figures
 
 def _fetch_fields(self, record):
 	"""
@@ -204,12 +236,14 @@ def _fetch_fields(self, record):
 	if not mapping:
 		mapping = None
 	extra = get_first_value(record, "extra")
+	images = get_images(record)
 	return {
 		"idents": idents,
 		"names": names,
 		"description": desc,
 		"mapping": mapping,
-		"extra": extra
+		"extra": extra,
+		"images": images,
 	}
 
 def _fetch_idents(self, record):

@@ -877,3 +877,20 @@ fieldset {
 	max-height: 10rem;
 	width: auto;
 }
+
+.glyphs-images {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+.glyphs-images figure {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+.glyphs-images.hidden {
+	display: none;
+}
+.glyphs-images figure > figcaption {
+	text-align: center;
+}
