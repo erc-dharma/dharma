@@ -1389,8 +1389,15 @@ def _make_gaiji(g):
 	if not text:
 		text = g.text()
 	if not text:
-		text = g["type"]
-		is_placeholder = True
+		match g["type"]:
+			case "symbol" | "":
+				text = "*"
+			case "punctuation":
+				text = "."
+			case "connector":
+				text = "§"
+			case "ideogram":
+				text = "@"
 	if not text:
 		text = "symbol"
 		is_placeholder = True
@@ -1418,8 +1425,10 @@ def _make_gaiji(g):
 			tip += ": " + info["idents"][0]
 		if info["description"]:
 			tip += " \N{en dash} " + info["description"]
-	elif g["ref"]:
-		tip += " with missing reference"
+	else:
+		tip = "Unclassified " + tip.lower()
+		if g["ref"]:
+			tip += " with missing reference"
 	return text, is_placeholder, tip
 
 # g[not @type='numeral']
