@@ -260,7 +260,7 @@ def _fetch_idents(self, record):
 	if not idents:
 		logging.error("missing record identifier")
 		return
-	return sorted(idents)
+	return idents
 
 @_handler("*")
 def _just_dispatch(self, node):
