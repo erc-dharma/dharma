@@ -1,5 +1,8 @@
 # TODO
 
+tam-ulakku; symbole s'affiche pas sur mobile. il faut offrir d'autres polices
+pour ces caractères. cf. tst-project.github.io/editor/entities.html
+
 sur la page de résultats de recherche, afficher ou non les champs selon qu'ils
 comprennent un match. en fait, il faudrait que pour chaque champ on ait un
 descripteur "display" = always (always display this field) or = auto (only display this field if it contains a match) or = never (never display this field, even if there is a match).
