@@ -76,6 +76,13 @@ class _Renderer(tree.Serializer):
 def _handle_nothing(self, node):
 	pass
 
+@_handler("hi[@rend='italic]")
+@_handler("foreign")
+def _handle_italics(self, node):
+	self.push("i")
+	self.dispatch_children(node)
+	self.join()
+
 @_handler("p")
 @_handler("ab")
 def _handle_para(self, node):
@@ -253,7 +260,7 @@ def _fetch_idents(self, record):
 		if not ident:
 			continue
 		if ident in self.idents:
-			logging.error("duplicate ident {ident!r}")
+			logging.error(f"duplicate ident {ident!r}")
 			continue
 		self.idents.add(ident)
 		idents.append(ident)
