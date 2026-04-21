@@ -76,7 +76,7 @@ class _Renderer(tree.Serializer):
 def _handle_nothing(self, node):
 	pass
 
-@_handler("hi[@rend='italic]")
+@_handler("hi[@rend='italic']")
 @_handler("foreign")
 def _handle_italics(self, node):
 	self.push("i")
