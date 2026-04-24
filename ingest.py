@@ -1427,7 +1427,7 @@ def _make_gaiji(g):
 			tip += " \N{en dash} " + info["description"]
 	else:
 		tip = "Unclassified " + tip.lower()
-		if g["ref"]:
+		if g["ref"] and g["ref"].removeprefix("sym:") != "unclassified":
 			tip += " with missing reference"
 	return text, is_placeholder, tip
 
