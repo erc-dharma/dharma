@@ -22,6 +22,36 @@ def handler(path):
 		return f
 	return decorator
 
+@handler("body/div/div[@type='translation']")
+def handle_div_translation(self, div):
+	self.push(tree.Tag("div"))
+	self.push(tree.Tag("head"))
+	self.append("Translation")
+	resps = div["resp"]
+	if resps:
+		# If translators names are the exact same set of people
+		# who edited the inscription, do not display them.
+		resps = resps.split()
+	if (sources := div["source"]):
+		# Print in this order: bibliographic sources and names
+		# of DHARMA members. Because we assume that, if both
+		# are given, the DHARMA member is using an existing
+		# traduction that he is trying to improve, so the
+		# primary translator is the one mentioned in the
+		# bibliography.
+		self.append(" by ")
+		finish_list = not resps
+		ingest.append_sources(self, sources.split(), finish_list)
+		if resps:
+			self.append(", ")
+			ingest.append_names(self, resps)
+	elif resps:
+		self.append(" by ")
+		ingest.append_names(self, resps)
+	self.join() # </head>
+	self.dispatch_children(div)
+	self.join() # </div>
+
 @handler("body/div/div")
 def handle_div(self, div):
 	self.push(tree.Tag("div"))
@@ -52,6 +82,7 @@ def handle_verse(self, div):
 HANDLERS.extend(ingest.HANDLERS)
 
 def process():
+	# XXX pull it from the db
 	t = tree.parse("repos/BESTOW/DHARMA_BESTOW.xml")
 	document_tree = ingest.process_tree(t, handlers=HANDLERS)
 	return document_tree

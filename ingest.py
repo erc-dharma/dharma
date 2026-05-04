@@ -866,10 +866,10 @@ def _parse_surplus(p, node):
 def _parse_note(p, note):
 	out = p.push(tree.Tag("note"))
 	if (resps := note["resp"]):
-		_append_names(p, resps.split())
+		append_names(p, resps.split())
 		p.append(": ")
 	elif (refs := note["source"]):
-		_append_sources(p, refs.split())
+		append_sources(p, refs.split())
 		p.append(": ")
 	p.dispatch_children(note)
 	p.join()
@@ -1985,13 +1985,13 @@ def _parse_div_translation(p, div):
 			# bibliography.
 			p.append(" by ")
 			finish_list = not resps
-			_append_sources(p, sources.split(), finish_list)
+			append_sources(p, sources.split(), finish_list)
 			if resps:
 				p.append(", ")
-				_append_names(p, resps)
+				append_names(p, resps)
 		elif resps:
 			p.append(" by ")
-			_append_names(p, resps)
+			append_names(p, resps)
 	p.push(tree.Tag("translation"))
 	_add_div_heading(p, div, make_translation_heading)
 	p.dispatch_children(div)
@@ -2044,7 +2044,7 @@ def _add_div_heading(p, div, dflt):
 		p.visited.add(note)
 	p.join() # </head>
 
-def _append_names(p, resps):
+def append_names(p, resps):
 	for i, resp in enumerate(resps):
 		resp = resp.removeprefix("part:")
 		if i == 0:
@@ -2055,7 +2055,7 @@ def _append_names(p, resps):
 			p.append(" and ")
 		p.append(_fetch_resp(resp))
 
-def _append_sources(p, bib_refs, finish_list=True):
+def append_sources(p, bib_refs, finish_list=True):
 	refs = []
 	for ref in bib_refs:
 		ref = ref.removeprefix("bib:")
