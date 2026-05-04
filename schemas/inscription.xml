@@ -2199,8 +2199,6 @@
                         <attDef ident="type" mode="change" usage="opt">
                             <defaultVal>symbol</defaultVal>
                             <valList type="closed" mode="replace">
-                                <!-- g/@type must remain open for the old encoding scheme to keep working-->
-                                <valItem ident="alphabetic"/>
                                 <valItem ident="connector"/>
                                 <valItem ident="ideogram"/>
                                 <valItem ident="numeral"/>
