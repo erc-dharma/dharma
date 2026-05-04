@@ -1959,7 +1959,7 @@ def _parse_main_div(p, div):
 @_handler("div[@type='translation']")
 def _parse_div_translation(p, div):
 	def make_translation_heading():
-		resps = div["resps"]
+		resps = div["resp"]
 		if resps:
 			# If translators names are the exact same set of people
 			# who edited the inscription, do not display them.
