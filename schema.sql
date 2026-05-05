@@ -151,9 +151,10 @@ create table if not exists people_main(
 		name ->> 0,
 		printf('%s, %s', name ->> 1, name ->> 0))),
 	-- All the following can be null.
-	affiliation text check(
-		affiliation is null
-		or typeof(affiliation) = 'text' and length(affiliation) > 0),
+	affiliation json check(
+		typeof(affiliation) = 'text'
+		and json_valid(affiliation)
+		and json_type(affiliation) = 'array'),
 	idhal text unique check(
 		idhal is null
 		or typeof(idhal) = 'text' and length(idhal) > 0),

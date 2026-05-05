@@ -16,8 +16,11 @@ People
 (<span class="member-id">{{row['dh_id']}}</span>)
 </p>
 
-% if row["affiliation"]:
-<p>{{row["affiliation"]}}</p>
+% set affiliations = from_json(row["affiliation"])
+% if affiliations:
+	% for affil in affiliations:
+		<p>{{affil}}</p>
+	% endfor
 % endif
 
 % if row["texts_prod"]:

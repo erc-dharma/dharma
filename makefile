@@ -30,9 +30,10 @@ commit-all:
 	for d in repos/*; do \
 		echo "% $$(basename $$d)"; \
 		git -C $$d add --all; \
-		git -C $$d commit -m $(m) || true; \
+		git -C $$d commit -m "$(m)" || true; \
 		git -C $$d pull -q; \
 		git -C $$d push -q; \
+		sleep 5s; \
 	done
 
 .PHONY: all clean forever commit-all

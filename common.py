@@ -269,7 +269,7 @@ class Row:
 def _read_only_db():
 	name = os.path.basename(sys.argv[0])
 	return name not in ("change.py", "repos.py", "languages.py",
-		"prosody.py", "biblio.py", "glyphs.py")
+		"prosody.py", "biblio.py", "glyphs.py", "people.py")
 
 # We can only have one transaction active per database object, so we allocate
 # new database objects for each thread. In a given thread, there is no point

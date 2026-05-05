@@ -40,15 +40,19 @@ def iter_members_list():
 			row[ltyp] = val or None
 		for typ in ID_TYPES:
 			row.setdefault(typ.lower(), None)
-		affil = person.first("affiliation")
-		if affil:
+		affiliations = []
+		for affil in person.find("affiliation"):
 			affil = affil.text()
-		row["affiliation"] = affil or None
+			if not affil:
+				continue
+			affiliations.append(affil)
+		row["affiliation"] = affiliations
 		yield row
 
 dependencies = {"DHARMA_gitNames.tsv", "DHARMA_idListMembers_v01.xml"}
 
 def update():
+	logging.debug("updating people table")
 	db = common.db("texts")
 	db.execute("delete from people_github")
 	db.execute("delete from people_main")

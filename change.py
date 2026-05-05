@@ -20,7 +20,8 @@ as a dependency.
 
 The `.global-partial` command updates global data but not the data that have
 them as a dependency. It doesn't reprocess individual texts. It should only be
-used for debugging and experimentation. The reason we have it is that the reconstruction of the whole database with the `.global` command is very slow.
+used for debugging and experimentation. The reason we have it is that the
+reconstruction of the whole database with the `.global` command is very slow.
 
 The `.rebuild` command triggers an update of the catalog. It does not check
 whether repositories are up-to-date. This is meant to be used for reprocessing
