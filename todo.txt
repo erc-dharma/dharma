@@ -12,7 +12,6 @@ ajouter support de la recherche levenshtein
 
 make the biblio searchable
 only display fields with matches
-je crois qu'on gère pas enjamb, à vérifier
 
 ###
 
