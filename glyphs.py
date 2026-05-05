@@ -200,9 +200,10 @@ def _add_images(self, images):
 	for url, caption in images:
 		self.push("figure")
 		self.append(tree.Tag("img", src=url))
-		self.push("figcaption")
-		self.dispatch_children(caption)
-		self.join()
+		if caption:
+			self.push("figcaption")
+			self.dispatch_children(caption)
+			self.join()
 		self.join("figure")
 	self.join()
 	self.join()
