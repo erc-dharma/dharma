@@ -1,7 +1,81 @@
-# For details, see https://github.com/erc-dharma/project-documentation/issues/408#issue-3973658968.
+from automata.fa.nfa import NFA
+from automata.fa.dfa import DFA
+
+"""
+Deux approches différentes sont possibles: on peut soit générer à l'avance les
+représentations de recherche que l'on va utiliser en transformant le texte de
+plusieurs manières (avec re2c ou équivalent), ou bien ne pas transformer le
+texte et construire une expression régulière qui sera évaluée au moment de la
+recherche. La seconde approche est la plus souple, partons là-dessus.
+
+The search code should take a finite-state automaton as input. Then have several
+functions in this module that will take the automaton as argument and modify it
+in some way. At the end, we minimize the automaton and convert it back to a
+regular expression. And we send this regular expression to the go server.
+
+Il peut valoir la peine de ne pas utiliser le module regexp pour la recherche.
+Si on manipule déjà à l'avance l'automate, autant carrément le minimiser et
+employer une petite boucle d'évaluation en go.
+
+En fait, il y a plusieurs choses.
+
+Problème avec les points (1) et (2) ci-dessous. En principe, ces transformations
+ne devraient être appliquées que sur le texte source, viz. l'édition et aussi
+les éléments <foreign>.
+
+(1) Pour la représentation de recherche, au moment où on la génère, il faut
+d'abord convertir les multigraphes en un seul code point. L'idée est de faire en
+sorte qu'en cherchant "a", on ne trouve pas "ai" ou "au", et qu'en cherchant
+"r", on ne trouve pas "r̥".
+
+Quand on a affaire à de vrais multigraphes comme "ai" et "au", il faut un
+pré-traitement, mais ça va créer des problèmes pour les segments de texte en
+anglais, où on ne devrait pas avoir de digraphes. On peut soit fondre les
+multigraphes en un seul caractère avant la recherche, soit conserver les
+caractères multiples et ajouter un test supplémentaire au moment de la recherche
+pour vérifier si le match se termine au milieu d'un multigraphe, auquel cas, il
+faut le rejeter.
+
+Pour les grapheme cluster, la librairie go regexp ne peut pas vérifier les
+grapheme boundaries, donc on devrait faire un test après chaque match retourné,
+c'est pas très commode.
+
+Pour l'instant, je pense que le plus commode serait de transformer le texte
+d'entrée de manière à éliminer les multigraphes, ça simplifiera le code de
+recherche ultérieur. On peut aussi décider de convertir l'UTF-8 vers un encodage
+qui n'est pas variable-length, pour la même raison. Dans les deux cas, il faut
+éventuellement simplifier des séquences de grapheme clusters, en retirant des
+signes diacritiques par exemple, quand on ne peut rien faire de mieux.
+
+Partons du principe que l'on n'essaiera pas de gérer les multigraphes ou l'UTF-8
+durant la recherche, pour simplifier la recherche.
+
+Il va falloir convertir le texte vers un encodage qui ne soit pas
+variable-length. On peut, soit encoder chaque caractère accentué, etc. en une
+seule unité, soit encoder le caractère sur un octet et un bit mask sur le
+suivant qui indique si le caractère porte un accent grave, etc. En fait, le plus
+simple est de traiter chaque caractère séparément, sans bit mask, donc faisons
+ça.
+
+(2) Au moment où on génère la représentation de recherche, après avoir réalisé
+les transformations (1), on devrait également appliquer les transformations qui
+doivent toujours être appliquées, et qui devraient être:
+
+(*) ignorer tous les caractères qui ne sont pas alphanumériques et qui ne sont
+pas des espaces
+
+(3) Ensuite, at search time, on applique les transformations qui doivent
+demeurer optionnelles.
+
+-- insensibilité à la casse
+-- ignorer les tirets
+-- ignorer les espaces
+
+"""
 
 # We store digraphs in the first private-use area. We start long after 0xE000
-# because the go code uses the initial characters of this area.
+# because the go code uses the initial characters of this area for other
+# purposes.
 start = 0xE000 + 100
 ai = chr(start + 0)
 au = chr(start + 1)
@@ -25,6 +99,8 @@ main = {
 	"œ": "oe",
 	"æ": "ae",
 	"đ": "d",
+	# Apparently, the underscore should be treated as a space character.
+	"_": " ",
 }
 
 # Some of the transformations described below are performed only to ensure that
@@ -34,9 +110,10 @@ main = {
 # to have to perform a lookahead on each match to test whether a combining char
 # follows. When segmenting the text, we should still try not to cut it before a
 # combining char.
+#
+# Spaces should be folded into one. And other non-alphabetic characters should
+# be ignored (don't replace them with spaces, act if they didn't occur)
 edition = {
-	# Apparently, the underscore should be treated as a space character.
-	"_": " ",
 	# In Tamil, the character "'" represents an elided "u" when it appears
 	# at the end of a word, thus:
 	#
@@ -100,8 +177,54 @@ edition = {
 	"\N{LATIN CAPITAL LETTER SCHWA}\N{COMBINING MACRON}": Long_schwa,
 }
 
-# Maps voiced to unvoiced.
-voiced_unvoiced = {
+class Automaton:
+
+	def __init__(self):
+		self.states = []
+		self.start_state = self.add_state()
+
+	def add_state(self):
+		ret = State()
+		self.states.append(ret)
+		return ret
+
+	@classmethod
+	def from_string(cls, s):
+		aut = Automaton()
+		state = aut.start_state
+		for c in s:
+			next_state = aut.add_state()
+			state.add_transition(c, next_state)
+			state = next_state
+		state.final = True
+		return aut
+
+class State:
+
+	def __init__(self):
+		self.transitions = {}
+		self.final = False
+
+	def add_transition(self, symbol, target):
+		assert not symbol in self.transitions
+		self.transitions[symbol] = target
+
+def apply_table(aut, table):
+	for state in aut.states:
+		transitions = list(state.transitions.items())
+		for symbol, target_state in transitions:
+			match = table.get(symbol)
+			if match is None:
+				continue
+			state.add_transition(match, target_state)
+
+def two_ways(table):
+	for k, v in list(table.items()):
+		assert not v in table
+		table[v] = k
+
+# Treat voiced and unvoiced as equivalent.
+voiced_unvoiced = two_ways({
 	"g": "k",
 	gh: kh,
 	"j": "c",
@@ -112,10 +235,10 @@ voiced_unvoiced = {
 	dh: th,
 	"b": "p",
 	bh: ph,
-}
+})
 
-# Maps aspirated to unaspirated.
-aspirated_unaspirated = {
+# Treat aspirated and unaspirated as equivalent.
+aspirated_unaspirated = two_ways({
 	kh: "k",
 	gh: "g",
 	ch: "c",
@@ -126,25 +249,25 @@ aspirated_unaspirated = {
 	dh: "d",
 	ph: "p",
 	bh: "b",
-}
+})
 
-# Maps retroflexes to dentals.
-retroflexes_dentals = {
+# Treat retroflexes and dentals as equivalent.
+retroflexes_dentals = two_ways({
 	"ṭ": "t",
-	"ṭh": "th",
+	ṭh: th,
 	"ḍ": "d",
-	"ḍh": "dh",
+	ḍh: dh,
 	"ṇ": "n",
-}
+})
 
-# Merge sibilants.
-sibilants = {
+# Treat sibilants as equivalent.
+sibilants = two_ways({
 	"ś": "s",
 	"ṣ": "s",
-}
+})
 
-# Merge long and short vowels.
-vowels = {
+# Treat long and short vowels as equivalent.
+vowels = two_ways({
 	"ā": "a",
 	"ī": "i",
 	"ū": "u",
@@ -152,8 +275,10 @@ vowels = {
 	"ḹ": "ḷ",
 	"ē": "e",
 	"ō": "o",
-}
+})
 
+
+# For details, see https://github.com/erc-dharma/project-documentation/issues/408#issue-3973658968.
 """
 Arlo stuff:
 
