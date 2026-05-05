@@ -1420,7 +1420,7 @@ def _make_gaiji(g):
 					tip += ", "
 				tip += name["name"]
 				if name["lang"]:
-					tip += "(" + name["lang"] + ")"
+					tip += " (" + name["lang"] + ")"
 		else:
 			tip += ": " + info["idents"][0]
 		if info["description"]:
