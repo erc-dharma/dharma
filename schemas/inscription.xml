@@ -2944,6 +2944,7 @@
                             <valList type="closed" mode="replace">
                                 <valItem ident="primary"/>
                                 <valItem ident="secondary"/>
+                                <valItem ident="surrogates"/>
                             </valList>
                         </attDef>
 

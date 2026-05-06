@@ -10327,6 +10327,7 @@ epistemology, methodology and history of
                             <valList type="closed" mode="replace">
                                 <valItem ident="primary"/>
                                 <valItem ident="secondary"/>
+                                <valItem ident="surrogates"/>
                             </valList>
                         </attDef></attList><exemplum xml:lang="en">
     <egXML xmlns="http://www.tei-c.org/ns/Examples">
