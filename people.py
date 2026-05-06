@@ -11,7 +11,7 @@ wikidata
 """.strip().split()
 
 def iter_members_list():
-	f = texts.save("project-documentation", "DHARMA_idListMembers_v01.xml")
+	f = texts.save("project-documentation", "DHARMA_idListMembers.xml")
 	xml = tree.parse(f)
 	for person in xml.find("//person"):
 		row = {}
@@ -49,7 +49,7 @@ def iter_members_list():
 		row["affiliation"] = affiliations
 		yield row
 
-dependencies = {"DHARMA_gitNames.tsv", "DHARMA_idListMembers_v01.xml"}
+dependencies = {"DHARMA_gitNames.tsv", "DHARMA_idListMembers.xml"}
 
 def update():
 	logging.debug("updating people table")

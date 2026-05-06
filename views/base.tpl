@@ -74,7 +74,7 @@
             <a href="/scripts">Scripts</a>
 	 </li>
 	 <li>
-            <a href="/people">People</a>
+            <a href="/contributors">Contributors</a>
 	 </li>
       </ul>
    </li>

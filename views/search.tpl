@@ -70,7 +70,7 @@ total.
 {{numberize("Author", (doc.editors | length))}} of digital edition:
 % for editor_ident, editor_name in doc.editors:
    {{editor_name.html() | safe}}{% if editor_ident %}
-   (<a href="/people/{{editor_ident.text()}}" class="monospace">{{editor_ident.html() | safe}}</a>){% endif %}{% if loop.index < loop.length %},{% else %}.{% endif %}
+   (<a href="/contributors/{{editor_ident.text()}}" class="monospace">{{editor_ident.html() | safe}}</a>){% endif %}{% if loop.index < loop.length %},{% else %}.{% endif %}
 % endfor
 </p>
 % endif

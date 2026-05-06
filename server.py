@@ -177,6 +177,14 @@ def show_symbols():
 	return flask.render_template("glyphs.tpl", body=body)
 
 @app.get("/people")
+def redirect_people():
+	return flask.redirect(f"/contributors")
+
+@app.get("/people/<dharma_id>")
+def redirect_person(dharma_id):
+	return flask.redirect(f"/contributors/{dharma_id}")
+
+@app.get("/contributors")
 @common.transaction("texts")
 def show_people():
 	db = common.db("texts")
@@ -184,13 +192,13 @@ def show_people():
 		order by inverted_name collate icu""").fetchall()
 	return flask.render_template("people.tpl", rows=rows)
 
-@app.get("/people/<dharma_id>")
+@app.get("/contributors/<dharma_id>")
 @common.transaction("texts")
 def show_person(dharma_id):
 	db = common.db("texts")
 	exists = db.execute("select 1 from people_main where dh_id = ?", (dharma_id,)).fetchone()
 	if exists:
-		return flask.redirect(f"/people#person-{dharma_id}")
+		return flask.redirect(f"/contributors#person-{dharma_id}")
 	return flask.abort(404)
 
 @app.get("/parallels")

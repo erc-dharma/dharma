@@ -76,9 +76,9 @@ Prosodic Patterns
 <p>
 % for author_id, author_name in note["authors"]:
 	% if loop.index < loop.length:
-		<a href="/people/{{author_id}}">{{author_name}}</a>
+		<a href="/contributors/{{author_id}}">{{author_name}}</a>
 	% else:
-		<a href="/people/{{author_id}}">{{author_name}}</a>:
+		<a href="/contributors/{{author_id}}">{{author_name}}</a>:
 	% endif
 % endfor
 	{{note["text"]}}
@@ -103,9 +103,9 @@ Prosodic Patterns
 	{{note["symbol"]}}
 	% for author_id, author_name in note["authors"]:
 		% if loop.index < loop.length:
-			<a href="/people/{{author_id}}">{{author_name}}</a>,
+			<a href="/contributors/{{author_id}}">{{author_name}}</a>,
 		% else:
-			<a href="/people/{{author_id}}">{{author_name}}</a>:
+			<a href="/contributors/{{author_id}}">{{author_name}}</a>:
 		% endif
 	% endfor
 	{{note["text"]}}

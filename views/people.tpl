@@ -1,7 +1,7 @@
 % extends "base.tpl"
 
 % block title
-People
+Contributors to this database
 % endblock
 
 % block body
