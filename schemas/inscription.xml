@@ -3057,7 +3057,6 @@
                                         engraved on two pillars or doorjambs
                                     </desc>
                                 </valItem>
-                                <valItem ident="segment"/>
                                 <valItem ident="zone">
                                     <desc>
                                         for visually distinct zones on a single two-dimensional surface
