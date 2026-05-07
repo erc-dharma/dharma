@@ -56,7 +56,9 @@ def update():
 	db = common.db("texts")
 	db.execute("delete from people_github")
 	db.execute("delete from people_main")
+	dh_ids = set()
 	for row in iter_members_list():
+		dh_ids.add(row["dh_id"])
 		db.execute("""
 		insert into people_main(name, dh_id, affiliation, idhal, idref,
 			orcid, viaf, wikidata)
@@ -72,6 +74,9 @@ def update():
 		key, value = fields
 		assert key not in seen, "duplicate record %r at line %d" % (key, line_no)
 		seen.add(key)
+		if value not in dh_ids:
+			logging.info(f"skipping dharma ident {value}")
+			continue
 		db.execute("insert into people_github(git_name, dh_id) values(?, ?)", (key, value))
 
 def plain(ident):
