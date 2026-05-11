@@ -1265,7 +1265,7 @@ def fix_rec(rec):
 	rec = rec.copy()
 	rec["_fixed"] = True
 	rec.setdefault("_shorthand", "")
-	rec.setdefault("_original_date", "")
+	rec.setdefault("_original_date", rec.get("originalDate", ""))
 	# TODO normalize_space()
 	if (date := rec.get("date")):
 		# Always use "-"
@@ -1290,11 +1290,11 @@ def fix_rec(rec):
 			continue
 		key, value = chunks
 		key = key.lower().replace(" ", "")
-		if key == "shorthand":
+		if key == "shorthand" and not rec["_shorthand"]:
 			rec["_shorthand"] = value
-		elif key == "originaldate":
-			value = value.replace("\N{en dash}", "-")
+		elif key == "originaldate" and not rec["_original_date"]:
 			rec["_original_date"] = value
+	rec["_original_date"] = rec["_original_date"].replace("\N{en dash}", "-")
 	for key, value in list(rec.items()):
 		# TODO should only allow html in specific fields (title?)
 		# because gets messy
