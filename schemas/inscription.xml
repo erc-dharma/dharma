@@ -1392,15 +1392,6 @@
                     </attList>
                 </elementSpec>
                 <elementSpec ident="bibl" module="core" mode="change">
-                    <content>
-                        <sequence minOccurs="0" maxOccurs="1">
-                            <sequence>
-                                <elementRef key="ptr"/>
-                                <elementRef key="citedRange" minOccurs="0" maxOccurs="unbounded"/>
-                            </sequence>
-                            <elementRef key="note" minOccurs="0" maxOccurs="1"/>
-                        </sequence>
-                    </content>
                     <attList>
                         <attDef ident="ana" mode="delete"/>
                         <attDef ident="cert" mode="delete"/>

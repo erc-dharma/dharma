@@ -322,9 +322,15 @@ def _extract_bibl_ref(bibl, ref):
 		location.append((unit, value))
 	return short_title, location
 
+@_handler("listBibl[@type='surrogates']/bibl")
+def _parse_listbibl_surrogates_bibl(p, bibl):
+	p.push("para", class_="bib-entry")
+	p.dispatch_children(bibl)
+	p.join()
+
 # For printing entries within the bibliography. In this context, bibl needs to
 # be replaced with the bibliography entry.
-@_handler("listBibl/bibl")
+@_handler("listBibl/bibl") # listBibl[@type!='surrogates']/bibl
 def _parse_listbibl_bibl(p, bibl):
 	ref = bibl.first("ptr") or bibl.first("ref")
 	if not ref or ref["target"].removeprefix("bib:") == "AuthorYear_01":
@@ -1928,7 +1934,7 @@ def _fetch_resp(resp):
 # present in the file-specific bibliography and which are not. (The latter
 # need to be presented within the project-wide bibliography.)
 def _gather_biblio(p):
-	for bibl in p.tree.find(".//listBibl/bibl[ptr]"):
+	for bibl in p.tree.find(".//listBibl[@type!='surrogates']/bibl[ptr]"):
 		ptr = bibl.first("ptr")
 		short_title = ptr["target"].removeprefix("bib:")
 		if not short_title or short_title == "AuthorYear_01":
