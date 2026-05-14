@@ -8,6 +8,15 @@ plusieurs manières (avec re2c ou équivalent), ou bien ne pas transformer le
 texte et construire une expression régulière qui sera évaluée au moment de la
 recherche. La seconde approche est la plus souple, partons là-dessus.
 
+Pour les transformations, que faire en python, et que faire en go? Les
+transformations pour lesquelles on a besoin de connaître la langue seraient
+peut-être plus commodes à faire en python, car on devrait autrement trouver un
+moyen de passer la langue au code go, ce qui n'est pas pratique. En même temps,
+il est plus rapide et plus facile de faire la transformation en go (avec re2c),
+et il serait sans doute utile que le code go connaisse la langue des portions de
+texte, pour permettre ensuite de filtrer les passages par langue. Si l'on permet
+cela, il faut trouver une stratégie d'encodage pour encoder la langue.
+
 The search code should take a finite-state automaton as input. Then have several
 functions in this module that will take the automaton as argument and modify it
 in some way. At the end, we minimize the automaton and convert it back to a
@@ -67,9 +76,7 @@ pas des espaces
 (3) Ensuite, at search time, on applique les transformations qui doivent
 demeurer optionnelles.
 
--- insensibilité à la casse
--- ignorer les tirets
--- ignorer les espaces
+-- insensibilité à la casse -- ignorer les tirets -- ignorer les espaces
 
 """
 
