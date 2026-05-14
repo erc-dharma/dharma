@@ -36,14 +36,20 @@ Texts
 </ul>
 </form>
 
-<p>Documents
-{{first_entry}}{{"\N{en dash}"}}{{last_entry}} of {{match_count}}
-% if query:
-matching.
-% else:
-total.
+% if matches
+	<p>Documents
+	{{first_entry}}{{"\N{en dash}"}}{{last_entry}} of {{match_count}}
+	% if query:
+	matching.
+	% else:
+	total.
+	% endif
+	</p>
+% elif query
+	<p>No matching documents.</p>
+% else
+	<p>No documents in database.</p>
 % endif
-</p>
 
 % if matches
 
