@@ -321,6 +321,7 @@ class Node:
 		raise Exception("bad operation")
 
 	def strings(self) -> list["String"]:
+		"""All `String` nodes in this subtree."""
 		return []
 
 	def delete(self):
