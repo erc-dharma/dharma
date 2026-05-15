@@ -13,24 +13,6 @@ BLOCK_TAGS = {"para", "verse", "quote", "dlist", "elist"}
 # Structural parents allowed for a snippet root
 VALID_PARENTS = {"div", "logical", "hand"}
 
-# TODO delete that, should be done in the go code.
-def translate_char(c):
-	# Translate specific characters for search normalization
-	match c:
-		case "'": return "’"
-		case "œ": return "oe"
-		case "æ": return "ae"
-		case "đ": return "d"
-		case _: return c
-
-def translate_string(s):
-	# Normalize strings to NFC to ensure index alignment with Go
-	tmp = []
-	for c in s.data:
-		c = translate_char(c)
-		tmp.append(c)
-	return unicodedata.normalize('NFC', "".join(tmp))
-
 class InternalWalker:
 
 	def __init__(self, handler):
@@ -141,7 +123,7 @@ class TextExtractor:
 		self.buf = []
 	def on_text(self, node):
 		# Append translated string to buffer
-		self.buf.append(translate_string(node))
+		self.buf.append(node.data)
 	def on_virtual(self, char):
 		# Append virtual structural character to buffer
 		self.buf.append(char)
@@ -175,7 +157,7 @@ class Highlighter:
 
 	def on_text(self, node):
 		# Evaluate and split text nodes intersecting with search hits
-		text = translate_string(node)
+		text = node.data
 		length = len(text)
 		mask = self._compute_mask(length)
 		self.cursor += length
