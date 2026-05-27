@@ -546,7 +546,7 @@ _supplied_tbl = {
 	"omitted": ("⟨⟩", "Omitted text"),
 	# EGD under "Marking up restored text" says that "undefined" is used when it's not possible
 	# to tell whether we have "lost" or "omitted"
-	"undefined": ("[]", "Text supplied for undefined reason (lost or omitted)")
+	"undefined": ("[]", "Text supplied for undefined reason (lost, omitted or subaudible)")
 }
 # OK
 @_handler("supplied") # [not @reason='subaudible']
