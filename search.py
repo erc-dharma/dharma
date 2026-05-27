@@ -292,10 +292,11 @@ class SnippetGenerator:
 	def _find_eligible_block(self, node):
 		# Ascend the DOM to find the nearest valid block container
 		curr = node
-		while curr:
+		while isinstance(curr, tree.Tag):
 			if curr.name in BLOCK_TAGS:
 				parent = curr.parent
-				if parent and parent.name in VALID_PARENTS: return curr
+				assert parent is not None
+				if isinstance(parent, tree.Tag) and parent.name in VALID_PARENTS: return curr
 			curr = curr.parent
 		return None
 
@@ -718,6 +719,8 @@ def process_single_match(item):
 		SnippetGenerator(doc).generate()
 		return doc
 	except Exception as e:
+		import traceback
+		print(traceback.format_exc())
 		print(f"Error processing match {item.get('ident')}: {e}")
 		return None
 
