@@ -14,12 +14,12 @@
   text-indent: -1.5em; }
 
 .sup {
-  vertical-align: baseline;
-  position: relative;
-  top: -0.4em; }
+  vertical-align: super;
+  font-size: smaller; }
 
 .sub {
-  vertical-align: sub; }
+  vertical-align: sub;
+  font-size: smaller; }
 
 .highlight {
   background: yellow; }
@@ -491,9 +491,8 @@ div.parallel-verse > p {
   color: black; }
 
 sup {
-  vertical-align: baseline;
-  position: relative;
-  top: -0.4em; }
+  vertical-align: super;
+  font-size: smaller; }
 
 /***************************************** Lists ******************************/
 /* Examples in:
