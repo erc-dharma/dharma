@@ -47,6 +47,11 @@
          <li><a href="/bestow">BESTOW</a></li>
          <li><a href="/development-of-tamil-fractions">Development of Tamil Fractions</a></li>
          <li><a href="/chola-fractional-calculations">Chola Fractional Calculations</a></li>
+         <li><a href="https://erc-dharma.github.io/arie">ARIE</a></li>
+         <li><a href="https://erc-dharma.github.io/tfb-ec-epigraphy/">Epigraphia Carnatica</a></li>
+         <li><a href="https://erc-dharma.github.io/output-roej/display-roej.html">Répertoire Onomastique Java</a></li>
+         <li><a href="https://erc-dharma.github.io/tfa-sii-epigraphy/index-sii.html">South-Indian Inscriptions</a></li>
+	 <li><a href="/documentation">Documentation</a></li>
       </ul>
    </li>
    <li>
