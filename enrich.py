@@ -56,7 +56,17 @@ def _fix_search(t: tree.Tree):
 
 ########################## Language extraction #################################
 
-def _extract_edition_languages(root: tree.Branch):
+def _iter_edition_languages(root: tree.Tag):
+	if root["editorial"] == "true":
+		return
+	if root["lang"]:
+		lang, script = root["lang"].split()
+		yield lang, script
+	for child in root:
+		if isinstance(child, tree.Tag):
+			yield from _iter_edition_languages(child)
+
+def _extract_edition_languages(root: tree.Tag):
 	"""Produces two maps of the form...
 
 		{lang: {script, script...}, lang: {script, script...}...}
@@ -64,9 +74,7 @@ def _extract_edition_languages(root: tree.Branch):
 	"""
 	langs = {}
 	scripts = set()
-	for node in root.find("descendant-or-self::*[@lang and @editorial != 'true']"):
-		assert isinstance(node, tree.Tag)
-		lang, script = node["lang"].split()
+	for lang, script in _iter_edition_languages(root):
 		langs.setdefault(lang, set()).add(script)
 		scripts.add(script)
 	# Fetch the corresponding names.
@@ -88,7 +96,7 @@ def _extract_edition_languages(root: tree.Branch):
 			scripts.setdefault(script, set()).add(lang)
 	return langs, scripts, lang_names, script_names
 
-def _add_edition_languages(t):
+def _add_edition_languages(t: tree.Tag):
 	"""Add language and script use info to the tree. Need to create a
 	structure like this:
 
@@ -1392,6 +1400,7 @@ def process(t: tree.Tree):
 	# TODO _put_grantha_in_bold(t)
 	# And extract languages from the logical division.
 	if (root := t.first("/document/edition/logical")):
+		assert isinstance(root, tree.Tag)
 		_add_edition_languages(root)
 
 def fetch_file_data(ident):
