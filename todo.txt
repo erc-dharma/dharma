@@ -1,16 +1,20 @@
 # TODO
 
-dans le display /texts et /search, n'afficher que le 1er paragraphe des summary pour éviter qu'ils soient trop longs. en fait, pour search, il faudrait avoir trois modes: display-none, display-if-matching, display-first-if-matching
-
-regarder remboursement impôts AFEI.
-
-languaes bugs:
+languages bugs:
 https://github.com/erc-dharma/project-documentation/issues/439#issuecomment-4543139343
+
+regarder dharmalekha.info/languages; on a des "english", etc. qui ne devraient pas apparaître
+
+handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml (language display)
 
 	INStfaSIIv38p0i0140
 
+regarder remboursement impôts AFEI.
+
 tam-ulakku; symbole s'affiche pas sur mobile. il faut offrir d'autres polices
 pour ces caractères. cf. tst-project.github.io/editor/entities.html
+
+dans le display /texts et /search, n'afficher que le 1er paragraphe des summary pour éviter qu'ils soient trop longs. en fait, pour search, il faudrait avoir trois modes: display-none, display-if-matching, display-first-if-matching
 
 sur la page de résultats de recherche, afficher ou non les champs selon qu'ils
 comprennent un match. en fait, il faudrait que pour chaque champ on ait un
@@ -23,15 +27,6 @@ make the biblio searchable
 only display fields with matches
 
 ###
-
-est-ce que ça fonctionne si on crée une page web repositories/tfa-...-epigraphy?
-
-écritures pas assignées correctement sur DHARMA_INSSIIv17p0i0227.
-
-regarder dharmalekha.info/languages; on a des "english", etc. qui ne devraient pas apparaître
-
-handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml (language display)
-
 
 ## other stuff
 

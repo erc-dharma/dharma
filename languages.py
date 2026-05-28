@@ -178,11 +178,10 @@ def _complete_internal_any(node):
 			continue
 		if (lang := child["lang"]):
 			langs.add(lang)
-	if len(langs) == 1:
+	if len(langs) == 1 and not node["lang"]:
 		node["lang"] = langs.pop()
 	for child in node:
 		_complete_internal_any(child)
-
 
 def finish_internal(node: tree.Branch):
 	"""
