@@ -201,6 +201,7 @@ def update_db(repo):
 # some point, we want to have a downloadable read-only db. Ideally, it should
 # be possible to run the code without having to set up repositories.
 def update_project() -> bool:
+	update_repo("project-documentation")
 	changes = Changes("project-documentation")
 	changes.check_db()
 	if changes.done:
@@ -249,11 +250,11 @@ def backup_biblio():
 		capture_output=False)
 
 def handle_changes(name):
-	update_repo(name)
 	if name == "project-documentation":
 		if update_project():
 			catalog.rebuild()
 	else:
+		update_repo(name)
 		update_db(name)
 	db = common.db("texts")
 	db.execute("replace into metadata values('last_updated', strftime('%s', 'now'))")
