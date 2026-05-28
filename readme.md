@@ -33,13 +33,13 @@ The code's documentation can be browsed with the `pdoc` tool:
 
 You need to clone this repository with its submodules:
 
-	git clone --recursive git@github.com:michaelnmmeyer/dharma.git
+	git clone --recursive git@github.com:erc-dharma/dharma.git
 
 The repository's directory must be placed somewhere on `$PYTHONPATH`, so you
 need to modify this variable accordingly (or to move the directory in one of the
 directories enumerated in `$PYTHONPATH`).
 
-Once done, run:
+Once done, `cd` to the repository and run:
 
 	python change.py
 
