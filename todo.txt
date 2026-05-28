@@ -1,13 +1,7 @@
 # TODO
 
-languages bugs:
-https://github.com/erc-dharma/project-documentation/issues/439#issuecomment-4543139343
-
-regarder dharmalekha.info/languages; on a des "english", etc. qui ne devraient pas apparaître
-
 handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml (language display)
 
-	INStfaSIIv38p0i0140
 
 regarder remboursement impôts AFEI.
 

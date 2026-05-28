@@ -1537,7 +1537,8 @@ def _parse_lg(p, lg):
 		unsure = True
 	met = _make_meter_heading(p, lg["met"])
 	if n or met:
-		p.push_lang(languages.Descriptor("eng", "latin")) # TODO and editorial!
+		p.push_lang(languages.Descriptor("eng", "latin"))
+		p.push_editorial(True)
 		p.push(tree.Tag("head"))
 		if n and met:
 			p.append(n)
@@ -1554,6 +1555,7 @@ def _parse_lg(p, lg):
 			if unsure:
 				p.append("(?)")
 		p.join()
+		p.pop_editorial()
 		p.pop_lang()
 	# Ensure that we always have at least one verse-line. Note that people
 	# do use <l> within <p rend="stanza"> in the traduction, so we do it
