@@ -140,27 +140,34 @@ def _extract_script_ident(node) -> str | None:
 	""", (script, script + "_other")).fetchone() or (None,)
 	return script
 
-def _extract_language_info(node) -> Descriptor | None:
+def _extract_language_info(node, parent_lang: Descriptor) -> Descriptor:
 	if (lang := node.notes.get("lang")):
 		return lang
+	inherit = True
+	if node.name == "foreign":
+		inherit = False
+	elif node.name == "div" and node["type"] == "edition":
+		inherit = False
 	lang_id = _extract_language_ident(node)
+	if not lang_id:
+		if inherit:
+			lang_id = parent_lang.language
+		else:
+			lang_id = "und"
 	script_id = _extract_script_ident(node)
 	# For marking up Grantha text, an old (legacy) convention was to use
 	# <hi rend="grantha"> (because Grantha is supposed to be put in bold)
 	# instead of @rendition="class:grantha maturity:regional". The use of
 	# <hi rend="grantha"> should be abandoned eventually. In the meantime,
 	# we manually change the script id when we find this encoding.
-	if not script_id and node.name == "hi" and node["rend"] == "grantha":
-		script_id = "grantha"
-	if not lang_id and not script_id:
-		return
-	parent_lang = node.parent.notes["lang"]
-	node_lang = parent_lang.copy()
-	if lang_id:
-		node_lang.language = lang_id
-	if script_id:
-		node_lang.script = script_id
-	return node_lang
+	if not script_id:
+		if node.name == "hi" and node["rend"] == "grantha":
+			script_id = "grantha"
+		elif inherit:
+			script_id = parent_lang.script
+		else:
+			script_id = "latin"
+	return Descriptor(lang_id, script_id)
 
 ##################### For annotating internal documents ########################
 
@@ -434,13 +441,7 @@ def add_lang_info(node, parent_lang=Descriptor("eng", "latin")):
 			for child in node:
 				add_lang_info(child, parent_lang)
 		case tree.Tag():
-			lang = _extract_language_info(node)
-			if not lang:
-				if node.name == "foreign" or node.name \
-					== "div" and node["type"] == "edition":
-					lang = Descriptor("und", "latin")
-				else:
-					lang = parent_lang
+			lang = _extract_language_info(node, parent_lang)
 			node.notes["lang"] = lang
 			for child in node:
 				add_lang_info(child, lang)
