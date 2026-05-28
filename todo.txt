@@ -1,16 +1,17 @@
 # TODO
 
-
-regarder remboursement impôts AFEI.
-
-tam-ulakku; symbole s'affiche pas sur mobile. il faut offrir d'autres polices
-pour ces caractères. cf. tst-project.github.io/editor/entities.html
-
-dans le display /texts et /search, n'afficher que le 1er paragraphe des summary pour éviter qu'ils soient trop longs. en fait, pour search, il faudrait avoir trois modes: display-none, display-if-matching, display-first-if-matching
+=== affichage recherche
 
 sur la page de résultats de recherche, afficher ou non les champs selon qu'ils
 comprennent un match. en fait, il faudrait que pour chaque champ on ait un
-descripteur "display" = always (always display this field) or = auto (only display this field if it contains a match) or = never (never display this field, even if there is a match).
+descripteur "display" dont les valeurs pourraient être:
+= always (always display this field)
+= auto (only display this field if it contains a match)
+= never (never display this field, even if there is a match).
+
+dans le display /texts et /search, n'afficher que le 1er paragraphe des summary pour éviter qu'ils soient trop longs. en fait, pour search, il faudrait avoir trois modes: display-none, display-if-matching, display-first-if-matching
+
+===
 
 ignorer espaces+hyphens
 ajouter support de la recherche levenshtein
@@ -18,16 +19,13 @@ ajouter support de la recherche levenshtein
 make the biblio searchable
 only display fields with matches
 
-###
-
 ## other stuff
-
-tfa-tamil-outside-TN-epigraphy: ~DHARMA_INSTamilOutsideTN10002.xml ; manque une réf. biblio à Pillai
-KanapathiPillai1962_01
 
 hi rend=grantha à uniformiser avec rendition.  et ne mettre du gras que si le parent est en tamoul.
 
 
+tam-ulakku; symbole s'affiche pas sur mobile. il faut offrir d'autres polices
+pour ces caractères. cf. tst-project.github.io/editor/entities.html
 
 
 
