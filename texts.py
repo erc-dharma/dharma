@@ -7,7 +7,12 @@ _valid_prefixes = {"DHARMA_INS", "DHARMA_DiplEd", "DHARMA_CritEd"}
 """Files that start with these prefixes are assumed to be TEI editions (but
 there are other additional criteria, see the code)."""
 
-_ignore_dirs = {"sii-corpus"}
+_dirs_to_ignore = {"sii-corpus"}
+"""Ignore texts that appear under the directories that bear one of these names
+viz. act as if they didn't exist."""
+
+_repos_to_ignore = {"tfb-ec-epigraphy", "test"}
+"""Ignore texts in these repositories viz. act as if they didn't exist."""
 
 # XXX need to have static methods for creating files: from a real file on disk;
 # from the db (in-memory file maskerading as a real one, see save_file()); and for creating an
@@ -148,13 +153,15 @@ def iter_texts_in_repo(repo: str) -> typing.Generator[File, None, None]:
 	"""Iterates over TEI editions in a repository. `repo` is the name of the
 	repository (e.g. `tfa-pallava-epigraphy`).
 	"""
+	if repo in _repos_to_ignore:
+		return
 	repo_path = common.path_of("repos", repo)
 	for root, dirs, files in os.walk(repo_path):
 		# Ignore hidden directories.
 		for dir in list(dirs):
 			if dir.startswith("."):
 				dirs.remove(dir)
-			if dir in _ignore_dirs:
+			if dir in _dirs_to_ignore:
 				dirs.remove(dir)
 		for file in files:
 			_, ext = os.path.splitext(file)
