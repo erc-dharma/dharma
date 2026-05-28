@@ -1,7 +1,5 @@
 # TODO
 
-handle /home/michael/dharma/texts/DHARMA_INSSIIv02p0i0001.xml (language display)
-
 
 regarder remboursement impôts AFEI.
 
