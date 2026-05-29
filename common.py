@@ -303,6 +303,9 @@ def db(name):
 					conn.execute(line)
 		else:
 			conn.execute(sql).fetchall()
+	elif name == "parallels":
+		import parallels
+		conn.execute(parallels.SCHEMA)
 	ret = Database(conn)
 	setattr(_DATABASES, name, ret)
 	return ret

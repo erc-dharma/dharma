@@ -3,7 +3,7 @@ import unicodedata
 import flask, werkzeug.security # pip install flask
 from bs4 import BeautifulSoup # pip install bs4
 
-from dharma import common, change, ngrams, catalog, validate, ingest, tree
+from dharma import common, change, parallels, catalog, validate, ingest, tree
 from dharma import biblio, texts, editorial, prosody, render, languages
 from dharma import enrich, search, snip, glyphs
 
@@ -202,9 +202,9 @@ def show_person(dharma_id):
 	return flask.abort(404)
 
 @app.get("/parallels")
-@common.transaction("ngrams")
+@common.transaction("parallels")
 def show_parallels():
-	db = common.db("ngrams")
+	db = common.db("parallels")
 	(date,) = db.execute("""select cast(value as int)
 		from metadata where key = 'last_updated'""").fetchone()
 	rows = db.execute("select * from sources where verses + hemistiches + padas > 0")
@@ -217,9 +217,9 @@ parallels_types = {
 }
 
 @app.get("/parallels/texts/<text>/<category>")
-@common.transaction("ngrams")
+@common.transaction("parallels")
 def show_parallels_details(text, category):
-	db = common.db("ngrams")
+	db = common.db("parallels")
 	type = parallels_types[category]
 	rows = db.execute("""
 		select id, number, contents, parallels from passages
@@ -229,9 +229,9 @@ def show_parallels_details(text, category):
 		file=text, category=category, data=rows)
 
 @app.get("/parallels/texts/<text>/<category>/<int:id>")
-@common.transaction("ngrams")
+@common.transaction("parallels")
 def show_parallels_full(text, category, id):
-	db = common.db("ngrams")
+	db = common.db("parallels")
 	type = parallels_types[category]
 	ret = db.execute("""
 		select number, contents from passages where type = ? and id = ?
@@ -352,7 +352,7 @@ def search_parallels():
 			page = 1
 	else:
 		page = 1
-	ret, formatted_text, page, per_page, total = ngrams.search(text, type, page)
+	ret, formatted_text, page, per_page, total = parallels.search(text, type, page)
 	return flask.render_template("parallels_search.tpl",
 		data=ret, text=formatted_text,
 		category=type,

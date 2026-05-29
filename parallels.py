@@ -1,5 +1,5 @@
 import os, string, unicodedata, re, html, sqlite3, sys
-from dharma import common, texts, tree
+from dharma import common, tree, texts
 
 # TODO try multisets: https://en.wikipedia.org/wiki/Jaccard_index
 # better results? makes sense?
@@ -189,7 +189,7 @@ def process_file(path, id):
 				yield type, id, file, number, contents, normalized
 
 def make_jaccard(type):
-	db = common.db("ngrams")
+	db = common.db("parallels")
 	data = []
 	for id, normalized in db.execute("select id, normalized from passages where type = ?", (type,)):
 		data.append((id, set(trigrams(normalized))))
@@ -207,13 +207,23 @@ def make_jaccard(type):
 				continue
 			db.execute("insert into jaccard values(?, ?, ?, ?)", (type, id1, id2, jaccard))
 
-@common.transaction("ngrams")
+def iter_all_texts_in_db():
+	db = common.db("texts")
+	for repo, path, mtime, data in db.execute("""
+	select files.repo, path, mtime, data
+	from files join documents on files.name = documents.name
+	order by files.repo, files.name"""):
+		file = texts.File(repo, path, mtime=mtime, data=data)
+		yield file
+
+@common.transaction("parallels")
+@common.transaction("texts")
 def make_database():
-	db = common.db("ngrams")
+	db = common.db("parallels")
 	for tbl in ("jaccard", "passages", "sources"):
 		db.execute(f"delete from {tbl}")
 	id = 0
-	for file in texts.iter_texts():
+	for file in iter_all_texts_in_db():
 		try:
 			db.execute("insert into sources(file) values(?)", (file.name,))
 		except sqlite3.IntegrityError as e:
@@ -236,13 +246,14 @@ def make_database():
 
 PER_PAGE = 50
 
-@common.transaction("ngrams")
+@common.transaction("parallels")
 def search(src_text, category, page):
-	db = common.db("ngrams")
+	db = common.db("parallels")
 	if category == "verse":
 		danda = re.search(r"[/|।]", src_text)
 		if not danda:
 			danda = re.search("$", src_text)
+		assert danda
 		one, two = src_text[:danda.end()], src_text[danda.end():]
 		src_norm = " %s %s " % (normalize(cleanup(one)), normalize(cleanup(two)))
 		formatted_text = '<div class="parallel-verse"><p>%s</p><p>%s</p></div>' % \
