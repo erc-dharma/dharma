@@ -43,7 +43,16 @@ Once done, `cd` to the repository and run:
 
 	python change.py
 
-This will clone all DHARMA repositories and create the database.
+This will clone all DHARMA repositories and create the main database
+(`dbs/texts.sqlite`).
+
+There is also a separate, secondary database for searching parallel verses. It
+is stored at `dbs/parallels.sqlite`. To build it, run:
+
+	python parallels.py
+
+This latter database is not automatically updated, so rebuilding it manually is
+necessary.
 
 ##  Entry points
 
@@ -52,16 +61,27 @@ managed by `systemd`, but they can also be run manually, independently of
 each other.
 
 Firstly, we have a server program. It is used for read-only operations: display,
-search, etc. It never writes to a database. The code's entry point is in
+search, etc. It never writes to the database. The code's entry point is in
 `server.py`. We do not use threads for concurrency, thus thread safety is not
 tested. It is possible to run several server processes simultaneously, if the
 backend supports it.
 
-Secondly, we have an update program. It is used for updating databases when
+Secondly, we have an update program. It is used for updating the database when
 people push to git repositories or modify our Zotero bibliography. This is the
-only program that modifies databases. The code's entry point is in `change.py`.
-A single update process should run at a given time, not more. To update
-databases, other processes communicate with this one through a named pipe.
+only program that modifies the database. The code's entry point is in
+`change.py`. A single update process should run at a given time, not more. To
+update the database, other processes communicate with this process through a
+named pipe. Once the `change.py` process is up and running, it is possible to
+talk to it by echoing stuff into the named pipe. For instance, the following:
+
+	echo .bib > change.hid
+
+... triggers an update of the bibliography. A full list of update commands is
+given in `change.py`. Likewise,
+
+	echo tfa-pallava-epigraphy > change.hid
+
+... triggers an update of the `tfa-pallava-epigraphy` repository.
 
 Thirdly, we have a WebSocket client that is hooked to Zotero and that notifies
 the update process whenever someone modifies the project's bibliography. The
@@ -71,11 +91,16 @@ Fourthly, we have a program for accessing zotero.org. The code is in
 `zotero_proxy.py`. This is a server that is queried by XSLT files when they try
 to access the bibliography. They make a lot of calls to the Zotero API, and
 Zotero servers are often overloaded, thus we use a proxy that repeats API calls
-on error, to prevent our builds from failing all the time.
+on error, to prevent our builds from failing all the time. The Zotero proxy also
+allows querying the bibliography by short titles (lookup keys), which Zotero's
+API does not support.
 
 Finally, we have a search server, written in Go. The code is in the `*.go` files
 in this directory. This server is not meant to be accessible from the internet.
-It is used internally, by the Python server in `server.py`.
+It is used internally by the main Python server from `server.py`. The search
+server only accesses the disk when the database is updated: it pulls all the
+data it needs from the database, loads it into memory, and performs searches on
+that.
 
 ## Configuration
 
