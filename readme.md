@@ -46,6 +46,10 @@ Once done, `cd` to the repository and run:
 This will clone all DHARMA repositories and create the main database
 (`dbs/texts.sqlite`).
 
+To add a new repository, you need to add an entry the file
+`repos/project-documentation/DHARMA_repositories.tsv`. The update process will
+pick it up and pull the repository.
+
 There is also a separate, secondary database for searching parallel verses. It
 is stored at `dbs/parallels.sqlite`. To build it, run:
 
