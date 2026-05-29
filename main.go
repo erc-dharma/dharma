@@ -85,7 +85,7 @@ type QueryTerm struct {
 
 // StringMapper defines a function type for text transformations returning offsets.
 // It provides a generic interface for various normalization algorithms.
-type StringMapper func(string) (string, []int)
+type StringMapper func(string) (string, []int, []int)
 
 var (
 	corpus          []Document
@@ -539,11 +539,13 @@ func containsMatcher(text, term, mode string) bool {
 	case "strict":
 		return strings.Contains(text, term)
 	case "normalized":
-		foldText, _ := foldString(text)
-		foldTerm, _ := foldString(term)
+		foldText, _, _ := foldString(text)
+		foldTerm, _, _ := foldString(term)
 		return strings.Contains(foldText, foldTerm)
 	default:
-		return strings.Contains(text, term)
+		foldText, _, _ := foldString(text)
+		foldTerm, _, _ := foldString(term)
+		return strings.Contains(foldText, foldTerm)
 	}
 }
 
@@ -839,7 +841,7 @@ func findOccurrences(text, term, mode string) [][2]int {
 	case "normalized":
 		return findOccurrencesWithMapping(text, term, foldString)
 	default:
-		return findOccurrencesStrict(text, term)
+		return findOccurrencesWithMapping(text, term, foldString)
 	}
 }
 
@@ -860,21 +862,25 @@ func findOccurrencesStrict(text, term string) [][2]int {
 	return matches
 }
 
+// findOccurrencesWithMapping identifies start and end indices using a text mapping function.
+// It computes the exact original boundaries by using the dedicated starts and ends mappings.
 func findOccurrencesWithMapping(text, term string, mapper StringMapper) [][2]int {
-	// Identify start and end indices using a text mapping function
-	transText, offsets := mapper(text)
-	transTerm, _ := mapper(term)
+	transText, starts, ends := mapper(text)
+	transTerm, _, _ := mapper(term)
 	var matches [][2]int
-	start := 0
 	termLen := len(transTerm)
+	if termLen == 0 {
+		return matches
+	}
+	start := 0
 	for {
 		idx := strings.Index(transText[start:], transTerm)
 		if idx == -1 {
 			break
 		}
 		absStart := start + idx
-		origStart := offsets[absStart]
-		origEnd := offsets[absStart+termLen]
+		origStart := starts[absStart]
+		origEnd := ends[absStart+termLen-1]
 		matches = append(matches, [2]int{origStart, origEnd})
 		start = absStart + 1
 	}
