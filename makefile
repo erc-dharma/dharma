@@ -117,7 +117,12 @@ missing-git-names:
 
 .PHONY: update-repos update-db update-texts deploy-schemas missing-git-names
 
-$(binary): $(wildcard *.go)
+go_sources = $(sort $(wildcard *.go) normalize.go)
+
+normalize.go: _normalize.re.go
+	re2go -W -Werror --utf8 --input-encoding utf8 -o $@ $^
+
+$(binary): $(go_sources)
 	go build
 
 %.py: %.g
