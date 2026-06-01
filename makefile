@@ -120,7 +120,7 @@ missing-git-names:
 go_sources = $(sort $(wildcard *.go) normalize.go)
 
 normalize.go: _normalize.re.go
-	re2go -W -Werror --utf8 --input-encoding utf8 -o $@ $^
+	re2go -W -Werror --input-encoding utf8 -o $@ $^
 
 $(binary): $(go_sources)
 	go build
