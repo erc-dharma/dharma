@@ -124,6 +124,9 @@ func lexPrefix(text string) (int, int, bool) {
 	re2c:define:YYSKIP = "cursor++";
 	re2c:define:YYBACKUP = "marker = cursor";
 	re2c:define:YYRESTORE = "cursor = marker";
+
+	schwa = "ə" | "Ə" | "ә" | "Ә";
+
 	* { return 1, Pnul, true }
 
 	// In Tamil, the character "'" represents an elided "u" when it appears
@@ -153,10 +156,13 @@ func lexPrefix(text string) (int, int, bool) {
 	"ī" | "Ī" { return cursor, Pī, false }
 	"u" | "U" | "ŭ" | "Ŭ" { return cursor, Pu, false }
 	"ū" | "Ū" { return cursor, Pū, false }
-	"ṛ" | "Ṛ" | "r̥" | "R̥" { return cursor, Pṛ, false }
+
+	// For the use of "rə" and "lə", see https://github.com/erc-dharma/project-documentation/issues/408#issuecomment-4593064244
+	"ṛ" | "Ṛ" | "r̥" | "R̥" | "r" schwa | "R" schwa { return cursor, Pṛ, false }
 	"ṝ" | "Ṝ" | "r̥̄" | "R̥̄" { return cursor, Pṝ, false }
-	"ḷ" | "Ḷ" | "l̥" | "L̥"{ return cursor, Pḷ, false }
+	"ḷ" | "Ḷ" | "l̥" | "L̥" | "l" schwa | "L" schwa { return cursor, Pḷ, false }
 	"ḹ" | "Ḹ" | "l̥̄" | "L̥̄" { return cursor, Pḹ, false }
+
 	"e" | "E" | "ĕ" | "Ĕ" { return cursor, Pe, false }
 	"ai" | "Ai" | "AI" | "aI" { return cursor, Pai, false }
 	"o" | "O" | "ŏ" | "Ŏ" { return cursor, Po, false }
@@ -205,7 +211,10 @@ func lexPrefix(text string) (int, int, bool) {
 	// Javanese/Balinese pepet. For the following, we both map
 	// LATIN SMALL LETTER SCHWA (the correct character) and CYRILLIC
 	// SMALL LETTER SCHWA (incorrect one), in both the upper- and lowercase versions.
-	"ə" | "Ə" | "ә" | "Ә" { return cursor, Pschwa, false }
+	// schwa + ":" may either mean short schwa or long schwa. See
+	// https://github.com/erc-dharma/project-documentation/issues/408#issuecomment-4593064244. We must choose one, so use the short
+	// variant.
+	schwa | schwa ":" { return cursor, Pschwa, false }
 	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, Plongschwa, false }
 
 	[^] {
