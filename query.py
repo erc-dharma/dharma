@@ -20,12 +20,13 @@ from dharma import common, tree, query_parser
 class InvalidQuery(Exception):
 	pass
 
+# Ajout des crochets pour la syntaxe SEQ[x-y]
+char_token = "():=[]"
+
 def make_token(s, t):
-	# For now we don't bother to indicate correct offsets. Might want to do
-	# that later on to improve error messages. And we also don't bother to
-	# distinguish operators, strings, etc. as python does, because it
-	# doesn't matter for us.
-	token = tokenize.TokenInfo(type=tokenize.NAME, string=t,
+	# Assigne le type OP (opérateur) aux délimiteurs, et NAME (texte) au reste
+	tok_type = tokenize.OP if t in char_token else tokenize.NAME
+	token = tokenize.TokenInfo(type=tok_type, string=t,
 		start=(1, 0), end=(1, 0), line=s)
 	return token
 
@@ -38,8 +39,6 @@ def read_string(s, i):
 	else:
 		raise InvalidQuery("non-matching double quotes")
 	return j
-
-char_token = "():="
 
 def tokenize_query(s):
 	i = 0

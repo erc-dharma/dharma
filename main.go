@@ -105,6 +105,8 @@ type QueryNode struct {
 	Field string      `json:"field,omitempty"`
 	Value string      `json:"value,omitempty"`
 	Mode  string      `json:"mode,omitempty"`
+	X     int         `json:"x,omitempty"`
+	Y     int         `json:"y,omitempty"`
 }
 
 type QueryTerm struct {

@@ -71,6 +71,66 @@ class Not(Node):
 	def serialize(self):
 		return {"op": "not", "arg": self.child.serialize()}
 
+class Seq(Node):
+
+	def __init__(self, left, right, x=0, y=-1):
+		self.left = left
+		self.right = right
+		self.x = x
+		self.y = y
+
+	def __repr__(self):
+		return f"(seq [{self.x}-{self.y}] {self.left!r} {self.right!r})"
+
+	def _complete_fields(self, name, mode=None):
+		# Validate that sequence operands are strictly textual leaves or nested sequences
+		for child in (self.left, self.right):
+			if not isinstance(child, (Field, Seq, Near)):
+				raise ValueError("SEQ operands must be simple strings")
+			if isinstance(child, Field) and child.name is not None:
+				raise ValueError("SEQ operands cannot have explicit fields")
+		self.left = self.left._complete_fields(name, mode)
+		self.right = self.right._complete_fields(name, mode)
+		return self
+
+	def serialize(self):
+		return {
+			"op": "seq",
+			"x": self.x,
+			"y": self.y,
+			"args": [self.left.serialize(), self.right.serialize()],
+		}
+
+class Near(Node):
+
+	def __init__(self, left, right, x=0, y=-1):
+		self.left = left
+		self.right = right
+		self.x = x
+		self.y = y
+
+	def __repr__(self):
+		return f"(near [{self.x}-{self.y}] {self.left!r} {self.right!r})"
+
+	def _complete_fields(self, name, mode=None):
+		# Validate that near operands conform to adjacency constraints
+		for child in (self.left, self.right):
+			if not isinstance(child, (Field, Seq, Near)):
+				raise ValueError("NEAR operands must be simple strings")
+			if isinstance(child, Field) and child.name is not None:
+				raise ValueError("NEAR operands cannot have explicit fields")
+		self.left = self.left._complete_fields(name, mode)
+		self.right = self.right._complete_fields(name, mode)
+		return self
+
+	def serialize(self):
+		return {
+			"op": "near",
+			"x": self.x,
+			"y": self.y,
+			"args": [self.left.serialize(), self.right.serialize()],
+		}
+
 class Field(Node):
 
 	def __init__(self, name, child=None, mode=None):
@@ -146,6 +206,15 @@ class _Null(Node):
 
 Null = _Null()
 
+def parse_seq_range(s):
+	# Parse textual interval bounds bypassing tokenizer hyphenation logic
+	if '-' not in s:
+		return (0, -1)
+	parts = s.split('-')
+	x = int(parts[0]) if parts[0] else 0
+	y = int(parts[1]) if parts[1] else -1
+	return (x, y)
+
 def mkbinop(klass, l, r):
 	if isinstance(l, klass):
 		l.children.append(r)
@@ -182,7 +251,7 @@ FieldExpr:
 	| PrimaryExpr
 
 PrimaryExpr:
-	| '(' r=Expr ')' { r }
+	| '(' r=Exprs ')' { r }
 	| r=Text { Field(None, r) }
 
 OrExpr:
@@ -190,8 +259,24 @@ OrExpr:
 	| AndExpr
 
 AndExpr:
-	| r=AndExpr ("and" | "AND") s=NotExpr { mkand(r, s) }
+	| r=AndExpr ("and" | "AND") s=NearExpr { mkand(r, s) }
+	| NearExpr
+
+NearExpr:
+	| r=NearExpr op=NearOp s=SeqExpr { Near(r, s, op[0], op[1]) }
+	| SeqExpr
+
+NearOp:
+	| ("near" | "NEAR") '[' range=NAME ']' { parse_seq_range(range.string) }
+	| ("near" | "NEAR") { (0, -1) }
+
+SeqExpr:
+	| r=SeqExpr op=SeqOp s=NotExpr { Seq(r, s, op[0], op[1]) }
 	| NotExpr
+
+SeqOp:
+	| ("seq" | "SEQ") '[' range=NAME ']' { parse_seq_range(range.string) }
+	| ("seq" | "SEQ") { (0, -1) }
 
 NotExpr:
 	| ("not" | "NOT") r=NotExpr { Not(r) }

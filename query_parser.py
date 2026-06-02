@@ -81,6 +81,66 @@ class Not(Node):
 	def serialize(self):
 		return {"op": "not", "arg": self.child.serialize()}
 
+class Seq(Node):
+
+	def __init__(self, left, right, x=0, y=-1):
+		self.left = left
+		self.right = right
+		self.x = x
+		self.y = y
+
+	def __repr__(self):
+		return f"(seq [{self.x}-{self.y}] {self.left!r} {self.right!r})"
+
+	def _complete_fields(self, name, mode=None):
+		# Validate that sequence operands are strictly textual leaves or nested sequences
+		for child in (self.left, self.right):
+			if not isinstance(child, (Field, Seq, Near)):
+				raise ValueError("SEQ operands must be simple strings")
+			if isinstance(child, Field) and child.name is not None:
+				raise ValueError("SEQ operands cannot have explicit fields")
+		self.left = self.left._complete_fields(name, mode)
+		self.right = self.right._complete_fields(name, mode)
+		return self
+
+	def serialize(self):
+		return {
+			"op": "seq",
+			"x": self.x,
+			"y": self.y,
+			"args": [self.left.serialize(), self.right.serialize()],
+		}
+
+class Near(Node):
+
+	def __init__(self, left, right, x=0, y=-1):
+		self.left = left
+		self.right = right
+		self.x = x
+		self.y = y
+
+	def __repr__(self):
+		return f"(near [{self.x}-{self.y}] {self.left!r} {self.right!r})"
+
+	def _complete_fields(self, name, mode=None):
+		# Validate that near operands conform to adjacency constraints
+		for child in (self.left, self.right):
+			if not isinstance(child, (Field, Seq, Near)):
+				raise ValueError("NEAR operands must be simple strings")
+			if isinstance(child, Field) and child.name is not None:
+				raise ValueError("NEAR operands cannot have explicit fields")
+		self.left = self.left._complete_fields(name, mode)
+		self.right = self.right._complete_fields(name, mode)
+		return self
+
+	def serialize(self):
+		return {
+			"op": "near",
+			"x": self.x,
+			"y": self.y,
+			"args": [self.left.serialize(), self.right.serialize()],
+		}
+
 class Field(Node):
 
 	def __init__(self, name, child=None, mode=None):
@@ -155,6 +215,15 @@ class _Null(Node):
 		return {"op": "null"}
 
 Null = _Null()
+
+def parse_seq_range(s):
+	# Parse textual interval bounds bypassing tokenizer hyphenation logic
+	if '-' not in s:
+		return (0, -1)
+	parts = s.split('-')
+	x = int(parts[0]) if parts[0] else 0
+	y = int(parts[1]) if parts[1] else -1
+	return (x, y)
 
 def mkbinop(klass, l, r):
 	if isinstance(l, klass):
@@ -241,12 +310,12 @@ class GeneratedParser(Parser):
 
     @memoize
     def PrimaryExpr(self) -> Optional[Any]:
-        # PrimaryExpr: '(' Expr ')' | Text
+        # PrimaryExpr: '(' Exprs ')' | Text
         mark = self._mark()
         if (
             (self.expect('('))
             and
-            (r := self.Expr())
+            (r := self.Exprs())
             and
             (self.expect(')'))
         ):
@@ -281,16 +350,78 @@ class GeneratedParser(Parser):
 
     @memoize_left_rec
     def AndExpr(self) -> Optional[Any]:
-        # AndExpr: AndExpr ("and" | "AND") NotExpr | NotExpr
+        # AndExpr: AndExpr ("and" | "AND") NearExpr | NearExpr
         mark = self._mark()
         if (
             (r := self.AndExpr())
             and
             (self._tmp_4())
             and
-            (s := self.NotExpr())
+            (s := self.NearExpr())
         ):
             return mkand ( r , s );
+        self._reset(mark)
+        if (
+            (NearExpr := self.NearExpr())
+        ):
+            return NearExpr;
+        self._reset(mark)
+        return None;
+
+    @memoize_left_rec
+    def NearExpr(self) -> Optional[Any]:
+        # NearExpr: NearExpr NearOp SeqExpr | SeqExpr
+        mark = self._mark()
+        if (
+            (r := self.NearExpr())
+            and
+            (op := self.NearOp())
+            and
+            (s := self.SeqExpr())
+        ):
+            return Near ( r , s , op [0] , op [1] );
+        self._reset(mark)
+        if (
+            (SeqExpr := self.SeqExpr())
+        ):
+            return SeqExpr;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def NearOp(self) -> Optional[Any]:
+        # NearOp: ("near" | "NEAR") '[' NAME ']' | ("near" | "NEAR")
+        mark = self._mark()
+        if (
+            (self._tmp_5())
+            and
+            (self.expect('['))
+            and
+            (range := self.name())
+            and
+            (self.expect(']'))
+        ):
+            return parse_seq_range ( range . string );
+        self._reset(mark)
+        if (
+            (self._tmp_6())
+        ):
+            return ( 0 , - 1 );
+        self._reset(mark)
+        return None;
+
+    @memoize_left_rec
+    def SeqExpr(self) -> Optional[Any]:
+        # SeqExpr: SeqExpr SeqOp NotExpr | NotExpr
+        mark = self._mark()
+        if (
+            (r := self.SeqExpr())
+            and
+            (op := self.SeqOp())
+            and
+            (s := self.NotExpr())
+        ):
+            return Seq ( r , s , op [0] , op [1] );
         self._reset(mark)
         if (
             (NotExpr := self.NotExpr())
@@ -300,11 +431,33 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
+    def SeqOp(self) -> Optional[Any]:
+        # SeqOp: ("seq" | "SEQ") '[' NAME ']' | ("seq" | "SEQ")
+        mark = self._mark()
+        if (
+            (self._tmp_7())
+            and
+            (self.expect('['))
+            and
+            (range := self.name())
+            and
+            (self.expect(']'))
+        ):
+            return parse_seq_range ( range . string );
+        self._reset(mark)
+        if (
+            (self._tmp_8())
+        ):
+            return ( 0 , - 1 );
+        self._reset(mark)
+        return None;
+
+    @memoize
     def NotExpr(self) -> Optional[Any]:
         # NotExpr: ("not" | "NOT") NotExpr | FieldExpr
         mark = self._mark()
         if (
-            (self._tmp_5())
+            (self._tmp_9())
             and
             (r := self.NotExpr())
         ):
@@ -429,7 +582,71 @@ class GeneratedParser(Parser):
 
     @memoize
     def _tmp_5(self) -> Optional[Any]:
-        # _tmp_5: "not" | "NOT"
+        # _tmp_5: "near" | "NEAR"
+        mark = self._mark()
+        if (
+            (literal := self.expect("near"))
+        ):
+            return literal;
+        self._reset(mark)
+        if (
+            (literal := self.expect("NEAR"))
+        ):
+            return literal;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_6(self) -> Optional[Any]:
+        # _tmp_6: "near" | "NEAR"
+        mark = self._mark()
+        if (
+            (literal := self.expect("near"))
+        ):
+            return literal;
+        self._reset(mark)
+        if (
+            (literal := self.expect("NEAR"))
+        ):
+            return literal;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_7(self) -> Optional[Any]:
+        # _tmp_7: "seq" | "SEQ"
+        mark = self._mark()
+        if (
+            (literal := self.expect("seq"))
+        ):
+            return literal;
+        self._reset(mark)
+        if (
+            (literal := self.expect("SEQ"))
+        ):
+            return literal;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_8(self) -> Optional[Any]:
+        # _tmp_8: "seq" | "SEQ"
+        mark = self._mark()
+        if (
+            (literal := self.expect("seq"))
+        ):
+            return literal;
+        self._reset(mark)
+        if (
+            (literal := self.expect("SEQ"))
+        ):
+            return literal;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_9(self) -> Optional[Any]:
+        # _tmp_9: "not" | "NOT"
         mark = self._mark()
         if (
             (literal := self.expect("not"))
@@ -444,7 +661,7 @@ class GeneratedParser(Parser):
         return None;
 
     KEYWORDS = ()
-    SOFT_KEYWORDS = ('AND', 'NOT', 'OR', 'and', 'not', 'or')
+    SOFT_KEYWORDS = ('AND', 'NEAR', 'NOT', 'OR', 'SEQ', 'and', 'near', 'not', 'or', 'seq')
 
 
 if __name__ == '__main__':
