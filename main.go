@@ -76,9 +76,10 @@ type QueryNode struct {
 	Mode  string      `json:"mode,omitempty"`
 }
 
-// QueryTerm associates a search value with its specific matching mode.
-// It is used to apply the correct highlighting strategy for each term.
+// QueryTerm associates a search value with its specific matching mode and target field.
+// It is used to apply the correct highlighting strategy for each term within its scope.
 type QueryTerm struct {
+	Field string
 	Value string
 	Mode  string
 }
@@ -740,10 +741,11 @@ func matchDocument(doc Document, qStr string) SearchResult {
 	return res
 }
 
+// extractTerms extracts terms, their matching mode, and target field from the AST.
+// Retaining the field ensures highlights are only applied to the requested scopes.
 func extractTerms(q QueryNode) []QueryTerm {
-	// Extract terms and their specific matching mode for highlighting
 	if q.Op == "field" {
-		return []QueryTerm{{Value: q.Value, Mode: q.Mode}}
+		return []QueryTerm{{Field: q.Field, Value: q.Value, Mode: q.Mode}}
 	}
 	var terms []QueryTerm
 	if q.Op == "and" || q.Op == "or" {
@@ -752,6 +754,18 @@ func extractTerms(q QueryNode) []QueryTerm {
 		}
 	}
 	return terms
+}
+
+// termsForField filters a list of query terms to retain only those applicable to a specific field.
+// It returns terms explicitly targeting the field, as well as globally scoped terms.
+func termsForField(terms []QueryTerm, field string) []QueryTerm {
+	var filtered []QueryTerm
+	for _, t := range terms {
+		if t.Field == "" || t.Field == field {
+			filtered = append(filtered, t)
+		}
+	}
+	return filtered
 }
 
 func applyHighlights(res *SearchResult, doc Document, qStr string) {
@@ -764,19 +778,20 @@ func applyHighlights(res *SearchResult, doc Document, qStr string) {
 	highlightFields(res, doc, terms)
 }
 
+// highlightFields applies highlights combining all query terms according to their target fields.
+// It routes field-specific terms to their corresponding document properties.
 func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
-	// Apply highlights combining all query terms
-	processFieldTerms(&res.Logical, doc.Logical, terms)
-	processFieldTerms(&res.Ident, doc.Ident, terms)
-	processFieldTerms(&res.Summary, doc.Summary, terms)
-	processFieldTerms(&res.RepoID, doc.RepoID, terms)
-	processFieldTerms(&res.RepoName, doc.RepoName, terms)
-	processFieldTerms(&res.Hand, doc.Hand, terms)
-	processListTerms(res.Title, doc.Title, terms)
-	processListTerms(res.Author, doc.Author, terms)
-	processListTerms(res.Editor, doc.Editor, terms)
-	processMatrixTerms(res.Lang, doc.Lang, terms)
-	processMatrixTerms(res.Script, doc.Script, terms)
+	processFieldTerms(&res.Logical, doc.Logical, termsForField(terms, "logical"))
+	processFieldTerms(&res.Ident, doc.Ident, termsForField(terms, "ident"))
+	processFieldTerms(&res.Summary, doc.Summary, termsForField(terms, "summary"))
+	processFieldTerms(&res.RepoID, doc.RepoID, termsForField(terms, "repo_id"))
+	processFieldTerms(&res.RepoName, doc.RepoName, termsForField(terms, "repo_name"))
+	processFieldTerms(&res.Hand, doc.Hand, termsForField(terms, "hand"))
+	processListTerms(res.Title, doc.Title, termsForField(terms, "title"))
+	processListTerms(res.Author, doc.Author, termsForField(terms, "author"))
+	processListTerms(res.Editor, doc.Editor, termsForField(terms, "editor"))
+	processMatrixTerms(res.Lang, doc.Lang, termsForField(terms, "lang"))
+	processMatrixTerms(res.Script, doc.Script, termsForField(terms, "script"))
 }
 
 func cloneList(src []string) []string {
