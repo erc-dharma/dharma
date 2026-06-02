@@ -49,6 +49,8 @@ def render_list(self, node):
 		case "numbered":
 			self.push(tree.Tag("ol", class_="list"))
 	for item in node.find("item"):
+		if item["match"] != "true":
+			continue
 		self.push(tree.Tag("li"))
 		self.dispatch_children(item)
 		self.join()
