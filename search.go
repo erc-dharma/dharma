@@ -156,7 +156,15 @@ func evalOr(d Document, args []QueryNode) bool {
 	return false
 }
 
-func containsMatcher(text, term, mode string) bool {
+func containsMatcher(text, term, mode, field string) bool {
+	// Resolve default mode based on the current field context
+	if mode == "" {
+		if field == "logical" {
+			mode = "normalized"
+		} else {
+			mode = "strict"
+		}
+	}
 	// Evaluate inclusion based on the chosen matching mode
 	switch mode {
 	case "strict":
@@ -166,9 +174,7 @@ func containsMatcher(text, term, mode string) bool {
 		foldTerm, _, _ := foldString(term)
 		return strings.Contains(foldText, foldTerm)
 	default:
-		foldText, _, _ := foldString(text)
-		foldTerm, _, _ := foldString(term)
-		return strings.Contains(foldText, foldTerm)
+		return strings.Contains(text, term)
 	}
 }
 
@@ -176,66 +182,66 @@ func matchField(d Document, field, val, mode string) bool {
 	// Check if a specific field matches the value considering the mode
 	switch field {
 	case "ident":
-		return containsMatcher(d.Ident, val, mode)
+		return containsMatcher(d.Ident, val, mode, field)
 	case "logical":
-		return containsMatcher(d.Logical, val, mode)
+		return containsMatcher(d.Logical, val, mode, field)
 	case "title":
-		return listMatches(d.Title, val, mode)
+		return listMatches(d.Title, val, mode, field)
 	case "summary":
-		return containsMatcher(d.Summary, val, mode)
+		return containsMatcher(d.Summary, val, mode, field)
 	case "repo_id":
-		return containsMatcher(d.RepoID, val, mode)
+		return containsMatcher(d.RepoID, val, mode, field)
 	case "repo_name":
-		return containsMatcher(d.RepoName, val, mode)
+		return containsMatcher(d.RepoName, val, mode, field)
 	case "hand":
-		return containsMatcher(d.Hand, val, mode)
+		return containsMatcher(d.Hand, val, mode, field)
 	case "author":
-		return listMatches(d.Author, val, mode)
+		return listMatches(d.Author, val, mode, field)
 	case "editor":
-		return listMatches(d.Editor, val, mode)
+		return listMatches(d.Editor, val, mode, field)
 	case "lang":
-		return matrixMatches(d.Lang, val, mode)
+		return matrixMatches(d.Lang, val, mode, field)
 	case "script":
-		return matrixMatches(d.Script, val, mode)
+		return matrixMatches(d.Script, val, mode, field)
 	}
 	return docMatchesAll(d, val, mode)
 }
 
 func docMatchesAll(d Document, val, mode string) bool {
 	// Verify if any document field contains the value considering the mode
-	if containsMatcher(d.Ident, val, mode) || containsMatcher(d.Logical, val, mode) {
+	if containsMatcher(d.Ident, val, mode, "ident") || containsMatcher(d.Logical, val, mode, "logical") {
 		return true
 	}
-	if containsMatcher(d.Summary, val, mode) || containsMatcher(d.RepoID, val, mode) {
+	if containsMatcher(d.Summary, val, mode, "summary") || containsMatcher(d.RepoID, val, mode, "repo_id") {
 		return true
 	}
-	if containsMatcher(d.RepoName, val, mode) || containsMatcher(d.Hand, val, mode) {
+	if containsMatcher(d.RepoName, val, mode, "repo_name") || containsMatcher(d.Hand, val, mode, "hand") {
 		return true
 	}
-	if listMatches(d.Title, val, mode) || listMatches(d.Author, val, mode) {
+	if listMatches(d.Title, val, mode, "title") || listMatches(d.Author, val, mode, "author") {
 		return true
 	}
-	if listMatches(d.Editor, val, mode) || matrixMatches(d.Lang, val, mode) {
+	if listMatches(d.Editor, val, mode, "editor") || matrixMatches(d.Lang, val, mode, "lang") {
 		return true
 	}
-	return matrixMatches(d.Script, val, mode)
+	return matrixMatches(d.Script, val, mode, "script")
 }
 
-func listMatches(list []string, q, mode string) bool {
+func listMatches(list []string, q, mode, field string) bool {
 	// Verify if any item in the list contains the query term considering the mode
 	for _, item := range list {
-		if containsMatcher(item, q, mode) {
+		if containsMatcher(item, q, mode, field) {
 			return true
 		}
 	}
 	return false
 }
 
-func matrixMatches(mat [][]string, q, mode string) bool {
+func matrixMatches(mat [][]string, q, mode, field string) bool {
 	// Verify if any cell in the matrix contains the query term considering the mode
 	for _, row := range mat {
 		for _, item := range row {
-			if containsMatcher(item, q, mode) {
+			if containsMatcher(item, q, mode, field) {
 				return true
 			}
 		}
@@ -296,17 +302,17 @@ func applyHighlights(res *SearchResult, doc Document, qStr string) {
 
 func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	// Apply highlights combining all query terms according to their target fields
-	processFieldTerms(&res.Logical, doc.Logical, termsForField(terms, "logical"))
-	processFieldTerms(&res.Ident, doc.Ident, termsForField(terms, "ident"))
-	processFieldTerms(&res.Summary, doc.Summary, termsForField(terms, "summary"))
-	processFieldTerms(&res.RepoID, doc.RepoID, termsForField(terms, "repo_id"))
-	processFieldTerms(&res.RepoName, doc.RepoName, termsForField(terms, "repo_name"))
-	processFieldTerms(&res.Hand, doc.Hand, termsForField(terms, "hand"))
-	processListTerms(res.Title, doc.Title, termsForField(terms, "title"))
-	processListTerms(res.Author, doc.Author, termsForField(terms, "author"))
-	processListTerms(res.Editor, doc.Editor, termsForField(terms, "editor"))
-	processMatrixTerms(res.Lang, doc.Lang, termsForField(terms, "lang"))
-	processMatrixTerms(res.Script, doc.Script, termsForField(terms, "script"))
+	processFieldTerms(&res.Logical, doc.Logical, termsForField(terms, "logical"), "logical")
+	processFieldTerms(&res.Ident, doc.Ident, termsForField(terms, "ident"), "ident")
+	processFieldTerms(&res.Summary, doc.Summary, termsForField(terms, "summary"), "summary")
+	processFieldTerms(&res.RepoID, doc.RepoID, termsForField(terms, "repo_id"), "repo_id")
+	processFieldTerms(&res.RepoName, doc.RepoName, termsForField(terms, "repo_name"), "repo_name")
+	processFieldTerms(&res.Hand, doc.Hand, termsForField(terms, "hand"), "hand")
+	processListTerms(res.Title, doc.Title, termsForField(terms, "title"), "title")
+	processListTerms(res.Author, doc.Author, termsForField(terms, "author"), "author")
+	processListTerms(res.Editor, doc.Editor, termsForField(terms, "editor"), "editor")
+	processMatrixTerms(res.Lang, doc.Lang, termsForField(terms, "lang"), "lang")
+	processMatrixTerms(res.Script, doc.Script, termsForField(terms, "script"), "script")
 }
 
 func cloneList(src []string) []string {
@@ -326,11 +332,11 @@ func cloneMatrix(src [][]string) [][]string {
 	return dst
 }
 
-func processFieldTerms(target *string, source string, terms []QueryTerm) bool {
+func processFieldTerms(target *string, source string, terms []QueryTerm, fieldName string) bool {
 	// Detect occurrences and update the target string with markers
 	var allIntervals [][2]int
 	for _, term := range terms {
-		allIntervals = append(allIntervals, findOccurrences(source, term.Value, term.Mode)...)
+		allIntervals = append(allIntervals, findOccurrences(source, term.Value, term.Mode, fieldName)...)
 	}
 	if len(allIntervals) > 0 {
 		*target = injectMarkers(source, allIntervals)
@@ -339,23 +345,23 @@ func processFieldTerms(target *string, source string, terms []QueryTerm) bool {
 	return false
 }
 
-func processListTerms(targets []string, sources []string, terms []QueryTerm) bool {
+func processListTerms(targets []string, sources []string, terms []QueryTerm, fieldName string) bool {
 	// Apply highlight processing to a list of strings
 	matched := false
 	for i, item := range sources {
-		if processFieldTerms(&targets[i], item, terms) {
+		if processFieldTerms(&targets[i], item, terms, fieldName) {
 			matched = true
 		}
 	}
 	return matched
 }
 
-func processMatrixTerms(targets [][]string, sources [][]string, terms []QueryTerm) bool {
+func processMatrixTerms(targets [][]string, sources [][]string, terms []QueryTerm, fieldName string) bool {
 	// Apply highlight processing to a matrix of strings
 	matched := false
 	for i, row := range sources {
 		for j, item := range row {
-			if processFieldTerms(&targets[i][j], item, terms) {
+			if processFieldTerms(&targets[i][j], item, terms, fieldName) {
 				matched = true
 			}
 		}
@@ -363,7 +369,15 @@ func processMatrixTerms(targets [][]string, sources [][]string, terms []QueryTer
 	return matched
 }
 
-func findOccurrences(text, term, mode string) [][2]int {
+func findOccurrences(text, term, mode, field string) [][2]int {
+	// Resolve default mode based on the current field context
+	if mode == "" {
+		if field == "logical" {
+			mode = "normalized"
+		} else {
+			mode = "strict"
+		}
+	}
 	// Route the occurrence search based on the matching mode
 	switch mode {
 	case "strict":
@@ -371,7 +385,7 @@ func findOccurrences(text, term, mode string) [][2]int {
 	case "normalized":
 		return findOccurrencesWithMapping(text, term, foldString)
 	default:
-		return findOccurrencesWithMapping(text, term, foldString)
+		return findOccurrencesStrict(text, term)
 	}
 }
 

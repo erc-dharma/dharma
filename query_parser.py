@@ -27,9 +27,9 @@ class And(Node):
 		buf += ")"
 		return buf
 
-	def _complete_fields(self, name):
+	def _complete_fields(self, name, mode=None):
 		for i, child in enumerate(self.children):
-			self.children[i] = child._complete_fields(name)
+			self.children[i] = child._complete_fields(name, mode)
 		return self
 
 	def serialize(self):
@@ -52,9 +52,9 @@ class Or(Node):
 		buf += ")"
 		return buf
 
-	def _complete_fields(self, name):
+	def _complete_fields(self, name, mode=None):
 		for i, child in enumerate(self.children):
-			self.children[i] = child._complete_fields(name)
+			self.children[i] = child._complete_fields(name, mode)
 		return self
 
 	def serialize(self):
@@ -74,8 +74,8 @@ class Not(Node):
 		buf += ")"
 		return buf
 
-	def _complete_fields(self, name):
-		self.child = self.child._complete_fields(name)
+	def _complete_fields(self, name, mode=None):
+		self.child = self.child._complete_fields(name, mode)
 		return self
 
 	def serialize(self):
@@ -83,34 +83,68 @@ class Not(Node):
 
 class Field(Node):
 
-	def __init__(self, name, child=None):
+	def __init__(self, name, child=None, mode=None):
 		self.name = name
-		"Field name, or the empty string if no name is given."
+		self.mode = mode
 		self.child = child
 
 	def __repr__(self):
-		return f"{self.name or '<null>'}:{self.child!r}"
+		mode_str = f"[{self.mode}]" if self.mode else ""
+		return f"{self.name or '<null>'}{mode_str}:{self.child!r}"
 
-	def _complete_fields(self, name):
-		if not self.name:
-			self.name = name
-		if isinstance(self.child, str):
-			return self
-		return self.child._complete_fields(self.name)
+	def _complete_fields(self, name, mode=None):
+		# Resolve name and mode using inheritance
+		final_name = self.name or name
+		final_mode = self.mode or mode
+
+		# Apply dotted parsing to extract the mode if present
+		if final_name:
+			parts = final_name.split('.')
+			if len(parts) > 1 and parts[-1] in {"strict", "normalized"}:
+				final_mode = parts.pop()
+			final_name = ".".join(parts)
+
+		# If child is a logical node (not a string), pass the resolved name/mode down
+		# and discard this intermediate Field node.
+		if not isinstance(self.child, str):
+			return self.child._complete_fields(final_name, final_mode)
+
+		# --- From here, we are a leaf node containing a search string ---
+
+		# Virtual field expansion for "repo"
+		if final_name == "repo":
+			# Return an OR node containing the two sub-fields
+			return Or(
+				Field("repo_id", self.child, final_mode),
+				Field("repo_name", self.child, final_mode)
+			)
+
+		# Mapping for specific sub-fields
+		if final_name == "repo.ident":
+			final_name = "repo_id"
+		elif final_name == "repo.name":
+			final_name = "repo_name"
+
+		self.name = final_name
+		self.mode = final_mode
+		return self
 
 	def serialize(self):
-		return {
+		res = {
 			"op": "field",
 			"field": self.name,
 			"value": self.child,
 		}
+		if self.mode:
+			res["mode"] = self.mode
+		return res
 
 class _Null(Node):
 
 	def __repr__(self):
 		return "<null>"
 
-	def _complete_fields(self, name):
+	def _complete_fields(self, name, mode=None):
 		return self
 
 	def serialize(self):
@@ -154,7 +188,7 @@ class GeneratedParser(Parser):
             and
             (self.expect('ENDMARKER'))
         ):
-            return r . _complete_fields ( "" );
+            return r . _complete_fields ( "" , None );
         self._reset(mark)
         return None;
 
@@ -183,10 +217,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def FieldExpr(self) -> Optional[Any]:
-        # FieldExpr: Text (':' | '=') PrimaryExpr | PrimaryExpr
+        # FieldExpr: DottedName (':' | '=') PrimaryExpr | PrimaryExpr
         mark = self._mark()
         if (
-            (name := self.Text())
+            (name := self.DottedName())
             and
             (self._tmp_2())
             and
@@ -281,8 +315,28 @@ class GeneratedParser(Parser):
 
     @memoize
     def Text(self) -> Optional[Any]:
-        # Text: NAME
+        # Text: DottedName
         mark = self._mark()
+        if (
+            (r := self.DottedName())
+        ):
+            return r;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def DottedName(self) -> Optional[Any]:
+        # DottedName: NAME '.' DottedName | NAME
+        mark = self._mark()
+        if (
+            (r := self.name())
+            and
+            (self.expect('.'))
+            and
+            (s := self.DottedName())
+        ):
+            return r . string + "." + s;
+        self._reset(mark)
         if (
             (r := self.name())
         ):
