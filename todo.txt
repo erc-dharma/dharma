@@ -14,7 +14,6 @@ dans le display /texts et /search, n'afficher que le 1er paragraphe des summary 
 
 ===
 
-ignorer espaces+hyphens
 ajouter support de la recherche levenshtein
 
 make the biblio searchable
