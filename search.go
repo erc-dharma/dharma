@@ -121,17 +121,17 @@ func filterDocs(qStr string) []Document {
 	return docs
 }
 
-func matchQuery(d Document, q QueryNode) bool {
+func matchQuery(doc Document, q QueryNode) bool {
 	// Evaluate the document against the query AST
 	switch q.Op {
 	case "and":
-		return evalAnd(d, q.Args)
+		return evalAnd(doc, q.Args)
 	case "or":
-		return evalOr(d, q.Args)
+		return evalOr(doc, q.Args)
 	case "not":
-		return !matchQuery(d, *q.Arg)
+		return !matchQuery(doc, *q.Arg)
 	case "field":
-		return matchField(d, q.Field, q.Value, q.Mode)
+		return matchField(doc, q.Field, q.Value, q.Mode)
 	}
 	return true
 }
@@ -153,7 +153,7 @@ func evalOr(d Document, args []QueryNode) bool {
 			return true
 		}
 	}
-	return false
+	return len(args) > 0
 }
 
 func containsMatcher(text, term, mode, field string) bool {
@@ -172,11 +172,12 @@ func containsMatcher(text, term, mode, field string) bool {
 }
 
 func matchField(d Document, field, val, mode string) bool {
-	// Check if a specific field matches the value considering the mode
+	// Normalize field name to support dotted syntax natively
+	field = strings.ReplaceAll(field, ".", "_")
 	switch field {
 	case "ident", "logical", "summary", "repo_id", "repo_name", "hand":
 		return matchStringField(d, field, val, mode)
-	case "title", "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name", "lang", "script":
+	case "title", "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name", "lang", "lang_ident", "lang_name", "script", "script_ident", "script_name":
 		return matchComplexField(d, field, val, mode)
 	}
 	return docMatchesAll(d, val, mode)
@@ -202,7 +203,7 @@ func matchStringField(d Document, field, val, mode string) bool {
 }
 
 func matchComplexField(d Document, field, val, mode string) bool {
-	// Route composite array and matrix properties to list matching helpers
+	// Route composite array properties to list matching helpers
 	switch field {
 	case "title":
 		return listMatches(d.Title, val, mode, field)
@@ -218,10 +219,25 @@ func matchComplexField(d Document, field, val, mode string) bool {
 		return listMatchesParity(d.Editor, val, mode, field, 0)
 	case "editor_name":
 		return listMatchesParity(d.Editor, val, mode, field, 1)
+	}
+	return matchMatrixField(d, field, val, mode)
+}
+
+func matchMatrixField(d Document, field, val, mode string) bool {
+	// Evaluate targeted matrix properties using selective column indices
+	switch field {
 	case "lang":
-		return matrixMatches(d.Lang, val, mode, field)
+		return matrixMatchesCol(d.Lang, val, mode, field, -1)
+	case "lang_ident":
+		return matrixMatchesCol(d.Lang, val, mode, field, 0)
+	case "lang_name":
+		return matrixMatchesCol(d.Lang, val, mode, field, 1)
 	case "script":
-		return matrixMatches(d.Script, val, mode, field)
+		return matrixMatchesCol(d.Script, val, mode, field, -1)
+	case "script_ident":
+		return matrixMatchesCol(d.Script, val, mode, field, 0)
+	case "script_name":
+		return matrixMatchesCol(d.Script, val, mode, field, 1)
 	}
 	return false
 }
@@ -240,10 +256,10 @@ func docMatchesAll(d Document, val, mode string) bool {
 	if listMatches(d.Title, val, mode, "title") || listMatches(d.Author, val, mode, "author") {
 		return true
 	}
-	if listMatches(d.Editor, val, mode, "editor") || matrixMatches(d.Lang, val, mode, "lang") {
+	if listMatches(d.Editor, val, mode, "editor") || matrixMatchesCol(d.Lang, val, mode, "lang", -1) {
 		return true
 	}
-	return matrixMatches(d.Script, val, mode, "script")
+	return matrixMatchesCol(d.Script, val, mode, "script", -1)
 }
 
 func listMatches(list []string, q, mode, field string) bool {
@@ -269,13 +285,21 @@ func listMatchesParity(list []string, q, mode, field string, parity int) bool {
 	return false
 }
 
-func matrixMatches(mat [][]string, q, mode, field string) bool {
-	// Verify if any cell in the matrix contains the query term considering the mode
+func matrixMatchesCol(mat [][]string, q, mode, field string, col int) bool {
+	// Filter matrix evaluation according to a specified column index limitation
 	for _, row := range mat {
-		for _, item := range row {
-			if containsMatcher(item, q, mode, field) {
-				return true
+		if col == -1 {
+			limit := len(row)
+			if limit > 2 {
+				limit = 2
 			}
+			for j := 0; j < limit; j++ {
+				if containsMatcher(row[j], q, mode, field) {
+					return true
+				}
+			}
+		} else if col < len(row) && containsMatcher(row[col], q, mode, field) {
+			return true
 		}
 	}
 	return false
@@ -319,8 +343,9 @@ func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
 			filtered = append(filtered, t)
 			continue
 		}
+		normField := strings.ReplaceAll(t.Field, ".", "_")
 		for _, f := range fields {
-			if t.Field == f {
+			if normField == f {
 				filtered = append(filtered, t)
 				break
 			}
@@ -352,8 +377,31 @@ func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	processListTermsParity(res.Author, doc.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
 	processListTermsParity(res.Editor, doc.Editor, termsForFields(terms, "editor", "editor_ident"), "editor_ident", 0)
 	processListTermsParity(res.Editor, doc.Editor, termsForFields(terms, "editor", "editor_name"), "editor_name", 1)
-	processMatrixTerms(res.Lang, doc.Lang, termsForFields(terms, "lang"), "lang")
-	processMatrixTerms(res.Script, doc.Script, termsForFields(terms, "script"), "script")
+	highlightMatrixFields(res, terms)
+}
+
+func highlightMatrixFields(res *SearchResult, terms []QueryTerm) {
+	// Direct specific matrix query terms to their dynamic row boundaries and fields
+	highlightMatrixParity(res.Lang, terms, "lang", "script")
+	highlightMatrixParity(res.Script, terms, "script", "lang")
+}
+
+func highlightMatrixParity(targets [][]string, terms []QueryTerm, primary, secondary string) {
+	// Traverse matrices mapping alternating indices to primary and secondary semantic fields
+	for i, row := range targets {
+		for j, item := range row {
+			base := secondary
+			if j < 2 {
+				base = primary
+			}
+			suffix := "_name"
+			if j%2 == 0 {
+				suffix = "_ident"
+			}
+			field := base + suffix
+			processFieldTerms(&targets[i][j], item, termsForFields(terms, base, field), field)
+		}
+	}
 }
 
 func cloneList(src []string) []string {
@@ -406,19 +454,6 @@ func processListTermsParity(targets []string, sources []string, terms []QueryTer
 		}
 		if processFieldTerms(&targets[i], item, terms, fieldName) {
 			matched = true
-		}
-	}
-	return matched
-}
-
-func processMatrixTerms(targets [][]string, sources [][]string, terms []QueryTerm, fieldName string) bool {
-	// Apply highlight processing to a matrix of strings
-	matched := false
-	for i, row := range sources {
-		for j, item := range row {
-			if processFieldTerms(&targets[i][j], item, terms, fieldName) {
-				matched = true
-			}
 		}
 	}
 	return matched

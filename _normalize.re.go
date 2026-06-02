@@ -373,11 +373,6 @@ func transform(text string, mode string) (string, []int, []int) {
 	return transformNormal(text)
 }
 
-const normalFirst = 0xE002
-const Slongschwa = string(normalFirst + Plongschwa)
-
-var folder = cases.Fold()
-
 // lexNormalPrefix uses a finite state machine to identify the next sequence for normal mode.
 // It returns the byte length of the matched sequence, its replacement string, and an elision flag.
 func lexNormalPrefix(text string) (int, string, bool) {
@@ -391,19 +386,22 @@ func lexNormalPrefix(text string) (int, string, bool) {
 	re2c:define:YYBACKUP = "marker = cursor";
 	re2c:define:YYRESTORE = "cursor = marker";
 	* { return 1, "", true }
-	"œ" | "Œ" { return cursor, "oe", false }
-	"æ" | "Æ" { return cursor, "ae", false }
-	"đ" | "Đ" { return cursor, "d", false }
-	"r̥" | "R̥" { return cursor, "ṛ", false }
-	"r̥̄" | "R̥̄" { return cursor, "ṝ", false }
-	"l̥" | "L̥"{ return cursor, "ḷ", false }
-	"l̥̄" | "L̥̄" { return cursor, "ḹ", false }
-	"ә" | "Ә" { return cursor, "ə", false }
-	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, Slongschwa, false }
-	// Fallback to Unicode case folding of the current rune.
+	// Add specific complex transformations for normal mode here.
+	// For instance, explicitly mapping uppercase digraphs to lowercase:
+	"KH" | "Kh" | "kH" { return cursor, "kh", false }
+	"GH" | "Gh" | "gH" { return cursor, "gh", false }
+	"CH" | "Ch" | "cH" { return cursor, "ch", false }
+	"JH" | "Jh" | "jH" { return cursor, "jh", false }
+	"ṬH" | "Ṭh" | "ṭH" { return cursor, "ṭh", false }
+	"ḌH" | "Ḍh" | "ḍH" { return cursor, "ḍh", false }
+	"TH" | "Th" | "tH" { return cursor, "th", false }
+	"DH" | "Dh" | "dH" { return cursor, "dh", false }
+	"PH" | "Ph" | "pH" { return cursor, "ph", false }
+	"BH" | "Bh" | "bH" { return cursor, "bh", false }
+	// Fallback to safe Unicode case folding of the current full rune.
 	[^] {
-		r, _ := utf8.DecodeRuneInString(text[:cursor])
-		return cursor, folder.String(string(r)), false
+		r, size := utf8.DecodeRuneInString(text)
+		return size, cases.Fold().String(string(r)), false
 	}
 	*/
 }

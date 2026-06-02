@@ -112,6 +112,10 @@ class Field(Node):
 			return Or(Field("author_ident", self.child, final_mode), Field("author_name", self.child, final_mode))
 		if final_name == "editor":
 			return Or(Field("editor_ident", self.child, final_mode), Field("editor_name", self.child, final_mode))
+		if final_name == "lang":
+			return Or(Field("lang_ident", self.child, final_mode), Field("lang_name", self.child, final_mode))
+		if final_name == "script":
+			return Or(Field("script_ident", self.child, final_mode), Field("script_name", self.child, final_mode))
 		# Mapping for specific sub-fields
 		mapping = {
 			"repo.ident": "repo_id",
@@ -119,7 +123,11 @@ class Field(Node):
 			"author.ident": "author_ident",
 			"author.name": "author_name",
 			"editor.ident": "editor_ident",
-			"editor.name": "editor_name"
+			"editor.name": "editor_name",
+			"lang.ident": "lang_ident",
+			"lang.name": "lang_name",
+			"script.ident": "script_ident",
+			"script.name": "script_name"
 		}
 		self.name = mapping.get(final_name, final_name)
 		self.mode = final_mode
