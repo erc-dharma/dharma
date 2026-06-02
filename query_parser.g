@@ -83,8 +83,8 @@ class Field(Node):
 		return f"{self.name or '<null>'}{mode_str}:{self.child!r}"
 
 	def _complete_fields(self, name, mode=None):
-		# Resolve name and mode using inheritance
-		final_name = self.name or name
+		# Resolve name and mode using inheritance ensuring empty strings are preserved
+		final_name = self.name if self.name is not None else name
 		final_mode = self.mode or mode
 		# Apply dotted parsing to extract the mode if present
 		if final_name:
@@ -178,7 +178,7 @@ Exprs: r=Expr* { mkmerge(*r) }
 Expr: OrExpr
 
 FieldExpr:
-	| name=DottedName (':' | '=') r=PrimaryExpr { Field(name, r) }
+	| name=FieldName (':' | '=') r=PrimaryExpr { Field(name, r) }
 	| PrimaryExpr
 
 PrimaryExpr:
@@ -198,6 +198,10 @@ NotExpr:
 	| FieldExpr
 
 Text: r=DottedName { r }
+
+FieldName:
+	| '.' r=DottedName { "." + r }
+	| DottedName
 
 DottedName:
 	| r=NAME '.' s=DottedName { r.string + "." + s }

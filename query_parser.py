@@ -93,8 +93,8 @@ class Field(Node):
 		return f"{self.name or '<null>'}{mode_str}:{self.child!r}"
 
 	def _complete_fields(self, name, mode=None):
-		# Resolve name and mode using inheritance
-		final_name = self.name or name
+		# Resolve name and mode using inheritance ensuring empty strings are preserved
+		final_name = self.name if self.name is not None else name
 		final_mode = self.mode or mode
 		# Apply dotted parsing to extract the mode if present
 		if final_name:
@@ -221,10 +221,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def FieldExpr(self) -> Optional[Any]:
-        # FieldExpr: DottedName (':' | '=') PrimaryExpr | PrimaryExpr
+        # FieldExpr: FieldName (':' | '=') PrimaryExpr | PrimaryExpr
         mark = self._mark()
         if (
-            (name := self.DottedName())
+            (name := self.FieldName())
             and
             (self._tmp_2())
             and
@@ -325,6 +325,24 @@ class GeneratedParser(Parser):
             (r := self.DottedName())
         ):
             return r;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def FieldName(self) -> Optional[Any]:
+        # FieldName: '.' DottedName | DottedName
+        mark = self._mark()
+        if (
+            (self.expect('.'))
+            and
+            (r := self.DottedName())
+        ):
+            return "." + r;
+        self._reset(mark)
+        if (
+            (DottedName := self.DottedName())
+        ):
+            return DottedName;
         self._reset(mark)
         return None;
 
