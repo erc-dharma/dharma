@@ -46,9 +46,6 @@ func findDocument(ident string) *Document {
 }
 
 func sortDocs(docs []Document, sortBy string) {
-	if sortBy == "ident" {
-		return
-	}
 	sort.Slice(docs, func(i, j int) bool {
 		return compareDocs(docs[i], docs[j], sortBy)
 	})
@@ -64,18 +61,18 @@ func myCompareString(c *collate.Collator, a, b string) int {
 }
 
 func compareDocs(d1, d2 Document, sortBy string) bool {
-	if sortBy == "title" {
-		hasT1 := len(d1.Title) > 0
-		hasT2 := len(d2.Title) > 0
-		if hasT1 && hasT2 {
-			return myCompareString(titleCollator, d1.Title[0], d2.Title[0]) < 0
-		}
-		if !hasT1 && !hasT2 {
-			return d1.Ident < d2.Ident
-		}
-		return hasT1
+	if sortBy == "ident" {
+		return d1.Ident < d2.Ident
 	}
-	return d1.Ident < d2.Ident
+	hasT1 := len(d1.Title) > 0
+	hasT2 := len(d2.Title) > 0
+	if hasT1 && hasT2 {
+		return myCompareString(titleCollator, d1.Title[0], d2.Title[0]) < 0
+	}
+	if !hasT1 && !hasT2 {
+		return d1.Ident < d2.Ident
+	}
+	return hasT1
 }
 
 func paginateDocs(docs []Document, off, lim int) []Document {
@@ -480,7 +477,6 @@ func processMatrixTermsCol(targets [][]string, sources [][]string, terms []Query
 	return matched
 }
 
-// StringMapper defines the signature for transformation functions computing text boundaries
 type StringMapper func(string) (string, []int)
 
 func findOccurrences(text, term, mode, field string) [][2]int {

@@ -287,7 +287,9 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 
 func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool) {
 	allDocs := filterDocs(q)
-	sortDocs(allDocs, sortBy)
+	if sortBy != "title" {
+		sortDocs(allDocs, sortBy)
+	}
 	total := len(allDocs)
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, q)
@@ -319,6 +321,7 @@ func reloadCorpus(tx *sql.Tx, ver int) error {
 	if err != nil {
 		return err
 	}
+	sortDocs(docs, "title")
 	corpus = docs
 	lastDataVersion = ver
 	return nil
