@@ -292,7 +292,7 @@ func lexFormB(formA string) (int, int) {
 	Pother = "\x34";
 	// Ignore all diacritics (except for the distinctions ṛ/r ḷ/l).
 	// Treat aspirated and unaspirated as equivalent.
-	// Treat nasals as equivalent.
+	// Treat nasals as equivalent (this isn't great though).
 	Pa | Paa { return cursor, Pa }
 	Pi | Pii { return cursor, Pi }
 	Pu | Puu { return cursor, Pu }
