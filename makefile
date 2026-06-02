@@ -9,13 +9,17 @@ generated_views = $(patsubst %.md,%.tpl,$(wildcard views/*.md))
 generated_parsers = $(patsubst %.g,%.py,$(wildcard *.g))
 generated = $(generated_tei) $(generated_views) $(generated_parsers)
 generated += static/base.css
+generated += normalize.go
 
-binary = dharma
+binary = search
 
 all: $(generated) $(binary)
 
 clean:
-	rm -f $(generated) $(binary)
+	rm -f $(binary)
+
+full-clean: clean
+	rm -f $(generated)
 
 forever:
 	@$(MAKE) || true
@@ -36,7 +40,7 @@ commit-all:
 		sleep 5s; \
 	done
 
-.PHONY: all clean forever commit-all
+.PHONY: all clean full-clean forever commit-all
 
 services = $(notdir $(wildcard config/*.service))
 
