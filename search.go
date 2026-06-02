@@ -162,31 +162,33 @@ func containsMatcher(text, term, mode, field string) bool {
 		if field == "logical" {
 			mode = "normalized"
 		} else {
-			mode = "strict"
+			mode = "normal"
 		}
 	}
-	// Evaluate inclusion based on the chosen matching mode
-	switch mode {
-	case "strict":
-		return strings.Contains(text, term)
-	case "normalized":
-		foldText, _, _ := foldString(text)
-		foldTerm, _, _ := foldString(term)
-		return strings.Contains(foldText, foldTerm)
-	default:
-		return strings.Contains(text, term)
-	}
+	// Transform text and term according to the resolved mode
+	transText, _, _ := transform(text, mode)
+	transTerm, _, _ := transform(term, mode)
+	return strings.Contains(transText, transTerm)
 }
 
 func matchField(d Document, field, val, mode string) bool {
 	// Check if a specific field matches the value considering the mode
 	switch field {
+	case "ident", "logical", "summary", "repo_id", "repo_name", "hand":
+		return matchStringField(d, field, val, mode)
+	case "title", "author", "editor", "lang", "script":
+		return matchComplexField(d, field, val, mode)
+	}
+	return docMatchesAll(d, val, mode)
+}
+
+func matchStringField(d Document, field, val, mode string) bool {
+	// Route simple string field evaluations to containsMatcher
+	switch field {
 	case "ident":
 		return containsMatcher(d.Ident, val, mode, field)
 	case "logical":
 		return containsMatcher(d.Logical, val, mode, field)
-	case "title":
-		return listMatches(d.Title, val, mode, field)
 	case "summary":
 		return containsMatcher(d.Summary, val, mode, field)
 	case "repo_id":
@@ -195,6 +197,15 @@ func matchField(d Document, field, val, mode string) bool {
 		return containsMatcher(d.RepoName, val, mode, field)
 	case "hand":
 		return containsMatcher(d.Hand, val, mode, field)
+	}
+	return false
+}
+
+func matchComplexField(d Document, field, val, mode string) bool {
+	// Route composite array and matrix properties to list matching helpers
+	switch field {
+	case "title":
+		return listMatches(d.Title, val, mode, field)
 	case "author":
 		return listMatches(d.Author, val, mode, field)
 	case "editor":
@@ -204,7 +215,7 @@ func matchField(d Document, field, val, mode string) bool {
 	case "script":
 		return matrixMatches(d.Script, val, mode, field)
 	}
-	return docMatchesAll(d, val, mode)
+	return false
 }
 
 func docMatchesAll(d Document, val, mode string) bool {
@@ -369,41 +380,24 @@ func processMatrixTerms(targets [][]string, sources [][]string, terms []QueryTer
 	return matched
 }
 
+// StringMapper defines a function type for text transformations returning offsets.
+// It provides a generic interface for various normalization algorithms.
+type StringMapper func(string) (string, []int, []int)
+
 func findOccurrences(text, term, mode, field string) [][2]int {
 	// Resolve default mode based on the current field context
 	if mode == "" {
 		if field == "logical" {
 			mode = "normalized"
 		} else {
-			mode = "strict"
+			mode = "normal"
 		}
 	}
-	// Route the occurrence search based on the matching mode
-	switch mode {
-	case "strict":
-		return findOccurrencesStrict(text, term)
-	case "normalized":
-		return findOccurrencesWithMapping(text, term, foldString)
-	default:
-		return findOccurrencesStrict(text, term)
+	// Delegate the search to the universal mapping function
+	mapper := func(s string) (string, []int, []int) {
+		return transform(s, mode)
 	}
-}
-
-func findOccurrencesStrict(text, term string) [][2]int {
-	// Identify start and end indices using native exact matching
-	var matches [][2]int
-	start := 0
-	termLen := len(term)
-	for {
-		idx := strings.Index(text[start:], term)
-		if idx == -1 {
-			break
-		}
-		absStart := start + idx
-		matches = append(matches, [2]int{absStart, absStart + termLen})
-		start = absStart + 1
-	}
-	return matches
+	return findOccurrencesWithMapping(text, term, mapper)
 }
 
 func findOccurrencesWithMapping(text, term string, mapper StringMapper) [][2]int {

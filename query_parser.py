@@ -96,35 +96,25 @@ class Field(Node):
 		# Resolve name and mode using inheritance
 		final_name = self.name or name
 		final_mode = self.mode or mode
-
 		# Apply dotted parsing to extract the mode if present
 		if final_name:
 			parts = final_name.split('.')
-			if len(parts) > 1 and parts[-1] in {"strict", "normalized"}:
+			if len(parts) > 1 and parts[-1] in {"normal", "exact", "normalized"}:
 				final_mode = parts.pop()
 			final_name = ".".join(parts)
-
 		# If child is a logical node (not a string), pass the resolved name/mode down
 		# and discard this intermediate Field node.
 		if not isinstance(self.child, str):
 			return self.child._complete_fields(final_name, final_mode)
-
 		# --- From here, we are a leaf node containing a search string ---
-
 		# Virtual field expansion for "repo"
 		if final_name == "repo":
-			# Return an OR node containing the two sub-fields
-			return Or(
-				Field("repo_id", self.child, final_mode),
-				Field("repo_name", self.child, final_mode)
-			)
-
+			return Or(Field("repo_id", self.child, final_mode), Field("repo_name", self.child, final_mode))
 		# Mapping for specific sub-fields
 		if final_name == "repo.ident":
 			final_name = "repo_id"
 		elif final_name == "repo.name":
 			final_name = "repo_name"
-
 		self.name = final_name
 		self.mode = final_mode
 		return self

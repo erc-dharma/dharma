@@ -87,10 +87,6 @@ type QueryTerm struct {
 	Mode  string
 }
 
-// StringMapper defines a function type for text transformations returning offsets.
-// It provides a generic interface for various normalization algorithms.
-type StringMapper func(string) (string, []int, []int)
-
 var (
 	corpus          []Document
 	lastDataVersion int

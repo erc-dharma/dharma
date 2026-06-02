@@ -1,7 +1,5 @@
 //go:generate re2go -W -Werror -8 -o normalize.go _normalize.re.go
 
-// XXX see if Arlo answered https://github.com/erc-dharma/project-documentation/issues/408.
-
 package main
 
 import (
@@ -11,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/rivo/uniseg"
+	"golang.org/x/text/cases"
 )
 
 // Dummy variables to prevent IDE formatters from stripping required imports.
@@ -18,6 +17,7 @@ var (
 	_ = utf8.DecodeRuneInString
 	_ = unicode.IsLetter
 	_ = log.Fatalf
+	_ = cases.Fold
 )
 
 const (
@@ -102,6 +102,8 @@ func peekByte(s string, i int) byte {
 	return 0
 }
 
+// makePrintable converts the internal binary representation back to readable characters.
+// It maps sequence codes to their IAST equivalents for debugging purposes.
 func makePrintable(s string) string {
 	var buf strings.Builder
 	for i := 0; i < len(s); i++ {
@@ -113,7 +115,6 @@ func makePrintable(s string) string {
 
 // lexPrefix uses a finite state machine to identify the next semantic sequence.
 // It returns the byte length of the matched sequence, its replacement, and an elision flag.
-// The declarative rules map the IAST inventory, while non-alphanumerics are naturally elided.
 func lexPrefix(text string) (int, int, bool) {
 	cursor, marker := 0, 0
 	/*!re2c
@@ -124,30 +125,21 @@ func lexPrefix(text string) (int, int, bool) {
 	re2c:define:YYSKIP = "cursor++";
 	re2c:define:YYBACKUP = "marker = cursor";
 	re2c:define:YYRESTORE = "cursor = marker";
-
-	schwa = "ə" | "Ə" | "ә" | "Ә";
-
 	* { return 1, Pnul, true }
-
 	// In Tamil, the character "'" represents an elided "u" when it appears
 	// at the end of a word (viz. before a non-alphanumeric char or the
 	// empty string), as in:
-	//
 	//     kaṇṇāṟṟ’ iraṇṭāñ
 	//     uttirōttar’-abhivriddhi
-	//
 	// But when "'" appears at the beginning of a word (viz. immediately
 	// before an alphabetic char), it represents the avagraha, even in
 	// Tamil, as in:
-	//
 	//     durvvāso-’nukāribhyaḥ
 	//     bar ’nukāribhyaḥ
 	//     sthirayogo’pi # not supposed to happen, but does happen.
-	//
 	// Ideally, we should resolve the ambiguity, and transform the "'" into
 	// an "a" or an "u". But for now, for simplicity, we just turn this
 	// character into an "a".
-	//
 	// The sequences "'!" and "’!" always represent the avagraha, e.g.
 	// ’!pi = 'pi = api
 	"a" | "A" | "ă" | "Ă" | "'" | "’" | "'!" | "’!" { return cursor, Pa, false }
@@ -156,24 +148,18 @@ func lexPrefix(text string) (int, int, bool) {
 	"ī" | "Ī" { return cursor, Pī, false }
 	"u" | "U" | "ŭ" | "Ŭ" { return cursor, Pu, false }
 	"ū" | "Ū" { return cursor, Pū, false }
-
-	// For the use of "rə" and "lə", see https://github.com/erc-dharma/project-documentation/issues/408#issuecomment-4593064244
-	"ṛ" | "Ṛ" | "r̥" | "R̥" | "r" schwa | "R" schwa { return cursor, Pṛ, false }
+	"ṛ" | "Ṛ" | "r̥" | "R̥" { return cursor, Pṛ, false }
 	"ṝ" | "Ṝ" | "r̥̄" | "R̥̄" { return cursor, Pṝ, false }
-	"ḷ" | "Ḷ" | "l̥" | "L̥" | "l" schwa | "L" schwa { return cursor, Pḷ, false }
+	"ḷ" | "Ḷ" | "l̥" | "L̥"{ return cursor, Pḷ, false }
 	"ḹ" | "Ḹ" | "l̥̄" | "L̥̄" { return cursor, Pḹ, false }
-
-	"e" | "E" | "ĕ" | "Ĕ" | "ē" | "Ē" { return cursor, Pe, false }
+	"e" | "E" | "ĕ" | "Ĕ" { return cursor, Pe, false }
 	"ai" | "Ai" | "AI" | "aI" { return cursor, Pai, false }
-	"o" | "O" | "ŏ" | "Ŏ" | "ō" | "Ō" { return cursor, Po, false }
+	"o" | "O" | "ŏ" | "Ŏ" { return cursor, Po, false }
 	"au" | "Au" | "AU" | "aU" { return cursor, Pau, false }
-
 	// Anusvara and anunāsika, Cam anusvāra-candra, all treated as the anusvara.
 	"ṁ" | "Ṁ" | "ṃ" | "Ṃ" | "m̐" | "M̐" | "m̃" | "M̃" { return cursor, Pṃ, false }
-
 	// Upadhmānīya and jihvāmūlīya. Just fold them to a visarga.
 	"ḥ" | "Ḥ" | "ḫ" | "Ḫ" | "ẖ" | "H̱" { return cursor, Pḥ, false }
-
 	"k" | "K" { return cursor, Pk, false }
 	"kh" | "Kh" | "KH" | "kH" { return cursor, Pkh, false }
 	"g" | "G" { return cursor, Pg, false }
@@ -207,16 +193,11 @@ func lexPrefix(text string) (int, int, bool) {
 	"ṣ" | "Ṣ" { return cursor, Pṣ, false }
 	"s" | "S" { return cursor, Ps, false }
 	"h" | "H" { return cursor, Ph, false }
-
 	// Javanese/Balinese pepet. For the following, we both map
 	// LATIN SMALL LETTER SCHWA (the correct character) and CYRILLIC
 	// SMALL LETTER SCHWA (incorrect one), in both the upper- and lowercase versions.
-	// schwa + ":" may either mean short schwa or long schwa. See
-	// https://github.com/erc-dharma/project-documentation/issues/408#issuecomment-4593064244. We must choose one, so use the short
-	// variant.
-	schwa | schwa ":" { return cursor, Pschwa, false }
+	"ə" | "Ə" | "ә" | "Ә" { return cursor, Pschwa, false }
 	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, Plongschwa, false }
-
 	[^] {
 		r, _ := utf8.DecodeRuneInString(text[:cursor])
 		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
@@ -255,10 +236,8 @@ func lexFormB(formA string) (int, int) {
 	re2c:define:YYSKIP = "cursor++";
 	re2c:define:YYBACKUP = "marker = cursor";
 	re2c:define:YYRESTORE = "cursor = marker";
-
 	* { return 1, Pnul }
 	"\x00" { return 1, Pnul }
-
 	Pa = "\x01";
 	Paa = "\x02";
 	Pi = "\x03";
@@ -311,11 +290,9 @@ func lexFormB(formA string) (int, int) {
 	Pschwa = "\x32";
 	Plongschwa = "\x33";
 	Pother = "\x34";
-
-	// Ignore all diacritics (except for the distinctions ṛ/r ḷ/l).
+	// Ignore all diacritics (except for the distinctions ṛ/r ḷ/l ḥ/h).
 	// Treat aspirated and unaspirated as equivalent.
 	// Treat nasals as equivalent.
-	// Ignore repetitions of a consonant.
 	Pa | Paa { return cursor, Pa }
 	Pi | Pii { return cursor, Pi }
 	Pu | Puu { return cursor, Pu }
@@ -325,20 +302,20 @@ func lexFormB(formA string) (int, int) {
 	Pai { return cursor, Pai }
 	Po { return cursor, Po }
 	Pau { return cursor, Pau }
-	P_h | Ph { return cursor, Ph }
-	Pk | Pkh | Pg | Pgh | Pk Pk | Pk Pkh | Pg Pg | Pg Pgh { return cursor, Pk }
-	P_m | Pf | Ppalataln | P_n | Pn | Pm | Pf Pf | Ppalataln Ppalataln | P_n P_n | Pn Pn | Pm Pm | Pf Pf { return cursor, Pn }
-	Pc | Pch | Pj | Pjh | Pc Pc | Pc Pch | Pj Pj | Pj Pjh { return cursor, Pc }
-	P_t | P_th | P_d | P_dh | Pt | Pth | Pd | Pdh | P_t P_t | P_t P_th | P_d P_d | P_dh P_dh | Pt Pt | Pt Pth | Pd Pd | Pd Pdh { return cursor, Pt }
-	Pp | Pph | Pb | Pbh | Pp Pp | Pp Pph | Pb Pb | Pb Pbh { return cursor, Pp }
-	Py | Py Py { return cursor, Py }
-	Pr | Pr Pr { return cursor, Pr }
-	Pl | Pl Pl { return cursor, Pl }
-	Pv | Pv Pv { return cursor, Pv }
+	P_h { return cursor, Pḥ }
+	Pk | Pkh | Pg | Pgh { return cursor, Pk }
+	P_m | Pf | Ppalataln | P_n | Pn | Pm { return cursor, Pn }
+	Pc | Pch | Pj | Pjh { return cursor, Pc }
+	P_t | P_th | P_d | P_dh | Pt | Pth | Pd | Pdh { return cursor, Pt }
+	Pp | Pph | Pb | Pbh { return cursor, Pp }
+	Py { return cursor, Py }
+	Pr { return cursor, Pr }
+	Pl { return cursor, Pl }
+	Pv { return cursor, Pv }
 	Ppalatals | P_s | Ps { return cursor, Ps }
+	Ph { return cursor, Ph }
 	Pschwa | Plongschwa { return cursor, Pschwa }
 	Pother { return cursor, Pother }
-
 	// Fallback to exactly one byte to avoid fatal panics.
 	[^] { return 1, int(formA[0]) }
 	*/
@@ -387,9 +364,97 @@ func toFormB(formA string) (string, []int, []int) {
 	return formB.String(), starts, ends
 }
 
-// foldString provides the complete normalization pipeline from UTF-8 to Form B.
+// transform acts as a dispatcher for text projection operations.
+// It routes the input to the appropriate normalizer based on the requested mode.
+func transform(text string, mode string) (string, []int, []int) {
+	if mode == "normalized" {
+		return transformNormalized(text)
+	}
+	return transformNormal(text)
+}
+
+const normalFirst = 0xE002
+const Slongschwa = string(normalFirst + Plongschwa)
+
+var folder = cases.Fold()
+
+// lexNormalPrefix uses a finite state machine to identify the next sequence for normal mode.
+// It returns the byte length of the matched sequence, its replacement string, and an elision flag.
+func lexNormalPrefix(text string) (int, string, bool) {
+	cursor, marker := 0, 0
+	/*!re2c
+	re2c:flags:8 = 1;
+	re2c:yyfill:enable = 0;
+	re2c:define:YYCTYPE = byte;
+	re2c:define:YYPEEK = "peekByte(text, cursor)";
+	re2c:define:YYSKIP = "cursor++";
+	re2c:define:YYBACKUP = "marker = cursor";
+	re2c:define:YYRESTORE = "cursor = marker";
+	* { return 1, "", true }
+	"œ" | "Œ" { return cursor, "oe", false }
+	"æ" | "Æ" { return cursor, "ae", false }
+	"đ" | "Đ" { return cursor, "d", false }
+	"r̥" | "R̥" { return cursor, "ṛ", false }
+	"r̥̄" | "R̥̄" { return cursor, "ṝ", false }
+	"l̥" | "L̥"{ return cursor, "ḷ", false }
+	"l̥̄" | "L̥̄" { return cursor, "ḹ", false }
+	"ә" | "Ә" { return cursor, "ə", false }
+	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, Slongschwa, false }
+	// Fallback to Unicode case folding of the current rune.
+	[^] {
+		r, _ := utf8.DecodeRuneInString(text[:cursor])
+		return cursor, folder.String(string(r)), false
+	}
+	*/
+}
+
+// consumeNormalToken reads the next token for normal mode and aligns with grapheme boundaries.
+// It attaches any trailing combining characters to the replacement string.
+func consumeNormalToken(text string) (int, string, bool) {
+	matchLen, rep, elide := lexNormalPrefix(text)
+	consumed := 0
+	state := -1
+	rest := text
+	for consumed < matchLen {
+		var cluster string
+		cluster, rest, _, state = uniseg.StepString(rest, state)
+		consumed += len(cluster)
+	}
+	if consumed > matchLen && !elide {
+		rep += text[matchLen:consumed]
+	}
+	return consumed, rep, elide
+}
+
+// transformNormal applies transformations for normal mode matching utilizing re2go.
+// It preserves the original byte index boundaries for exact highlighting.
+func transformNormal(text string) (string, []int, []int) {
+	var folded strings.Builder
+	var starts, ends []int
+	cursor := 0
+	for len(text) > 0 {
+		consumed, rep, elide := consumeNormalToken(text)
+		if elide {
+			cursor += consumed
+			text = text[consumed:]
+			continue
+		}
+		endCursor := cursor + consumed
+		n := len(rep)
+		for j := 0; j < n; j++ {
+			starts = append(starts, cursor)
+			ends = append(ends, endCursor)
+		}
+		folded.WriteString(rep)
+		cursor = endCursor
+		text = text[consumed:]
+	}
+	return folded.String(), starts, ends
+}
+
+// transformNormalized provides the complete normalization pipeline from UTF-8 to Form B.
 // It maintains the strict index synchronization required by the search engine.
-func foldString(text string) (string, []int, []int) {
+func transformNormalized(text string) (string, []int, []int) {
 	formA, startsA, endsA := toFormA(text)
 	formB, startsB, endsB := toFormB(formA)
 	var finalStarts, finalEnds []int
