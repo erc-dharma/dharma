@@ -163,9 +163,9 @@ func lexPrefix(text string) (int, int, bool) {
 	"ḷ" | "Ḷ" | "l̥" | "L̥" | "l" schwa | "L" schwa { return cursor, Pḷ, false }
 	"ḹ" | "Ḹ" | "l̥̄" | "L̥̄" { return cursor, Pḹ, false }
 
-	"e" | "E" | "ĕ" | "Ĕ" { return cursor, Pe, false }
+	"e" | "E" | "ĕ" | "Ĕ" | "ē" | "Ē" { return cursor, Pe, false }
 	"ai" | "Ai" | "AI" | "aI" { return cursor, Pai, false }
-	"o" | "O" | "ŏ" | "Ŏ" { return cursor, Po, false }
+	"o" | "O" | "ŏ" | "Ŏ" | "ō" | "Ō" { return cursor, Po, false }
 	"au" | "Au" | "AU" | "aU" { return cursor, Pau, false }
 
 	// Anusvara and anunāsika, Cam anusvāra-candra, all treated as the anusvara.
