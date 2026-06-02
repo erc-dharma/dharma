@@ -176,7 +176,7 @@ func matchField(d Document, field, val, mode string) bool {
 	switch field {
 	case "ident", "logical", "summary", "repo_id", "repo_name", "hand":
 		return matchStringField(d, field, val, mode)
-	case "title", "author", "editor", "lang", "script":
+	case "title", "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name", "lang", "script":
 		return matchComplexField(d, field, val, mode)
 	}
 	return docMatchesAll(d, val, mode)
@@ -208,8 +208,16 @@ func matchComplexField(d Document, field, val, mode string) bool {
 		return listMatches(d.Title, val, mode, field)
 	case "author":
 		return listMatches(d.Author, val, mode, field)
+	case "author_ident":
+		return listMatchesParity(d.Author, val, mode, field, 0)
+	case "author_name":
+		return listMatchesParity(d.Author, val, mode, field, 1)
 	case "editor":
 		return listMatches(d.Editor, val, mode, field)
+	case "editor_ident":
+		return listMatchesParity(d.Editor, val, mode, field, 0)
+	case "editor_name":
+		return listMatchesParity(d.Editor, val, mode, field, 1)
 	case "lang":
 		return matrixMatches(d.Lang, val, mode, field)
 	case "script":
@@ -241,6 +249,19 @@ func docMatchesAll(d Document, val, mode string) bool {
 func listMatches(list []string, q, mode, field string) bool {
 	// Verify if any item in the list contains the query term considering the mode
 	for _, item := range list {
+		if containsMatcher(item, q, mode, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func listMatchesParity(list []string, q, mode, field string, parity int) bool {
+	// Verify if any item in the list matches considering parity and mode
+	for i, item := range list {
+		if parity != -1 && i%2 != parity {
+			continue
+		}
 		if containsMatcher(item, q, mode, field) {
 			return true
 		}
@@ -290,12 +311,19 @@ func extractTerms(q QueryNode) []QueryTerm {
 	return terms
 }
 
-func termsForField(terms []QueryTerm, field string) []QueryTerm {
-	// Filter a list of query terms to retain only those applicable to a specific field
+func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
+	// Filter a list of query terms retaining only those targeting specific fields
 	var filtered []QueryTerm
 	for _, t := range terms {
-		if t.Field == "" || t.Field == field {
+		if t.Field == "" {
 			filtered = append(filtered, t)
+			continue
+		}
+		for _, f := range fields {
+			if t.Field == f {
+				filtered = append(filtered, t)
+				break
+			}
 		}
 	}
 	return filtered
@@ -313,17 +341,19 @@ func applyHighlights(res *SearchResult, doc Document, qStr string) {
 
 func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	// Apply highlights combining all query terms according to their target fields
-	processFieldTerms(&res.Logical, doc.Logical, termsForField(terms, "logical"), "logical")
-	processFieldTerms(&res.Ident, doc.Ident, termsForField(terms, "ident"), "ident")
-	processFieldTerms(&res.Summary, doc.Summary, termsForField(terms, "summary"), "summary")
-	processFieldTerms(&res.RepoID, doc.RepoID, termsForField(terms, "repo_id"), "repo_id")
-	processFieldTerms(&res.RepoName, doc.RepoName, termsForField(terms, "repo_name"), "repo_name")
-	processFieldTerms(&res.Hand, doc.Hand, termsForField(terms, "hand"), "hand")
-	processListTerms(res.Title, doc.Title, termsForField(terms, "title"), "title")
-	processListTerms(res.Author, doc.Author, termsForField(terms, "author"), "author")
-	processListTerms(res.Editor, doc.Editor, termsForField(terms, "editor"), "editor")
-	processMatrixTerms(res.Lang, doc.Lang, termsForField(terms, "lang"), "lang")
-	processMatrixTerms(res.Script, doc.Script, termsForField(terms, "script"), "script")
+	processFieldTerms(&res.Logical, doc.Logical, termsForFields(terms, "logical"), "logical")
+	processFieldTerms(&res.Ident, doc.Ident, termsForFields(terms, "ident"), "ident")
+	processFieldTerms(&res.Summary, doc.Summary, termsForFields(terms, "summary"), "summary")
+	processFieldTerms(&res.RepoID, doc.RepoID, termsForFields(terms, "repo_id"), "repo_id")
+	processFieldTerms(&res.RepoName, doc.RepoName, termsForFields(terms, "repo_name"), "repo_name")
+	processFieldTerms(&res.Hand, doc.Hand, termsForFields(terms, "hand"), "hand")
+	processListTerms(res.Title, doc.Title, termsForFields(terms, "title"), "title")
+	processListTermsParity(res.Author, doc.Author, termsForFields(terms, "author", "author_ident"), "author_ident", 0)
+	processListTermsParity(res.Author, doc.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
+	processListTermsParity(res.Editor, doc.Editor, termsForFields(terms, "editor", "editor_ident"), "editor_ident", 0)
+	processListTermsParity(res.Editor, doc.Editor, termsForFields(terms, "editor", "editor_name"), "editor_name", 1)
+	processMatrixTerms(res.Lang, doc.Lang, termsForFields(terms, "lang"), "lang")
+	processMatrixTerms(res.Script, doc.Script, termsForFields(terms, "script"), "script")
 }
 
 func cloneList(src []string) []string {
@@ -367,6 +397,20 @@ func processListTerms(targets []string, sources []string, terms []QueryTerm, fie
 	return matched
 }
 
+func processListTermsParity(targets []string, sources []string, terms []QueryTerm, fieldName string, parity int) bool {
+	// Apply highlight processing to a list of strings respecting parity
+	matched := false
+	for i, item := range sources {
+		if parity != -1 && i%2 != parity {
+			continue
+		}
+		if processFieldTerms(&targets[i], item, terms, fieldName) {
+			matched = true
+		}
+	}
+	return matched
+}
+
 func processMatrixTerms(targets [][]string, sources [][]string, terms []QueryTerm, fieldName string) bool {
 	// Apply highlight processing to a matrix of strings
 	matched := false
@@ -380,8 +424,6 @@ func processMatrixTerms(targets [][]string, sources [][]string, terms []QueryTer
 	return matched
 }
 
-// StringMapper defines a function type for text transformations returning offsets.
-// It provides a generic interface for various normalization algorithms.
 type StringMapper func(string) (string, []int, []int)
 
 func findOccurrences(text, term, mode, field string) [][2]int {

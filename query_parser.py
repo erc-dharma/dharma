@@ -103,19 +103,25 @@ class Field(Node):
 				final_mode = parts.pop()
 			final_name = ".".join(parts)
 		# If child is a logical node (not a string), pass the resolved name/mode down
-		# and discard this intermediate Field node.
 		if not isinstance(self.child, str):
 			return self.child._complete_fields(final_name, final_mode)
-		# --- From here, we are a leaf node containing a search string ---
-		# Virtual field expansion for "repo"
+		# Virtual field expansion for composite lists
 		if final_name == "repo":
 			return Or(Field("repo_id", self.child, final_mode), Field("repo_name", self.child, final_mode))
+		if final_name == "author":
+			return Or(Field("author_ident", self.child, final_mode), Field("author_name", self.child, final_mode))
+		if final_name == "editor":
+			return Or(Field("editor_ident", self.child, final_mode), Field("editor_name", self.child, final_mode))
 		# Mapping for specific sub-fields
-		if final_name == "repo.ident":
-			final_name = "repo_id"
-		elif final_name == "repo.name":
-			final_name = "repo_name"
-		self.name = final_name
+		mapping = {
+			"repo.ident": "repo_id",
+			"repo.name": "repo_name",
+			"author.ident": "author_ident",
+			"author.name": "author_name",
+			"editor.ident": "editor_ident",
+			"editor.name": "editor_name"
+		}
+		self.name = mapping.get(final_name, final_name)
 		self.mode = final_mode
 		return self
 
