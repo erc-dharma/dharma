@@ -321,11 +321,27 @@ func lexFormB(formA string) (int, int) {
 	*/
 }
 
-// toFormA converts UTF-8 text to the internal Form A (binary phonemic sequence).
-// It maintains alignment arrays for original start and end byte positions.
-func toFormA(text string) (string, []int, []int) {
+// toFormA converts UTF-8 text to the internal Form A without allocating bounds.
+// It is optimized for high-speed evaluation during the filtering phase.
+func toFormA(text string) string {
 	var formA strings.Builder
-	var starts, ends []int
+	for len(text) > 0 {
+		consumed, rep, elide := consumeToken(text)
+		if elide {
+			text = text[consumed:]
+			continue
+		}
+		formA.WriteByte(byte(rep))
+		text = text[consumed:]
+	}
+	return formA.String()
+}
+
+// toFormAWithBounds converts text to Form A and returns an interleaved bounds array.
+// The array alternates original start and original end indices for each byte.
+func toFormAWithBounds(text string) (string, []int) {
+	var formA strings.Builder
+	var bounds []int
 	cursor := 0
 	for len(text) > 0 {
 		consumed, rep, elide := consumeToken(text)
@@ -335,43 +351,52 @@ func toFormA(text string) (string, []int, []int) {
 			continue
 		}
 		endCursor := cursor + consumed
-		starts = append(starts, cursor)
-		ends = append(ends, endCursor)
 		formA.WriteByte(byte(rep))
+		bounds = append(bounds, cursor, endCursor)
 		cursor = endCursor
 		text = text[consumed:]
 	}
-	return formA.String(), starts, ends
+	return formA.String(), bounds
 }
 
-// toFormB converts Form A to Form B, applying phonological neutralizations.
-// It returns the mapped binary sequence and its index boundaries within Form A.
-func toFormB(formA string) (string, []int, []int) {
+// toFormB converts Form A to Form B without calculating positional bounds.
+// It applies phonological neutralizations strictly for content matching.
+func toFormB(formA string) string {
 	var formB strings.Builder
-	var starts, ends []int
+	for len(formA) > 0 {
+		consumed, rep := lexFormB(formA)
+		if rep == Pnul {
+			break
+		}
+		formB.WriteByte(byte(rep))
+		formA = formA[consumed:]
+	}
+	return formB.String()
+}
+
+// toFormBWithBounds converts Form A to Form B and maintains sequence bounds.
+// It maps the reduced byte sequence back to its boundaries within Form A.
+func toFormBWithBounds(formA string) (string, []int) {
+	var formB strings.Builder
+	var bounds []int
 	cursor := 0
 	for len(formA) > 0 {
 		consumed, rep := lexFormB(formA)
 		if rep == Pnul {
 			break
 		}
-		starts = append(starts, cursor)
-		ends = append(ends, cursor+consumed)
 		formB.WriteByte(byte(rep))
+		bounds = append(bounds, cursor, cursor+consumed)
 		cursor += consumed
 		formA = formA[consumed:]
 	}
-	return formB.String(), starts, ends
+	return formB.String(), bounds
 }
 
-// transform acts as a dispatcher for text projection operations.
-// It routes the input to the appropriate normalizer based on the requested mode.
-func transform(text string, mode string) (string, []int, []int) {
-	if mode == "normalized" {
-		return transformNormalized(text)
-	}
-	return transformNormal(text)
-}
+const normalFirst = 0xE002
+const Slongschwa = string(normalFirst + Plongschwa)
+
+var folder = cases.Fold()
 
 // lexNormalPrefix uses a finite state machine to identify the next sequence for normal mode.
 // It returns the byte length of the matched sequence, its replacement string, and an elision flag.
@@ -386,22 +411,19 @@ func lexNormalPrefix(text string) (int, string, bool) {
 	re2c:define:YYBACKUP = "marker = cursor";
 	re2c:define:YYRESTORE = "cursor = marker";
 	* { return 1, "", true }
-	// Add specific complex transformations for normal mode here.
-	// For instance, explicitly mapping uppercase digraphs to lowercase:
-	"KH" | "Kh" | "kH" { return cursor, "kh", false }
-	"GH" | "Gh" | "gH" { return cursor, "gh", false }
-	"CH" | "Ch" | "cH" { return cursor, "ch", false }
-	"JH" | "Jh" | "jH" { return cursor, "jh", false }
-	"ṬH" | "Ṭh" | "ṭH" { return cursor, "ṭh", false }
-	"ḌH" | "Ḍh" | "ḍH" { return cursor, "ḍh", false }
-	"TH" | "Th" | "tH" { return cursor, "th", false }
-	"DH" | "Dh" | "dH" { return cursor, "dh", false }
-	"PH" | "Ph" | "pH" { return cursor, "ph", false }
-	"BH" | "Bh" | "bH" { return cursor, "bh", false }
-	// Fallback to safe Unicode case folding of the current full rune.
+	"œ" | "Œ" { return cursor, "oe", false }
+	"æ" | "Æ" { return cursor, "ae", false }
+	"đ" | "Đ" { return cursor, "d", false }
+	"r̥" | "R̥" { return cursor, "ṛ", false }
+	"r̥̄" | "R̥̄" { return cursor, "ṝ", false }
+	"l̥" | "L̥"{ return cursor, "ḷ", false }
+	"l̥̄" | "L̥̄" { return cursor, "ḹ", false }
+	"ә" | "Ә" { return cursor, "ə", false }
+	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, Slongschwa, false }
+	// Fallback to Unicode case folding of the current full rune.
 	[^] {
 		r, size := utf8.DecodeRuneInString(text)
-		return size, cases.Fold().String(string(r)), false
+		return size, folder.String(string(r)), false
 	}
 	*/
 }
@@ -424,11 +446,27 @@ func consumeNormalToken(text string) (int, string, bool) {
 	return consumed, rep, elide
 }
 
-// transformNormal applies transformations for normal mode matching utilizing re2go.
-// It preserves the original byte index boundaries for exact highlighting.
-func transformNormal(text string) (string, []int, []int) {
+// transformNormal applies transformations for normal matching without allocating memory bounds.
+// This fast path is crucial for eliminating garbage collection overhead during filtering.
+func transformNormal(text string) string {
 	var folded strings.Builder
-	var starts, ends []int
+	for len(text) > 0 {
+		consumed, rep, elide := consumeNormalToken(text)
+		if elide {
+			text = text[consumed:]
+			continue
+		}
+		folded.WriteString(rep)
+		text = text[consumed:]
+	}
+	return folded.String()
+}
+
+// transformNormalWithBounds applies transformations and records interleaved index bounds.
+// The returned array stores the exact original start and end byte offsets.
+func transformNormalWithBounds(text string) (string, []int) {
+	var folded strings.Builder
+	var bounds []int
 	cursor := 0
 	for len(text) > 0 {
 		consumed, rep, elide := consumeNormalToken(text)
@@ -440,25 +478,49 @@ func transformNormal(text string) (string, []int, []int) {
 		endCursor := cursor + consumed
 		n := len(rep)
 		for j := 0; j < n; j++ {
-			starts = append(starts, cursor)
-			ends = append(ends, endCursor)
+			bounds = append(bounds, cursor, endCursor)
 		}
 		folded.WriteString(rep)
 		cursor = endCursor
 		text = text[consumed:]
 	}
-	return folded.String(), starts, ends
+	return folded.String(), bounds
 }
 
-// transformNormalized provides the complete normalization pipeline from UTF-8 to Form B.
-// It maintains the strict index synchronization required by the search engine.
-func transformNormalized(text string) (string, []int, []int) {
-	formA, startsA, endsA := toFormA(text)
-	formB, startsB, endsB := toFormB(formA)
-	var finalStarts, finalEnds []int
+// transformNormalized executes the complete Form B pipeline purely for content evaluation.
+// It bypasses the generation of transitive index bounds to conserve memory.
+func transformNormalized(text string) string {
+	return toFormB(toFormA(text))
+}
+
+// transformNormalizedWithBounds tracks structural limits across the double normalization.
+// It recursively retrieves the initial offsets from Form A using the boundaries of Form B.
+func transformNormalizedWithBounds(text string) (string, []int) {
+	formA, boundsA := toFormAWithBounds(text)
+	formB, boundsB := toFormBWithBounds(formA)
+	var finalBounds []int
 	for i := 0; i < len(formB); i++ {
-		finalStarts = append(finalStarts, startsA[startsB[i]])
-		finalEnds = append(finalEnds, endsA[endsB[i]-1])
+		startA := boundsB[2*i]
+		endA := boundsB[2*i+1] - 1
+		finalBounds = append(finalBounds, boundsA[2*startA], boundsA[2*endA+1])
 	}
-	return formB, finalStarts, finalEnds
+	return formB, finalBounds
+}
+
+// transform acts as a fast text dispatcher ignoring positional metadata.
+// It is intended for boolean evaluation matrices.
+func transform(text string, mode string) string {
+	if mode == "normalized" {
+		return transformNormalized(text)
+	}
+	return transformNormal(text)
+}
+
+// transformWithBounds computes structural offsets alongside textual mapping.
+// It is strictly reserved for the final highlight processing layer.
+func transformWithBounds(text string, mode string) (string, []int) {
+	if mode == "normalized" {
+		return transformNormalizedWithBounds(text)
+	}
+	return transformNormalWithBounds(text)
 }
