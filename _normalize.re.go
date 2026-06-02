@@ -290,7 +290,7 @@ func lexFormB(formA string) (int, int) {
 	Pschwa = "\x32";
 	Plongschwa = "\x33";
 	Pother = "\x34";
-	// Ignore all diacritics (except for the distinctions ṛ/r ḷ/l ḥ/h).
+	// Ignore all diacritics (except for the distinctions ṛ/r ḷ/l).
 	// Treat aspirated and unaspirated as equivalent.
 	// Treat nasals as equivalent.
 	Pa | Paa { return cursor, Pa }
@@ -302,18 +302,17 @@ func lexFormB(formA string) (int, int) {
 	Pai { return cursor, Pai }
 	Po { return cursor, Po }
 	Pau { return cursor, Pau }
-	P_h { return cursor, Pḥ }
-	Pk | Pkh | Pg | Pgh { return cursor, Pk }
-	P_m | Pf | Ppalataln | P_n | Pn | Pm { return cursor, Pn }
-	Pc | Pch | Pj | Pjh { return cursor, Pc }
-	P_t | P_th | P_d | P_dh | Pt | Pth | Pd | Pdh { return cursor, Pt }
-	Pp | Pph | Pb | Pbh { return cursor, Pp }
-	Py { return cursor, Py }
-	Pr { return cursor, Pr }
-	Pl { return cursor, Pl }
-	Pv { return cursor, Pv }
+	P_h | Ph { return cursor, Ph }
+	Pk | Pkh | Pg | Pgh | Pk Pk | Pk Pkh | Pg Pg | Pg Pgh { return cursor, Pk }
+	P_m | Pf | Ppalataln | P_n | Pn | Pm | Pf Pf | Ppalataln Ppalataln | P_n P_n | Pn Pn | Pm Pm { return cursor, Pn }
+	Pc | Pch | Pj | Pjh | Pc Pc | Pc Pch | Pj Pj | Pj Pjh { return cursor, Pc }
+	P_t | P_th | P_d | P_dh | Pt | Pth | Pd | Pdh | P_t P_t | P_t P_th | P_d P_d | P_d P_dh | Pt Pt | Pt Pth | Pd Pd | Pd Pdh { return cursor, Pt }
+	Pp | Pph | Pb | Pbh | Pp Pp | Pp Pph | Pb Pb | Pb Pbh { return cursor, Pp }
+	Py | Py Py { return cursor, Py }
+	Pr | Pr Pr { return cursor, Pr }
+	Pl | Pl Pl { return cursor, Pl }
+	Pv | Pv Pv { return cursor, Pv }
 	Ppalatals | P_s | Ps { return cursor, Ps }
-	Ph { return cursor, Ph }
 	Pschwa | Plongschwa { return cursor, Pschwa }
 	Pother { return cursor, Pother }
 	// Fallback to exactly one byte to avoid fatal panics.
