@@ -254,7 +254,7 @@ def legacy_show_catalog():
 
 # Legacy
 @app.get("/old_texts")
-def show_catalog():
+def show_catalog_old():
 	q = flask.request.args.get("q", "")
 	s = flask.request.args.get("s", "")
 	page = flask.request.args.get("p", "")
@@ -622,7 +622,7 @@ def redirect_to_texts():
 	return flask.redirect("/texts")
 
 @app.get("/texts")
-def render_search_page():
+def show_catalog():
 	query = flask.request.args.get("q", "").strip()
 	sort = flask.request.args.get("sort", "title")
 	page = flask.request.args.get("p", 1, type=int)
