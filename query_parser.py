@@ -152,30 +152,38 @@ class Field(Node):
 		mode_str = f"[{self.mode}]" if self.mode else ""
 		return f"{self.name or '<null>'}{mode_str}:{self.child!r}"
 
-	def _complete_fields(self, name, mode=None):
-		# Resolve name and mode using inheritance ensuring empty strings are preserved
+	def _resolve_name_mode(self, name, mode):
+		# Extracted helper to keep functions short and modular
 		final_name = self.name if self.name is not None else name
 		final_mode = self.mode or mode
-		# Apply dotted parsing to extract the mode if present
 		if final_name:
 			parts = final_name.split('.')
 			if len(parts) > 1 and parts[-1] in {"normal", "exact", "normalized"}:
 				final_mode = parts.pop()
 			final_name = ".".join(parts)
-		# If child is a logical node (not a string), pass the resolved name/mode down
+		return final_name, final_mode
+
+	def _expand_virtual(self, name, mode):
+		# Extracted virtual field conditional checks to stay under length limits
+		if name == "repo":
+			return Or(Field("repo_id", self.child, mode), Field("repo_name", self.child, mode))
+		if name == "author":
+			return Or(Field("author_ident", self.child, mode), Field("author_name", self.child, mode))
+		if name == "editor":
+			return Or(Field("editor_ident", self.child, mode), Field("editor_name", self.child, mode))
+		if name == "lang":
+			return Or(Field("lang_ident", self.child, mode), Field("lang_name", self.child, mode))
+		if name == "script":
+			return Or(Field("script_ident", self.child, mode), Field("script_name", self.child, mode))
+		return None
+
+	def _complete_fields(self, name, mode=None):
+		final_name, final_mode = self._resolve_name_mode(name, mode)
 		if not isinstance(self.child, str):
 			return self.child._complete_fields(final_name, final_mode)
-		# Virtual field expansion for composite lists
-		if final_name == "repo":
-			return Or(Field("repo_id", self.child, final_mode), Field("repo_name", self.child, final_mode))
-		if final_name == "author":
-			return Or(Field("author_ident", self.child, final_mode), Field("author_name", self.child, final_mode))
-		if final_name == "editor":
-			return Or(Field("editor_ident", self.child, final_mode), Field("editor_name", self.child, final_mode))
-		if final_name == "lang":
-			return Or(Field("lang_ident", self.child, final_mode), Field("lang_name", self.child, final_mode))
-		if final_name == "script":
-			return Or(Field("script_ident", self.child, final_mode), Field("script_name", self.child, final_mode))
+		virtual_node = self._expand_virtual(final_name, final_mode)
+		if virtual_node:
+			return virtual_node
 		# Mapping for specific sub-fields
 		mapping = {
 			"repo.ident": "repo_id",
@@ -350,16 +358,34 @@ class GeneratedParser(Parser):
 
     @memoize_left_rec
     def AndExpr(self) -> Optional[Any]:
-        # AndExpr: AndExpr ("and" | "AND") NearExpr | NearExpr
+        # AndExpr: AndExpr ("and" | "AND") NotExpr | NotExpr
         mark = self._mark()
         if (
             (r := self.AndExpr())
             and
             (self._tmp_4())
             and
-            (s := self.NearExpr())
+            (s := self.NotExpr())
         ):
             return mkand ( r , s );
+        self._reset(mark)
+        if (
+            (NotExpr := self.NotExpr())
+        ):
+            return NotExpr;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def NotExpr(self) -> Optional[Any]:
+        # NotExpr: ("not" | "NOT") NotExpr | NearExpr
+        mark = self._mark()
+        if (
+            (self._tmp_5())
+            and
+            (r := self.NotExpr())
+        ):
+            return Not ( r );
         self._reset(mark)
         if (
             (NearExpr := self.NearExpr())
@@ -393,7 +419,7 @@ class GeneratedParser(Parser):
         # NearOp: ("near" | "NEAR") '[' NAME ']' | ("near" | "NEAR")
         mark = self._mark()
         if (
-            (self._tmp_5())
+            (self._tmp_6())
             and
             (self.expect('['))
             and
@@ -404,7 +430,7 @@ class GeneratedParser(Parser):
             return parse_seq_range ( range . string );
         self._reset(mark)
         if (
-            (self._tmp_6())
+            (self._tmp_7())
         ):
             return ( 0 , - 1 );
         self._reset(mark)
@@ -412,21 +438,21 @@ class GeneratedParser(Parser):
 
     @memoize_left_rec
     def SeqExpr(self) -> Optional[Any]:
-        # SeqExpr: SeqExpr SeqOp NotExpr | NotExpr
+        # SeqExpr: SeqExpr SeqOp FieldExpr | FieldExpr
         mark = self._mark()
         if (
             (r := self.SeqExpr())
             and
             (op := self.SeqOp())
             and
-            (s := self.NotExpr())
+            (s := self.FieldExpr())
         ):
             return Seq ( r , s , op [0] , op [1] );
         self._reset(mark)
         if (
-            (NotExpr := self.NotExpr())
+            (FieldExpr := self.FieldExpr())
         ):
-            return NotExpr;
+            return FieldExpr;
         self._reset(mark)
         return None;
 
@@ -435,7 +461,7 @@ class GeneratedParser(Parser):
         # SeqOp: ("seq" | "SEQ") '[' NAME ']' | ("seq" | "SEQ")
         mark = self._mark()
         if (
-            (self._tmp_7())
+            (self._tmp_8())
             and
             (self.expect('['))
             and
@@ -446,27 +472,9 @@ class GeneratedParser(Parser):
             return parse_seq_range ( range . string );
         self._reset(mark)
         if (
-            (self._tmp_8())
+            (self._tmp_9())
         ):
             return ( 0 , - 1 );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def NotExpr(self) -> Optional[Any]:
-        # NotExpr: ("not" | "NOT") NotExpr | FieldExpr
-        mark = self._mark()
-        if (
-            (self._tmp_9())
-            and
-            (r := self.NotExpr())
-        ):
-            return Not ( r );
-        self._reset(mark)
-        if (
-            (FieldExpr := self.FieldExpr())
-        ):
-            return FieldExpr;
         self._reset(mark)
         return None;
 
@@ -582,15 +590,15 @@ class GeneratedParser(Parser):
 
     @memoize
     def _tmp_5(self) -> Optional[Any]:
-        # _tmp_5: "near" | "NEAR"
+        # _tmp_5: "not" | "NOT"
         mark = self._mark()
         if (
-            (literal := self.expect("near"))
+            (literal := self.expect("not"))
         ):
             return literal;
         self._reset(mark)
         if (
-            (literal := self.expect("NEAR"))
+            (literal := self.expect("NOT"))
         ):
             return literal;
         self._reset(mark)
@@ -614,15 +622,15 @@ class GeneratedParser(Parser):
 
     @memoize
     def _tmp_7(self) -> Optional[Any]:
-        # _tmp_7: "seq" | "SEQ"
+        # _tmp_7: "near" | "NEAR"
         mark = self._mark()
         if (
-            (literal := self.expect("seq"))
+            (literal := self.expect("near"))
         ):
             return literal;
         self._reset(mark)
         if (
-            (literal := self.expect("SEQ"))
+            (literal := self.expect("NEAR"))
         ):
             return literal;
         self._reset(mark)
@@ -646,15 +654,15 @@ class GeneratedParser(Parser):
 
     @memoize
     def _tmp_9(self) -> Optional[Any]:
-        # _tmp_9: "not" | "NOT"
+        # _tmp_9: "seq" | "SEQ"
         mark = self._mark()
         if (
-            (literal := self.expect("not"))
+            (literal := self.expect("seq"))
         ):
             return literal;
         self._reset(mark)
         if (
-            (literal := self.expect("NOT"))
+            (literal := self.expect("SEQ"))
         ):
             return literal;
         self._reset(mark)

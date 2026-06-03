@@ -142,30 +142,38 @@ class Field(Node):
 		mode_str = f"[{self.mode}]" if self.mode else ""
 		return f"{self.name or '<null>'}{mode_str}:{self.child!r}"
 
-	def _complete_fields(self, name, mode=None):
-		# Resolve name and mode using inheritance ensuring empty strings are preserved
+	def _resolve_name_mode(self, name, mode):
+		# Extracted helper to keep functions short and modular
 		final_name = self.name if self.name is not None else name
 		final_mode = self.mode or mode
-		# Apply dotted parsing to extract the mode if present
 		if final_name:
 			parts = final_name.split('.')
 			if len(parts) > 1 and parts[-1] in {"normal", "exact", "normalized"}:
 				final_mode = parts.pop()
 			final_name = ".".join(parts)
-		# If child is a logical node (not a string), pass the resolved name/mode down
+		return final_name, final_mode
+
+	def _expand_virtual(self, name, mode):
+		# Extracted virtual field conditional checks to stay under length limits
+		if name == "repo":
+			return Or(Field("repo_id", self.child, mode), Field("repo_name", self.child, mode))
+		if name == "author":
+			return Or(Field("author_ident", self.child, mode), Field("author_name", self.child, mode))
+		if name == "editor":
+			return Or(Field("editor_ident", self.child, mode), Field("editor_name", self.child, mode))
+		if name == "lang":
+			return Or(Field("lang_ident", self.child, mode), Field("lang_name", self.child, mode))
+		if name == "script":
+			return Or(Field("script_ident", self.child, mode), Field("script_name", self.child, mode))
+		return None
+
+	def _complete_fields(self, name, mode=None):
+		final_name, final_mode = self._resolve_name_mode(name, mode)
 		if not isinstance(self.child, str):
 			return self.child._complete_fields(final_name, final_mode)
-		# Virtual field expansion for composite lists
-		if final_name == "repo":
-			return Or(Field("repo_id", self.child, final_mode), Field("repo_name", self.child, final_mode))
-		if final_name == "author":
-			return Or(Field("author_ident", self.child, final_mode), Field("author_name", self.child, final_mode))
-		if final_name == "editor":
-			return Or(Field("editor_ident", self.child, final_mode), Field("editor_name", self.child, final_mode))
-		if final_name == "lang":
-			return Or(Field("lang_ident", self.child, final_mode), Field("lang_name", self.child, final_mode))
-		if final_name == "script":
-			return Or(Field("script_ident", self.child, final_mode), Field("script_name", self.child, final_mode))
+		virtual_node = self._expand_virtual(final_name, final_mode)
+		if virtual_node:
+			return virtual_node
 		# Mapping for specific sub-fields
 		mapping = {
 			"repo.ident": "repo_id",
@@ -259,9 +267,16 @@ OrExpr:
 	| AndExpr
 
 AndExpr:
-	| r=AndExpr ("and" | "AND") s=NearExpr { mkand(r, s) }
+	| r=AndExpr ("and" | "AND") s=NotExpr { mkand(r, s) }
+	| NotExpr
+
+# Shifted NOT precedence below NEAR and SEQ so that NOT binds to entire sequence/proximity blocks.
+# This prevents logical value errors where NOT was incorrectly treated as a simple textual leaf.
+NotExpr:
+	| ("not" | "NOT") r=NotExpr { Not(r) }
 	| NearExpr
 
+# NearExpr now evaluates expressions derived from SeqExpr, binding higher than NOT.
 NearExpr:
 	| r=NearExpr op=NearOp s=SeqExpr { Near(r, s, op[0], op[1]) }
 	| SeqExpr
@@ -270,17 +285,14 @@ NearOp:
 	| ("near" | "NEAR") '[' range=NAME ']' { parse_seq_range(range.string) }
 	| ("near" | "NEAR") { (0, -1) }
 
+# SeqExpr now directly evaluates FieldExpr, giving proximity and sequence constraints maximum priority.
 SeqExpr:
-	| r=SeqExpr op=SeqOp s=NotExpr { Seq(r, s, op[0], op[1]) }
-	| NotExpr
+	| r=SeqExpr op=SeqOp s=FieldExpr { Seq(r, s, op[0], op[1]) }
+	| FieldExpr
 
 SeqOp:
 	| ("seq" | "SEQ") '[' range=NAME ']' { parse_seq_range(range.string) }
 	| ("seq" | "SEQ") { (0, -1) }
-
-NotExpr:
-	| ("not" | "NOT") r=NotExpr { Not(r) }
-	| FieldExpr
 
 Text: r=DottedName { r }
 
