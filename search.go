@@ -276,7 +276,7 @@ func matchContextQuery(row []string, caches []*TransformCache, q QueryNode, defa
 	case "field":
 		return evalContextField(row, caches, q, defaultField)
 	case "seq", "near":
-		return evalContextSeq(row, q)
+		return evalContextSeq(row, caches, q)
 	}
 	return true
 }
@@ -337,7 +337,7 @@ func evalContextFieldAll(row []string, caches []*TransformCache, q QueryNode, de
 	return false
 }
 
-func evalContextSeq(row []string, q QueryNode) bool {
+func evalContextSeq(row []string, caches []*TransformCache, q QueryNode) bool {
 	col := -1
 	field := strings.ReplaceAll(getFieldName(q), ".", "_")
 	if strings.HasSuffix(field, "ident") || field == "ident" || strings.HasSuffix(field, "id") {
@@ -351,13 +351,21 @@ func evalContextSeq(row []string, q QueryNode) bool {
 			limit = 2
 		}
 		for j := 0; j < limit; j++ {
-			if len(findSeqOccurrences(row[j], q)) > 0 {
+			var c *TransformCache
+			if caches != nil && j < len(caches) {
+				c = caches[j]
+			}
+			if len(findSeqOccurrences(c, row[j], q)) > 0 {
 				return true
 			}
 		}
 		return false
 	}
-	return col < len(row) && len(findSeqOccurrences(row[col], q)) > 0
+	var c *TransformCache
+	if caches != nil && col < len(caches) {
+		c = caches[col]
+	}
+	return col < len(row) && len(findSeqOccurrences(c, row[col], q)) > 0
 }
 
 func evalAnd(d Document, args []QueryNode) bool {
@@ -617,25 +625,25 @@ func applyHighlights(res *SearchResult, doc Document, qStr string) {
 }
 
 func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
-	processFieldTerms(&res.Logical, doc.Logical, termsForFields(terms, "logical"), "logical")
-	processFieldTerms(&res.Ident, doc.Ident, termsForFields(terms, "ident"), "ident")
-	processFieldTerms(&res.Summary, doc.Summary, termsForFields(terms, "summary"), "summary")
-	processFieldTerms(&res.RepoID, doc.RepoID, termsForFields(terms, "repo_id"), "repo_id")
-	processFieldTerms(&res.RepoName, doc.RepoName, termsForFields(terms, "repo_name"), "repo_name")
-	processFieldTerms(&res.Hand, doc.Hand, termsForFields(terms, "hand"), "hand")
-	processListTerms(res.Title, doc.Title, termsForFields(terms, "title"), "title")
-	processListTermsParity(res.Author, doc.Author, termsForFields(terms, "author", "author_ident"), "author_ident", 0)
-	processListTermsParity(res.Author, doc.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
-	processListTermsParity(res.Editor, doc.Editor, termsForFields(terms, "editor", "editor_ident"), "editor_ident", 0)
-	processListTermsParity(res.Editor, doc.Editor, termsForFields(terms, "editor", "editor_name"), "editor_name", 1)
+	processFieldTerms(doc.Cache.Logical, &res.Logical, doc.Logical, termsForFields(terms, "logical"), "logical")
+	processFieldTerms(doc.Cache.Ident, &res.Ident, doc.Ident, termsForFields(terms, "ident"), "ident")
+	processFieldTerms(doc.Cache.Summary, &res.Summary, doc.Summary, termsForFields(terms, "summary"), "summary")
+	processFieldTerms(doc.Cache.RepoID, &res.RepoID, doc.RepoID, termsForFields(terms, "repo_id"), "repo_id")
+	processFieldTerms(doc.Cache.RepoName, &res.RepoName, doc.RepoName, termsForFields(terms, "repo_name"), "repo_name")
+	processFieldTerms(doc.Cache.Hand, &res.Hand, doc.Hand, termsForFields(terms, "hand"), "hand")
+	processListTerms(res.Title, doc.Title, doc.Cache.Title, termsForFields(terms, "title"), "title")
+	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_ident"), "author_ident", 0)
+	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
+	processListTermsParity(res.Editor, doc.Editor, doc.Cache.Editor, termsForFields(terms, "editor", "editor_ident"), "editor_ident", 0)
+	processListTermsParity(res.Editor, doc.Editor, doc.Cache.Editor, termsForFields(terms, "editor", "editor_name"), "editor_name", 1)
 	highlightMatrixFields(res, doc, terms)
 }
 
 func highlightMatrixFields(res *SearchResult, doc Document, terms []QueryTerm) {
-	processMatrixTermsCol(res.Lang, doc.Lang, termsForFields(terms, "lang", "lang_ident"), "lang_ident", 0)
-	processMatrixTermsCol(res.Lang, doc.Lang, termsForFields(terms, "lang", "lang_name"), "lang_name", 1)
-	processMatrixTermsCol(res.Script, doc.Script, termsForFields(terms, "script", "script_ident"), "script_ident", 0)
-	processMatrixTermsCol(res.Script, doc.Script, termsForFields(terms, "script", "script_name"), "script_name", 1)
+	processMatrixTermsCol(res.Lang, doc.Lang, doc.Cache.Lang, termsForFields(terms, "lang", "lang_ident"), "lang_ident", 0)
+	processMatrixTermsCol(res.Lang, doc.Lang, doc.Cache.Lang, termsForFields(terms, "lang", "lang_name"), "lang_name", 1)
+	processMatrixTermsCol(res.Script, doc.Script, doc.Cache.Script, termsForFields(terms, "script", "script_ident"), "script_ident", 0)
+	processMatrixTermsCol(res.Script, doc.Script, doc.Cache.Script, termsForFields(terms, "script", "script_name"), "script_name", 1)
 }
 
 func cloneList(src []string) []string {
@@ -653,10 +661,10 @@ func cloneMatrix(src [][]string) [][]string {
 	return dst
 }
 
-func processFieldTerms(target *string, source string, terms []QueryTerm, fieldName string) bool {
+func processFieldTerms(cache *TransformCache, target *string, source string, terms []QueryTerm, fieldName string) bool {
 	var allIntervals [][2]int
 	for _, term := range terms {
-		allIntervals = append(allIntervals, findOccurrences(source, term.Value, term.Mode, fieldName)...)
+		allIntervals = append(allIntervals, findOccurrences(cache, source, term.Value, term.Mode, fieldName)...)
 	}
 	if len(allIntervals) > 0 {
 		*target = injectMarkers(source, allIntervals)
@@ -665,44 +673,66 @@ func processFieldTerms(target *string, source string, terms []QueryTerm, fieldNa
 	return false
 }
 
-func processListTerms(targets []string, sources []string, terms []QueryTerm, fieldName string) bool {
+func processListTerms(targets []string, sources []string, caches []*TransformCache, terms []QueryTerm, fieldName string) bool {
 	matched := false
 	for i, item := range sources {
-		if processFieldTerms(&targets[i], item, terms, fieldName) {
+		var c *TransformCache
+		if caches != nil && i < len(caches) {
+			c = caches[i]
+		}
+		if processFieldTerms(c, &targets[i], item, terms, fieldName) {
 			matched = true
 		}
 	}
 	return matched
 }
 
-func processListTermsParity(targets []string, sources []string, terms []QueryTerm, fieldName string, parity int) bool {
+func processListTermsParity(targets []string, sources []string, caches []*TransformCache, terms []QueryTerm, fieldName string, parity int) bool {
 	matched := false
 	for i, item := range sources {
 		if parity != -1 && i%2 != parity {
 			continue
 		}
-		if processFieldTerms(&targets[i], item, terms, fieldName) {
+		var c *TransformCache
+		if caches != nil && i < len(caches) {
+			c = caches[i]
+		}
+		if processFieldTerms(c, &targets[i], item, terms, fieldName) {
 			matched = true
 		}
 	}
 	return matched
 }
 
-func processMatrixTermsCol(targets [][]string, sources [][]string, terms []QueryTerm, fieldName string, col int) bool {
+func processMatrixTermsCol(targets [][]string, sources [][]string, caches [][]*TransformCache, terms []QueryTerm, fieldName string, col int) bool {
 	matched := false
 	for i, row := range sources {
+		var rowCaches []*TransformCache
+		if caches != nil && i < len(caches) {
+			rowCaches = caches[i]
+		}
 		if col == -1 {
 			limit := len(row)
 			if limit > 2 {
 				limit = 2
 			}
 			for j := 0; j < limit; j++ {
-				if processFieldTerms(&targets[i][j], row[j], terms, fieldName) {
+				var c *TransformCache
+				if rowCaches != nil && j < len(rowCaches) {
+					c = rowCaches[j]
+				}
+				if processFieldTerms(c, &targets[i][j], row[j], terms, fieldName) {
 					matched = true
 				}
 			}
-		} else if col < len(row) && processFieldTerms(&targets[i][col], row[col], terms, fieldName) {
-			matched = true
+		} else if col < len(row) {
+			var c *TransformCache
+			if rowCaches != nil && col < len(rowCaches) {
+				c = rowCaches[col]
+			}
+			if processFieldTerms(c, &targets[i][col], row[col], terms, fieldName) {
+				matched = true
+			}
 		}
 	}
 	return matched
@@ -710,7 +740,7 @@ func processMatrixTermsCol(targets [][]string, sources [][]string, terms []Query
 
 type StringMapper func(string) (string, []int)
 
-func findOccurrences(text, term, mode, field string) [][2]int {
+func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2]int {
 	if mode == "" {
 		if field == "logical" {
 			mode = "normalized"
@@ -718,6 +748,15 @@ func findOccurrences(text, term, mode, field string) [][2]int {
 			mode = "normal"
 		}
 	}
+
+	// Fast-path cache rejection
+	// Avoids the heavy transformWithBounds allocation if the term simply does not exist in the text.
+	transText := cache.get(text, mode)
+	transTerm := transform(term, mode)
+	if !strings.Contains(transText, transTerm) {
+		return nil
+	}
+
 	mapper := func(s string) (string, []int) {
 		return transformWithBounds(s, mode)
 	}
@@ -818,34 +857,77 @@ func getFieldName(q QueryNode) string {
 	return ""
 }
 
-func findSeqOccurrences(text string, q QueryNode) [][2]int {
+func findSeqOccurrences(cache *TransformCache, text string, q QueryNode) [][2]int {
 	if q.Op == "field" {
 		if q.Arg != nil {
-			return findSeqOccurrences(text, *q.Arg)
+			return findSeqOccurrences(cache, text, *q.Arg)
 		}
-		return findOccurrences(text, q.Value, q.Mode, q.Field)
+		return findOccurrences(cache, text, q.Value, q.Mode, q.Field)
 	}
 	var matches [][2]int
 	if q.Op == "near" && len(q.Args) >= 2 {
-		matches = append(matches, evalSeqPair(text, q.Args[0], q.Args[1], q.X, q.Y)...)
-		matches = append(matches, evalSeqPair(text, q.Args[1], q.Args[0], q.X, q.Y)...)
+		matches = append(matches, evalSeqPair(cache, text, q.Args[0], q.Args[1], q.X, q.Y)...)
+		matches = append(matches, evalSeqPair(cache, text, q.Args[1], q.Args[0], q.X, q.Y)...)
+
+		if len(matches) > 1 {
+			sort.Slice(matches, func(i, j int) bool {
+				if matches[i][0] != matches[j][0] {
+					return matches[i][0] < matches[j][0]
+				}
+				return matches[i][1] < matches[j][1]
+			})
+			unique := matches[:1]
+			for i := 1; i < len(matches); i++ {
+				if matches[i] != matches[i-1] {
+					unique = append(unique, matches[i])
+				}
+			}
+			matches = unique
+		}
 		return matches
 	}
 	if q.Op != "seq" || len(q.Args) < 2 {
 		return matches
 	}
-	return evalSeqPair(text, q.Args[0], q.Args[1], q.X, q.Y)
+	return evalSeqPair(cache, text, q.Args[0], q.Args[1], q.X, q.Y)
 }
 
-func evalSeqPair(text string, left, right QueryNode, x, y int) [][2]int {
+func evalSeqPair(cache *TransformCache, text string, left, right QueryNode, x, y int) [][2]int {
 	var matches [][2]int
-	leftOpt := findSeqOccurrences(text, left)
-	rightOpt := findSeqOccurrences(text, right)
+	leftOpt := findSeqOccurrences(cache, text, left)
+	if len(leftOpt) == 0 {
+		return matches
+	}
+	rightOpt := findSeqOccurrences(cache, text, right)
+	if len(rightOpt) == 0 {
+		return matches
+	}
+
+	seen := make(map[[2]int]struct{})
+
 	for _, l := range leftOpt {
-		for _, r := range rightOpt {
+		target := l[1] + x
+
+		low, high := 0, len(rightOpt)
+		for low < high {
+			mid := int(uint(low+high) >> 1)
+			if rightOpt[mid][0] < target {
+				low = mid + 1
+			} else {
+				high = mid
+			}
+		}
+
+		for i := low; i < len(rightOpt); i++ {
+			r := rightOpt[i]
 			dist := r[0] - l[1]
-			if dist >= x && (y == -1 || dist < y) {
-				matches = append(matches, [2]int{l[0], r[1]})
+			if y != -1 && dist >= y {
+				break
+			}
+			pair := [2]int{l[0], r[1]}
+			if _, ok := seen[pair]; !ok {
+				seen[pair] = struct{}{}
+				matches = append(matches, pair)
 			}
 		}
 	}
@@ -857,17 +939,17 @@ func matchSeqField(d Document, q QueryNode) bool {
 	field = strings.ReplaceAll(field, ".", "_")
 	switch field {
 	case "ident":
-		return len(findSeqOccurrences(d.Ident, q)) > 0
+		return len(findSeqOccurrences(d.Cache.Ident, d.Ident, q)) > 0
 	case "logical":
-		return len(findSeqOccurrences(d.Logical, q)) > 0
+		return len(findSeqOccurrences(d.Cache.Logical, d.Logical, q)) > 0
 	case "summary":
-		return len(findSeqOccurrences(d.Summary, q)) > 0
+		return len(findSeqOccurrences(d.Cache.Summary, d.Summary, q)) > 0
 	case "repo_id":
-		return len(findSeqOccurrences(d.RepoID, q)) > 0
+		return len(findSeqOccurrences(d.Cache.RepoID, d.RepoID, q)) > 0
 	case "repo_name":
-		return len(findSeqOccurrences(d.RepoName, q)) > 0
+		return len(findSeqOccurrences(d.Cache.RepoName, d.RepoName, q)) > 0
 	case "hand":
-		return len(findSeqOccurrences(d.Hand, q)) > 0
+		return len(findSeqOccurrences(d.Cache.Hand, d.Hand, q)) > 0
 	}
 	return matchComplexSeqField(d, field, q)
 }
@@ -875,19 +957,19 @@ func matchSeqField(d Document, q QueryNode) bool {
 func matchComplexSeqField(d Document, field string, q QueryNode) bool {
 	switch field {
 	case "title":
-		return listSeqMatches(d.Title, q)
+		return listSeqMatches(d.Title, d.Cache.Title, q)
 	case "author":
-		return listSeqMatches(d.Author, q)
+		return listSeqMatches(d.Author, d.Cache.Author, q)
 	case "author_ident":
-		return listSeqMatchesParity(d.Author, q, 0)
+		return listSeqMatchesParity(d.Author, d.Cache.Author, q, 0)
 	case "author_name":
-		return listSeqMatchesParity(d.Author, q, 1)
+		return listSeqMatchesParity(d.Author, d.Cache.Author, q, 1)
 	case "editor":
-		return listSeqMatches(d.Editor, q)
+		return listSeqMatches(d.Editor, d.Cache.Editor, q)
 	case "editor_ident":
-		return listSeqMatchesParity(d.Editor, q, 0)
+		return listSeqMatchesParity(d.Editor, d.Cache.Editor, q, 0)
 	case "editor_name":
-		return listSeqMatchesParity(d.Editor, q, 1)
+		return listSeqMatchesParity(d.Editor, d.Cache.Editor, q, 1)
 	}
 	return matchMatrixSeqField(d, field, q)
 }
@@ -895,73 +977,97 @@ func matchComplexSeqField(d Document, field string, q QueryNode) bool {
 func matchMatrixSeqField(d Document, field string, q QueryNode) bool {
 	switch field {
 	case "lang":
-		return matrixSeqMatchesCol(d.Lang, q, -1)
+		return matrixSeqMatchesCol(d.Lang, d.Cache.Lang, q, -1)
 	case "lang_ident":
-		return matrixSeqMatchesCol(d.Lang, q, 0)
+		return matrixSeqMatchesCol(d.Lang, d.Cache.Lang, q, 0)
 	case "lang_name":
-		return matrixSeqMatchesCol(d.Lang, q, 1)
+		return matrixSeqMatchesCol(d.Lang, d.Cache.Lang, q, 1)
 	case "script":
-		return matrixSeqMatchesCol(d.Script, q, -1)
+		return matrixSeqMatchesCol(d.Script, d.Cache.Script, q, -1)
 	case "script_ident":
-		return matrixSeqMatchesCol(d.Script, q, 0)
+		return matrixSeqMatchesCol(d.Script, d.Cache.Script, q, 0)
 	case "script_name":
-		return matrixSeqMatchesCol(d.Script, q, 1)
+		return matrixSeqMatchesCol(d.Script, d.Cache.Script, q, 1)
 	}
 	return docSeqMatchesAll(d, q)
 }
 
-func listSeqMatches(list []string, q QueryNode) bool {
-	for _, item := range list {
-		if len(findSeqOccurrences(item, q)) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func listSeqMatchesParity(list []string, q QueryNode, parity int) bool {
+func listSeqMatches(list []string, caches []*TransformCache, q QueryNode) bool {
 	for i, item := range list {
-		if i%2 == parity && len(findSeqOccurrences(item, q)) > 0 {
+		var c *TransformCache
+		if caches != nil && i < len(caches) {
+			c = caches[i]
+		}
+		if len(findSeqOccurrences(c, item, q)) > 0 {
 			return true
 		}
 	}
 	return false
 }
 
-func matrixSeqMatchesCol(mat [][]string, q QueryNode, col int) bool {
-	for _, row := range mat {
+func listSeqMatchesParity(list []string, caches []*TransformCache, q QueryNode, parity int) bool {
+	for i, item := range list {
+		if i%2 == parity {
+			var c *TransformCache
+			if caches != nil && i < len(caches) {
+				c = caches[i]
+			}
+			if len(findSeqOccurrences(c, item, q)) > 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func matrixSeqMatchesCol(mat [][]string, caches [][]*TransformCache, q QueryNode, col int) bool {
+	for i, row := range mat {
+		var rowCaches []*TransformCache
+		if caches != nil && i < len(caches) {
+			rowCaches = caches[i]
+		}
 		if col == -1 {
 			limit := len(row)
 			if limit > 2 {
 				limit = 2
 			}
 			for j := 0; j < limit; j++ {
-				if len(findSeqOccurrences(row[j], q)) > 0 {
+				var c *TransformCache
+				if rowCaches != nil && j < len(rowCaches) {
+					c = rowCaches[j]
+				}
+				if len(findSeqOccurrences(c, row[j], q)) > 0 {
 					return true
 				}
 			}
-		} else if col < len(row) && len(findSeqOccurrences(row[col], q)) > 0 {
-			return true
+		} else if col < len(row) {
+			var c *TransformCache
+			if rowCaches != nil && col < len(rowCaches) {
+				c = rowCaches[col]
+			}
+			if len(findSeqOccurrences(c, row[col], q)) > 0 {
+				return true
+			}
 		}
 	}
 	return false
 }
 
 func docSeqMatchesAll(d Document, q QueryNode) bool {
-	if len(findSeqOccurrences(d.Logical, q)) > 0 || len(findSeqOccurrences(d.Ident, q)) > 0 {
+	if len(findSeqOccurrences(d.Cache.Logical, d.Logical, q)) > 0 || len(findSeqOccurrences(d.Cache.Ident, d.Ident, q)) > 0 {
 		return true
 	}
-	if len(findSeqOccurrences(d.Summary, q)) > 0 || len(findSeqOccurrences(d.RepoID, q)) > 0 {
+	if len(findSeqOccurrences(d.Cache.Summary, d.Summary, q)) > 0 || len(findSeqOccurrences(d.Cache.RepoID, d.RepoID, q)) > 0 {
 		return true
 	}
-	if len(findSeqOccurrences(d.RepoName, q)) > 0 || len(findSeqOccurrences(d.Hand, q)) > 0 {
+	if len(findSeqOccurrences(d.Cache.RepoName, d.RepoName, q)) > 0 || len(findSeqOccurrences(d.Cache.Hand, d.Hand, q)) > 0 {
 		return true
 	}
-	if listSeqMatches(d.Title, q) || listSeqMatches(d.Author, q) {
+	if listSeqMatches(d.Title, d.Cache.Title, q) || listSeqMatches(d.Author, d.Cache.Author, q) {
 		return true
 	}
-	if listSeqMatches(d.Editor, q) || matrixSeqMatchesCol(d.Lang, q, -1) {
+	if listSeqMatches(d.Editor, d.Cache.Editor, q) || matrixSeqMatchesCol(d.Lang, d.Cache.Lang, q, -1) {
 		return true
 	}
-	return matrixSeqMatchesCol(d.Script, q, -1)
+	return matrixSeqMatchesCol(d.Script, d.Cache.Script, q, -1)
 }
