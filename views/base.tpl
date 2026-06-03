@@ -30,7 +30,7 @@
       <i class="fa-brands fa-git-alt"></i> Repositories</a>
    </li>
    <li>
-      <a href="{{url_for("show_catalog")}}">
+      <a href="/texts">
       <i class="fa-regular fa-file-lines"></i> Texts</a>
    </li>
    <li class="submenu">

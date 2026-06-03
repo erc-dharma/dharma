@@ -252,7 +252,8 @@ def show_parallels_full(text, category, id):
 def legacy_show_catalog():
 	return flask.redirect(flask.url_for("show_catalog"))
 
-@app.get("/texts")
+# Legacy
+@app.get("/old_texts")
 def show_catalog():
 	q = flask.request.args.get("q", "")
 	s = flask.request.args.get("s", "")
@@ -615,7 +616,12 @@ def handle_github():
 	change.notify(repo)
 	return ""
 
+# Legacy
 @app.get("/search")
+def redirect_to_texts():
+	return flask.redirect("/texts")
+
+@app.get("/texts")
 def render_search_page():
 	query = flask.request.args.get("q", "").strip()
 	sort = flask.request.args.get("sort", "title")
