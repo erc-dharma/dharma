@@ -225,13 +225,13 @@ body {
 /*************************************** Tables *******************************/
 
 tr:hover td {
-	background-color: gray;
+	background-color: #e6e6e6;
 }
 table tr:nth-child(odd) {
-	background-color: #eff0f1;
+	background-color: #fafafa;
 }
 table tr:nth-child(even) {
-	background-color: #d9dadb;
+	background-color: #fafafa;
 }
 table {
 	border-spacing: 0;
@@ -243,7 +243,7 @@ td, th {
 	padding: 0.4em;
 }
 th {
-	background-color: #d9dadb;
+	background-color: var(--card-heading-background);
 }
 
 
