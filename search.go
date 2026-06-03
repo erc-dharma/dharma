@@ -15,12 +15,10 @@ import (
 var titleCollator *collate.Collator
 
 func init() {
-	// Initialize collator with English configuration ignoring punctuation
 	titleCollator = collate.New(language.Make("en-u-ka-shifted"))
 }
 
 func (c *TransformCache) get(text, mode string) string {
-	// Execute lazy transformation falling back to immediate evaluation if nil
 	if c == nil {
 		return transform(text, mode)
 	}
@@ -37,7 +35,6 @@ func (c *TransformCache) get(text, mode string) string {
 }
 
 func findDocument(ident string) *Document {
-	// Search the in-memory corpus for a specific identifier
 	mu.RLock()
 	defer mu.RUnlock()
 	for _, doc := range corpus {
@@ -49,14 +46,12 @@ func findDocument(ident string) *Document {
 }
 
 func sortDocs(docs []Document, sortBy string) {
-	// Apply the requested sorting algorithm to the document list
 	sort.Slice(docs, func(i, j int) bool {
 		return compareDocs(docs[i], docs[j], sortBy)
 	})
 }
 
 func myCompareString(c *collate.Collator, a, b string) int {
-	// Compare two strings using the collator avoiding known bugs
 	var buf collate.Buffer
 	kA := c.KeyFromString(&buf, a)
 	kB := c.KeyFromString(&buf, b)
@@ -66,7 +61,6 @@ func myCompareString(c *collate.Collator, a, b string) int {
 }
 
 func compareDocs(d1, d2 Document, sortBy string) bool {
-	// Compare two documents based on the specified sort criteria
 	if sortBy == "ident" {
 		return d1.Ident < d2.Ident
 	}
@@ -82,7 +76,6 @@ func compareDocs(d1, d2 Document, sortBy string) bool {
 }
 
 func paginateDocs(docs []Document, off, lim int) []Document {
-	// Extract the requested page of results from the full list
 	if off < 0 {
 		off = 0
 	}
@@ -100,7 +93,6 @@ func paginateDocs(docs []Document, off, lim int) []Document {
 }
 
 func buildResults(docs []Document, q string) []SearchResult {
-	// Generate search results with highlighted matches
 	results := make([]SearchResult, 0, len(docs))
 	for _, doc := range docs {
 		results = append(results, matchDocument(doc, q))
@@ -109,14 +101,12 @@ func buildResults(docs []Document, q string) []SearchResult {
 }
 
 func parseQuery(qStr string) QueryNode {
-	// Parse JSON query AST
 	var q QueryNode
 	json.Unmarshal([]byte(qStr), &q)
 	return q
 }
 
 func filterDocs(qStr string) []Document {
-	// Filter the corpus returning documents matching the query tree
 	mu.RLock()
 	snap := corpus
 	mu.RUnlock()
@@ -136,7 +126,6 @@ func filterDocs(qStr string) []Document {
 }
 
 func matchQuery(doc Document, q QueryNode) bool {
-	// Evaluate the document against the query AST
 	switch q.Op {
 	case "and":
 		return evalAnd(doc, q.Args)
@@ -153,7 +142,6 @@ func matchQuery(doc Document, q QueryNode) bool {
 }
 
 func evalAnd(d Document, args []QueryNode) bool {
-	// Evaluate an AND node
 	for _, arg := range args {
 		if !matchQuery(d, arg) {
 			return false
@@ -163,17 +151,15 @@ func evalAnd(d Document, args []QueryNode) bool {
 }
 
 func evalOr(d Document, args []QueryNode) bool {
-	// Evaluate an OR node
 	for _, arg := range args {
 		if matchQuery(d, arg) {
 			return true
 		}
 	}
-	return len(args) > 0
+	return false
 }
 
 func containsMatcher(cache *TransformCache, text, term, mode, field string) bool {
-	// Verify text inclusion utilizing the configured transformation cache
 	if mode == "" {
 		if field == "logical" {
 			mode = "normalized"
@@ -187,7 +173,6 @@ func containsMatcher(cache *TransformCache, text, term, mode, field string) bool
 }
 
 func matchField(d Document, field, val, mode string) bool {
-	// Normalize field name to support dotted syntax natively
 	field = strings.ReplaceAll(field, ".", "_")
 	switch field {
 	case "ident", "logical", "summary", "repo_id", "repo_name", "hand":
@@ -199,7 +184,6 @@ func matchField(d Document, field, val, mode string) bool {
 }
 
 func matchStringField(d Document, field, val, mode string) bool {
-	// Route simple string field evaluations to containsMatcher
 	switch field {
 	case "ident":
 		return containsMatcher(d.Cache.Ident, d.Ident, val, mode, field)
@@ -218,7 +202,6 @@ func matchStringField(d Document, field, val, mode string) bool {
 }
 
 func matchComplexField(d Document, field, val, mode string) bool {
-	// Route composite array properties to list matching helpers
 	switch field {
 	case "title":
 		return listMatches(d.Title, d.Cache.Title, val, mode, field)
@@ -239,7 +222,6 @@ func matchComplexField(d Document, field, val, mode string) bool {
 }
 
 func matchMatrixField(d Document, field, val, mode string) bool {
-	// Evaluate targeted matrix properties using selective column indices
 	switch field {
 	case "lang":
 		return matrixMatchesCol(d.Lang, d.Cache.Lang, val, mode, field, -1)
@@ -258,7 +240,6 @@ func matchMatrixField(d Document, field, val, mode string) bool {
 }
 
 func docMatchesAll(d Document, val, mode string) bool {
-	// Verify if any document field contains the value considering the mode
 	if containsMatcher(d.Cache.Logical, d.Logical, val, mode, "logical") || containsMatcher(d.Cache.Ident, d.Ident, val, mode, "ident") {
 		return true
 	}
@@ -278,7 +259,6 @@ func docMatchesAll(d Document, val, mode string) bool {
 }
 
 func listMatches(list []string, caches []*TransformCache, q, mode, field string) bool {
-	// Verify if any item in the list contains the query term
 	for i, item := range list {
 		var c *TransformCache
 		if caches != nil && i < len(caches) {
@@ -292,7 +272,6 @@ func listMatches(list []string, caches []*TransformCache, q, mode, field string)
 }
 
 func listMatchesParity(list []string, caches []*TransformCache, q, mode, field string, parity int) bool {
-	// Verify if any item in the list matches considering parity and mode
 	for i, item := range list {
 		if parity != -1 && i%2 != parity {
 			continue
@@ -309,7 +288,6 @@ func listMatchesParity(list []string, caches []*TransformCache, q, mode, field s
 }
 
 func matrixMatchesCol(mat [][]string, caches [][]*TransformCache, q, mode, field string, col int) bool {
-	// Filter matrix evaluation according to a specified column index limitation
 	for i, row := range mat {
 		var rowCaches []*TransformCache
 		if caches != nil && i < len(caches) {
@@ -327,7 +305,6 @@ func matrixMatchesCol(mat [][]string, caches [][]*TransformCache, q, mode, field
 }
 
 func scanRowLimit(row []string, rowCaches []*TransformCache, q, mode, field string) bool {
-	// Scan exclusively the first two elements of a matrix row
 	limit := len(row)
 	if limit > 2 {
 		limit = 2
@@ -345,7 +322,6 @@ func scanRowLimit(row []string, rowCaches []*TransformCache, q, mode, field stri
 }
 
 func scanRowCol(row []string, rowCaches []*TransformCache, q, mode, field string, col int) bool {
-	// Evaluate a specific column index within a matrix row
 	var c *TransformCache
 	if rowCaches != nil && col < len(rowCaches) {
 		c = rowCaches[col]
@@ -354,7 +330,6 @@ func scanRowCol(row []string, rowCaches []*TransformCache, q, mode, field string
 }
 
 func matchDocument(doc Document, qStr string) SearchResult {
-	// Duplicate the document and apply highlights if necessary
 	res := SearchResult{
 		Ident: doc.Ident, Logical: doc.Logical,
 		Title: cloneList(doc.Title), Summary: doc.Summary,
@@ -370,7 +345,6 @@ func matchDocument(doc Document, qStr string) SearchResult {
 }
 
 func extractTerms(q QueryNode) []QueryTerm {
-	// Extract terms, their matching mode, and target field from the AST
 	if q.Op == "field" {
 		return []QueryTerm{{Field: q.Field, Value: q.Value, Mode: q.Mode}}
 	}
@@ -384,7 +358,6 @@ func extractTerms(q QueryNode) []QueryTerm {
 }
 
 func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
-	// Filter a list of query terms retaining only those targeting specific fields
 	var filtered []QueryTerm
 	for _, t := range terms {
 		if t.Field == "" {
@@ -403,7 +376,6 @@ func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
 }
 
 func applyHighlights(res *SearchResult, doc Document, qStr string) {
-	// Inject highlight markers across all relevant fields
 	q := parseQuery(qStr)
 	terms := extractTerms(q)
 	if len(terms) == 0 {
@@ -413,7 +385,6 @@ func applyHighlights(res *SearchResult, doc Document, qStr string) {
 }
 
 func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
-	// Apply highlights combining all query terms according to their target fields
 	processFieldTerms(&res.Logical, doc.Logical, termsForFields(terms, "logical"), "logical")
 	processFieldTerms(&res.Ident, doc.Ident, termsForFields(terms, "ident"), "ident")
 	processFieldTerms(&res.Summary, doc.Summary, termsForFields(terms, "summary"), "summary")
@@ -429,7 +400,6 @@ func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 }
 
 func highlightMatrixFields(res *SearchResult, doc Document, terms []QueryTerm) {
-	// Direct specific matrix query terms to their respective row boundaries and columns
 	processMatrixTermsCol(res.Lang, doc.Lang, termsForFields(terms, "lang", "lang_ident"), "lang_ident", 0)
 	processMatrixTermsCol(res.Lang, doc.Lang, termsForFields(terms, "lang", "lang_name"), "lang_name", 1)
 	processMatrixTermsCol(res.Script, doc.Script, termsForFields(terms, "script", "script_ident"), "script_ident", 0)
@@ -437,14 +407,12 @@ func highlightMatrixFields(res *SearchResult, doc Document, terms []QueryTerm) {
 }
 
 func cloneList(src []string) []string {
-	// Create a deep copy of a string slice
 	dst := make([]string, len(src))
 	copy(dst, src)
 	return dst
 }
 
 func cloneMatrix(src [][]string) [][]string {
-	// Create a deep copy of a string matrix
 	dst := make([][]string, len(src))
 	for i, row := range src {
 		dst[i] = make([]string, len(row))
@@ -454,7 +422,6 @@ func cloneMatrix(src [][]string) [][]string {
 }
 
 func processFieldTerms(target *string, source string, terms []QueryTerm, fieldName string) bool {
-	// Detect occurrences and update the target string with markers
 	var allIntervals [][2]int
 	for _, term := range terms {
 		allIntervals = append(allIntervals, findOccurrences(source, term.Value, term.Mode, fieldName)...)
@@ -467,7 +434,6 @@ func processFieldTerms(target *string, source string, terms []QueryTerm, fieldNa
 }
 
 func processListTerms(targets []string, sources []string, terms []QueryTerm, fieldName string) bool {
-	// Apply highlight processing to a list of strings
 	matched := false
 	for i, item := range sources {
 		if processFieldTerms(&targets[i], item, terms, fieldName) {
@@ -478,7 +444,6 @@ func processListTerms(targets []string, sources []string, terms []QueryTerm, fie
 }
 
 func processListTermsParity(targets []string, sources []string, terms []QueryTerm, fieldName string, parity int) bool {
-	// Apply highlight processing to a list of strings respecting parity
 	matched := false
 	for i, item := range sources {
 		if parity != -1 && i%2 != parity {
@@ -492,7 +457,6 @@ func processListTermsParity(targets []string, sources []string, terms []QueryTer
 }
 
 func processMatrixTermsCol(targets [][]string, sources [][]string, terms []QueryTerm, fieldName string, col int) bool {
-	// Apply highlight processing to targeted matrix components utilizing specific column rules
 	matched := false
 	for i, row := range sources {
 		if col == -1 {
@@ -512,11 +476,9 @@ func processMatrixTermsCol(targets [][]string, sources [][]string, terms []Query
 	return matched
 }
 
-// StringMapper defines the signature for transformation functions computing text boundaries
 type StringMapper func(string) (string, []int)
 
 func findOccurrences(text, term, mode, field string) [][2]int {
-	// Resolve default mode based on the current field context
 	if mode == "" {
 		if field == "logical" {
 			mode = "normalized"
@@ -524,7 +486,6 @@ func findOccurrences(text, term, mode, field string) [][2]int {
 			mode = "normal"
 		}
 	}
-	// Delegate the search to the universal mapping function
 	mapper := func(s string) (string, []int) {
 		return transformWithBounds(s, mode)
 	}
@@ -532,7 +493,6 @@ func findOccurrences(text, term, mode, field string) [][2]int {
 }
 
 func findOccurrencesWithMapping(text, term string, mapper StringMapper) [][2]int {
-	// Identify start and end indices using a text mapping function
 	transText, bounds := mapper(text)
 	transTerm, _ := mapper(term)
 	var matches [][2]int
@@ -561,7 +521,6 @@ type Point struct {
 }
 
 func injectMarkers(text string, intervals [][2]int) string {
-	// Insert boundary markers around all identified occurrences
 	if len(intervals) == 0 {
 		return text
 	}
@@ -582,7 +541,6 @@ func injectMarkers(text string, intervals [][2]int) string {
 }
 
 func buildPoints(intervals [][2]int) []Point {
-	// Transform intervals into a sorted list of boundary points
 	var points []Point
 	for _, interval := range intervals {
 		points = append(points, Point{interval[0], 1})
@@ -593,7 +551,6 @@ func buildPoints(intervals [][2]int) []Point {
 }
 
 func sortPoints(points []Point) {
-	// Sort boundary points sequentially ensuring logical nesting
 	sort.Slice(points, func(i, j int) bool {
 		if points[i].idx != points[j].idx {
 			return points[i].idx < points[j].idx
@@ -603,7 +560,6 @@ func sortPoints(points []Point) {
 }
 
 func processPoint(p Point, depth int, sb *strings.Builder) int {
-	// Compute nesting depth and emit structural markers
 	if p.kind == 1 {
 		if depth == 0 {
 			sb.WriteString(MarkerStart)
@@ -618,7 +574,6 @@ func processPoint(p Point, depth int, sb *strings.Builder) int {
 }
 
 func getFieldName(q QueryNode) string {
-	// Retrieve the nominal field attribute traversing the syntax tree
 	if q.Op == "field" {
 		return q.Field
 	}
@@ -629,7 +584,6 @@ func getFieldName(q QueryNode) string {
 }
 
 func findSeqOccurrences(text string, q QueryNode) [][2]int {
-	// Calculate boundaries of sequence intersections respecting positional distances
 	if q.Op == "field" {
 		return findOccurrences(text, q.Value, q.Mode, q.Field)
 	}
@@ -646,7 +600,6 @@ func findSeqOccurrences(text string, q QueryNode) [][2]int {
 }
 
 func evalSeqPair(text string, left, right QueryNode, x, y int) [][2]int {
-	// Helper function to evaluate ordered adjacency ensuring metric limits
 	var matches [][2]int
 	leftOpt := findSeqOccurrences(text, left)
 	rightOpt := findSeqOccurrences(text, right)
@@ -662,7 +615,6 @@ func evalSeqPair(text string, left, right QueryNode, x, y int) [][2]int {
 }
 
 func matchSeqField(d Document, q QueryNode) bool {
-	// Route sequential evaluations utilizing dynamic positional constraints
 	field := getFieldName(q)
 	field = strings.ReplaceAll(field, ".", "_")
 	switch field {
@@ -683,7 +635,6 @@ func matchSeqField(d Document, q QueryNode) bool {
 }
 
 func matchComplexSeqField(d Document, field string, q QueryNode) bool {
-	// Delegate array properties ensuring constraints across multiple nodes
 	switch field {
 	case "title":
 		return listSeqMatches(d.Title, q)
@@ -704,7 +655,6 @@ func matchComplexSeqField(d Document, field string, q QueryNode) bool {
 }
 
 func matchMatrixSeqField(d Document, field string, q QueryNode) bool {
-	// Distribute matrix validations bounding specific column parameters
 	switch field {
 	case "lang":
 		return matrixSeqMatchesCol(d.Lang, q, -1)
@@ -723,7 +673,6 @@ func matchMatrixSeqField(d Document, field string, q QueryNode) bool {
 }
 
 func listSeqMatches(list []string, q QueryNode) bool {
-	// Evaluate if any string element successfully integrates the sequence conditions
 	for _, item := range list {
 		if len(findSeqOccurrences(item, q)) > 0 {
 			return true
@@ -733,7 +682,6 @@ func listSeqMatches(list []string, q QueryNode) bool {
 }
 
 func listSeqMatchesParity(list []string, q QueryNode, parity int) bool {
-	// Check matrix nodes preserving boundaries under positional restrictions
 	for i, item := range list {
 		if i%2 == parity && len(findSeqOccurrences(item, q)) > 0 {
 			return true
@@ -743,7 +691,6 @@ func listSeqMatchesParity(list []string, q QueryNode, parity int) bool {
 }
 
 func matrixSeqMatchesCol(mat [][]string, q QueryNode, col int) bool {
-	// Process matrix vectors to assess if elements sustain sequence validity
 	for _, row := range mat {
 		if col == -1 {
 			limit := len(row)
@@ -763,7 +710,6 @@ func matrixSeqMatchesCol(mat [][]string, q QueryNode, col int) bool {
 }
 
 func docSeqMatchesAll(d Document, q QueryNode) bool {
-	// Determine validation status across the entirety of text fields
 	if len(findSeqOccurrences(d.Logical, q)) > 0 || len(findSeqOccurrences(d.Ident, q)) > 0 {
 		return true
 	}
