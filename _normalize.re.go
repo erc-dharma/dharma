@@ -410,8 +410,13 @@ func lexNormalPrefix(text string) (int, string, bool) {
 	re2c:define:YYBACKUP = "marker = cursor";
 	re2c:define:YYRESTORE = "cursor = marker";
 	* { return 1, "", true }
-	"œ" | "Œ" { return cursor, "oe", false }
+	"ă" | "Ă" { return cursor, "a", false }
+	"ĕ" | "Ĕ" { return cursor, "e", false }
+	"ĭ" | "Ĭ" { return cursor, "i", false }
+	"ŏ" | "Ŏ" { return cursor, "o", false }
+	"ŭ" | "Ŭ" { return cursor, "u", false }
 	"æ" | "Æ" { return cursor, "ae", false }
+	"œ" | "Œ" { return cursor, "oe", false }
 	"đ" | "Đ" { return cursor, "d", false }
 	"r̥" | "R̥" { return cursor, "ṛ", false }
 	"r̥̄" | "R̥̄" { return cursor, "ṝ", false }
@@ -419,6 +424,8 @@ func lexNormalPrefix(text string) (int, string, bool) {
 	"l̥̄" | "L̥̄" { return cursor, "ḹ", false }
 	"ә" | "Ә" { return cursor, "ə", false }
 	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, Slongschwa, false }
+	"ṁ" | "Ṁ" | "ṃ" | "Ṃ" | "m̐" | "M̐" | "m̃" | "M̃" { return cursor, "ṃ", false }
+	"ḥ" | "Ḥ" | "ḫ" | "Ḫ" | "ẖ" | "H̱" { return cursor, "ḥ", false }
 	// Fallback to Unicode case folding of the current full rune.
 	[^] {
 		r, size := utf8.DecodeRuneInString(text)
