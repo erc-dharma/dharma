@@ -8,18 +8,19 @@ Languages
 
 <p>The following only displays languages that currently appear in the DHARMA database.</p>
 
-<div class="catalog-list">
+<div class="card-list">
 
 % for row in rows:
-<div id="lang-{{row['lang']}}" class="catalog-card">
+<div id="lang-{{row['lang']}}" class="card">
 
-<p>
+<div class="card-heading">
 	<b>{{row["inverted_name"]}}</b> [<span class="monospace">{{row["lang"]}}</span>]
 % if row["prod"] is not none:
 	(<a href="{{url_for('show_catalog', q='lang:' + row['lang'])}}">{{row["prod"]}} {{numberize("text", row["prod"])}}</a>)
 % endif
-</p>
+</div> ## class="card-heading"
 
+<div class="card-body">
 % if row["repos"]:
 <p>
 Repositories:
@@ -41,11 +42,12 @@ Editors:
 % endif
 
 <p>Standard: {{row["standard"]}}.</p>
+</div> ## class="card-body"
 
-</div>
+</div> ## class="card"
 % endfor
 
-</div> <!-- class="catalog-list" -->
+</div> ## class="card-list"
 
 <p>For the canonical list of languages of the DHARMA project, see <a href="https://github.com/erc-dharma/project-documentation/blob/master/DHARMA_languages.tsv">here</a>.</p>
 

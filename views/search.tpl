@@ -71,6 +71,7 @@ Texts
       </a>
    </div>
 
+<div class="card-body">
 % if doc.editors:
 <p>
 {{numberize("Author", (doc.editors | length))}} of digital edition:
@@ -111,9 +112,10 @@ Texts
    <div class="snippets">
    {{doc.logical.html() | safe}}
    </div>
-</div> ## class=catalog-card
+</div> ## class="card-body"
+</div> ## class=card
 % endfor
-</div> ## class=catalog-list
+</div> ## class=card-list
 
 <div class="pagination">
 % if page > 1:
@@ -127,7 +129,7 @@ Texts
 % else:
    Next →
 % endif
-</div>
+</div><!-- class="pagination"-->
 
 </div>
 

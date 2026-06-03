@@ -9,21 +9,22 @@ Repositories
 <p>Most of our git repositories are hosted <a
 href="https://github.com/erc-dharma">here</a>. The table below does not show them all; in particular, it does not show private repositories.</p>
 
-<div class="catalog-list">
+<div class="card-list">
 
 % for repo in rows:
-<div class="catalog-card" id="repo-{{repo["repo"]}}">
-<p>
-	<b>{{repo["title"]}}</b>
+<div class="card" id="repo-{{repo["repo"]}}">
+<div class="card-heading">
+	{{repo["title"]}}
 % if repo["repo_prod"] is not none:
 	(<a href="{{url_for('show_catalog', q='repo:' + repo['repo'])}}">{{repo["repo_prod"]}} {{numberize("text", repo["repo_prod"])}}</a>)
 % endif
+</div>
+<div class="card-body">
 % if repo["has_description_page"]:
 <p>
 <a href="/repositories/{{repo["repo"]}}">Presentation</a>.
-<p>
-% endif
 </p>
+% endif
 % if repo["people"]:
 % set people = from_json(repo["people"])
 <p>{{numberize('Editor', people)}}:
@@ -61,9 +62,10 @@ processed by the DHARMA application. The repository might contain more recent
 commits."></i>
 </p>
 % endif
-</div> <!-- class="catalog-card" -->
+</div> <!-- class="card-body" -->
+</div> <!-- class="card" -->
 
 % endfor
-</div> <!-- class="catalog-list" -->
+</div> <!-- class="card-list" -->
 
 % endblock

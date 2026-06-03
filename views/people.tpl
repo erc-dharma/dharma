@@ -6,16 +6,17 @@ Contributors to this database
 
 % block body
 
-<div class="catalog-list">
+<div class="card-list">
 
 % for row in rows:
-<div class="catalog-card" id="person-{{row['dh_id']}}">
+<div class="card" id="person-{{row['dh_id']}}">
 
-<p>
+<div class="card-heading">
 <b>{{row['inverted_name']}}</b>
 (<span class="member-id">{{row['dh_id']}}</span>)
-</p>
+</div> ## class="card-heading"
 
+<div class="card-body">
 % set affiliations = from_json(row["affiliation"])
 % if affiliations:
 	% for affil in affiliations:
@@ -71,9 +72,10 @@ Contributors to this database
 </p>
 % endif
 
-</div><!-- class="catalog-card" -->
+</div> ## class="card-body"
+</div> ## class="card"
 % endfor
 
-</div><!-- class="catalog-list" -->
+</div> ## class="card-list"
 
 % endblock

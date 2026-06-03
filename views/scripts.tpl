@@ -17,18 +17,19 @@ have the form <span class="monospace">X_other</span>, where <span class="monospa
 
 <p>The following only displays scripts that currently appear in the DHARMA database.</p>
 
-<div class="catalog-list">
+<div class="card-list">
 
 % for row in rows:
-<div id="script-{{row['script']}}" class="catalog-card">
+<div id="script-{{row['script']}}" class="card">
 
-<p>
+<div class="card-heading">
 	<b>{{row["inverted_name"]}}</b> [<span class="monospace">{{row["script"]}}</span>]
 % if row["prod"] is not none:
 	(<a href="{{url_for('show_catalog', q='script:' + row['script'])}}">{{row["prod"]}} {{numberize("text", row["prod"])}}</a>)
 % endif
-</p>
+</div> ## class="card-heading"
 
+<div class="card-body">
 % if row["repos"]:
 <p>
 Repositories:
@@ -48,9 +49,10 @@ Editors:
 % endfor
 </p>
 % endif
-</div>
+</div> ## class="card-body"
+</div> ## class="card"
 % endfor
 
-</div> <!-- class="catalog-list" -->
+</div> ## class="card-list"
 
 % endblock
