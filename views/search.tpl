@@ -7,7 +7,7 @@ Texts
 % block body
 
 <p>This interface allows you to look for texts in the DHARMA collection. The
-search form below can be used for filtering results. For help on the query syntax, see <a href="/texts/search-help">here</a>.
+search form below can be used for filtering results. For help on the query syntax, see <a href="/search-help">here</a>.
 
 <form action="{{url_for('render_search_page')}}" method="get">
 <ul>
