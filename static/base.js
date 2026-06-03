@@ -201,15 +201,12 @@ function updateTooltipPosition() {
 			top: `${y}px`,
 		})
 		const {x: arrowX, y: arrowY} = middlewareData.arrow;
-
 		const staticSide = {
 			top: ["bottom", "border-bottom-width", "border-right-width"],
 			right: ["left", "border-bottom-width", "border-left-width"],
 			bottom: ["top", "border-top-width", "border-left-width"],
 			left: ["right", "border-top-width", "border-right-width"],
 		}[placement.split("-")[0]]
-
-
 		Object.assign(tipArrow.style, {
 			left: arrowX != null ? `${arrowX}px` : "",
 			top: arrowY != null ? `${arrowY}px` : "",
@@ -475,6 +472,7 @@ function localizeDate(node) {
 	let minute = new String(when.getMinutes()).padStart(2, "0")
 	node.innerText = `${year}-${month}-${day} ${hour}:${minute}`
 }
+
 function localizeDates() {
 	for (let node of document.querySelectorAll("time"))
 		localizeDate(node)
@@ -551,6 +549,25 @@ function initNumberedVerses() {
 	}
 }
 
+// Initialize event listeners for internal links to prevent conflicts with parent tags.
+// This allows specific span elements to behave as links without violating HTML nesting rules.
+function initInternalLinks() {
+	const internalLinks = document.querySelectorAll('.link')
+	internalLinks.forEach(link => {
+		link.addEventListener('click', handleInternalLinkClick)
+	})
+}
+
+// Process the internal link click by stopping event bubbling and redirecting.
+// This intercepts the click before the parent anchor tag can trigger its own redirection.
+function handleInternalLinkClick(event) {
+	event.preventDefault()
+	event.stopPropagation()
+	const targetUrl = this.getAttribute('data-target')
+	if (targetUrl)
+		window.location.href = targetUrl
+}
+
 window.addEventListener("load", function () {
 	localizeDates()
 	initNumberedVerses()
@@ -560,4 +577,5 @@ window.addEventListener("load", function () {
 	initDisplays()
 	initFlashing()
 	initDisplayOptions()
+	initInternalLinks()
 })

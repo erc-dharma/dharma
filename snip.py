@@ -278,7 +278,10 @@ def render_match(self, node):
 		href = f"/texts/{ident}?q={query}&display=logical#{node['id']}"
 	else:
 		href = "#"
-	self.push(tree.Tag("a", class_="highlight", href=href))
+	link = tree.Tag("span", class_="link highlight")
+	link["data-tip"] = "See in context"
+	link["data-target"] = href
+	self.push(link)
 	self.dispatch_children(node)
 	self.join()
 

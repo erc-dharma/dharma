@@ -24,6 +24,9 @@
 .highlight {
   background: yellow; }
 
+link {
+  cursor: pointer; }
+
 a {
   text-decoration: none; }
 
