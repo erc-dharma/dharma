@@ -9,7 +9,7 @@ Texts
 <p>This interface allows you to look for texts in the DHARMA collection. The
 search form below can be used for filtering results. For help on the query syntax, see <a href="/search-help">here</a>.
 
-<form action="{{url_for('render_search_page')}}" method="get">
+<form action="{{url_for('show_catalog')}}" method="get">
 <ul>
    <li>
    <label for="text-input">Find:</label>
@@ -120,13 +120,13 @@ search form below can be used for filtering results. For help on the query synta
 
 <div class="pagination">
 % if page > 1:
-   <a href="{{url_for('render_search_page', q=query, p=page - 1, sort=sort)}}">← Previous</a>
+   <a href="{{url_for('show_catalog', q=query, p=page - 1, sort=sort)}}">← Previous</a>
 % else:
    ← Previous
 % endif
    |
 % if page < pages_nr:
-   <a href="{{url_for('render_search_page', q=query, p=page + 1, sort=sort)}}">Next →</a>
+   <a href="{{url_for('show_catalog', q=query, p=page + 1, sort=sort)}}">Next →</a>
 % else:
    Next →
 % endif
