@@ -63,7 +63,7 @@ def make_document_record(file, doc: tree.Tree):
 	for node in doc.find("/document/scripts/script/identifier"):
 		scripts.append(node.text())
 	if not scripts:
-		scripts = ["source_other"]
+		scripts = ["script_other"]
 	rec["scripts"] = scripts
 	editors = []
 	for node in doc.find("/document/editor/name"):
@@ -131,7 +131,7 @@ def insert(file: texts.File):
 		data["title"] = None
 		data["authors"] = []
 		data["langs"] = ["und"]
-		data["scripts"] = ["source_other"]
+		data["scripts"] = ["script_other"]
 		data["editors"] = []
 		data["editors_ids"] = []
 		data["summary"] = None
