@@ -134,11 +134,230 @@ func matchQuery(doc Document, q QueryNode) bool {
 	case "not":
 		return !matchQuery(doc, *q.Arg)
 	case "field":
+		if q.Arg != nil {
+			return matchScopedField(doc, q)
+		}
 		return matchField(doc, q.Field, q.Value, q.Mode)
 	case "seq", "near":
 		return matchSeqField(doc, q)
 	}
 	return true
+}
+
+func matchScopedField(d Document, q QueryNode) bool {
+	field := strings.ReplaceAll(q.Field, ".", "_")
+	switch field {
+	case "ident", "logical", "summary", "repo_id", "repo_name", "hand", "repo":
+		return matchScopedSingle(d, q, field)
+	case "title":
+		return matchScopedList(d, q, field)
+	case "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name":
+		return matchScopedPeople(d, q, field)
+	case "lang", "lang_ident", "lang_name", "script", "script_ident", "script_name":
+		return matchScopedMatrix(d, q, field)
+	}
+	return false
+}
+
+func matchScopedSingle(d Document, q QueryNode, field string) bool {
+	switch field {
+	case "ident":
+		return matchContextQuery([]string{d.Ident}, []*TransformCache{d.Cache.Ident}, *q.Arg, field)
+	case "logical":
+		return matchContextQuery([]string{d.Logical}, []*TransformCache{d.Cache.Logical}, *q.Arg, field)
+	case "summary":
+		return matchContextQuery([]string{d.Summary}, []*TransformCache{d.Cache.Summary}, *q.Arg, field)
+	case "repo_id":
+		return matchContextQuery([]string{d.RepoID}, []*TransformCache{d.Cache.RepoID}, *q.Arg, field)
+	case "repo_name":
+		return matchContextQuery([]string{d.RepoName}, []*TransformCache{d.Cache.RepoName}, *q.Arg, field)
+	case "hand":
+		return matchContextQuery([]string{d.Hand}, []*TransformCache{d.Cache.Hand}, *q.Arg, field)
+	case "repo":
+		return matchContextQuery([]string{d.RepoID, d.RepoName}, []*TransformCache{d.Cache.RepoID, d.Cache.RepoName}, *q.Arg, field)
+	}
+	return false
+}
+
+func matchScopedList(d Document, q QueryNode, field string) bool {
+	for i, item := range d.Title {
+		var c *TransformCache
+		if d.Cache.Title != nil && i < len(d.Cache.Title) {
+			c = d.Cache.Title[i]
+		}
+		if matchContextQuery([]string{item}, []*TransformCache{c}, *q.Arg, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchScopedPeople(d Document, q QueryNode, field string) bool {
+	list := d.Author
+	caches := d.Cache.Author
+	if strings.HasPrefix(field, "editor") {
+		list = d.Editor
+		caches = d.Cache.Editor
+	}
+	for i := 0; i < len(list); i += 2 {
+		if i+1 >= len(list) {
+			break
+		}
+		if matchOnePerson(list[i], list[i+1], caches, i, q, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchOnePerson(idStr, nameStr string, caches []*TransformCache, i int, q QueryNode, field string) bool {
+	var idC, nameC *TransformCache
+	if caches != nil {
+		if i < len(caches) {
+			idC = caches[i]
+		}
+		if i+1 < len(caches) {
+			nameC = caches[i+1]
+		}
+	}
+	if strings.HasSuffix(field, "ident") {
+		return matchContextQuery([]string{idStr}, []*TransformCache{idC}, *q.Arg, field)
+	} else if strings.HasSuffix(field, "name") {
+		return matchContextQuery([]string{"", nameStr}, []*TransformCache{nil, nameC}, *q.Arg, field)
+	}
+	return matchContextQuery([]string{idStr, nameStr}, []*TransformCache{idC, nameC}, *q.Arg, field)
+}
+
+func matchScopedMatrix(d Document, q QueryNode, field string) bool {
+	mat := d.Lang
+	caches := d.Cache.Lang
+	if strings.HasPrefix(field, "script") {
+		mat = d.Script
+		caches = d.Cache.Script
+	}
+	for i, row := range mat {
+		var rowCaches []*TransformCache
+		if caches != nil && i < len(caches) {
+			rowCaches = caches[i]
+		}
+		if matchOneMatrixRow(row, rowCaches, q, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchOneMatrixRow(row []string, rowCaches []*TransformCache, q QueryNode, field string) bool {
+	if strings.HasSuffix(field, "ident") && len(row) > 0 {
+		var c *TransformCache
+		if rowCaches != nil && len(rowCaches) > 0 {
+			c = rowCaches[0]
+		}
+		return matchContextQuery([]string{row[0]}, []*TransformCache{c}, *q.Arg, field)
+	}
+	if strings.HasSuffix(field, "name") && len(row) > 1 {
+		var c *TransformCache
+		if rowCaches != nil && len(rowCaches) > 1 {
+			c = rowCaches[1]
+		}
+		return matchContextQuery([]string{"", row[1]}, []*TransformCache{nil, c}, *q.Arg, field)
+	}
+	return matchContextQuery(row, rowCaches, *q.Arg, field)
+}
+
+func matchContextQuery(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
+	switch q.Op {
+	case "and":
+		return evalContextAnd(row, caches, q, defaultField)
+	case "or":
+		return evalContextOr(row, caches, q, defaultField)
+	case "not":
+		return !matchContextQuery(row, caches, *q.Arg, defaultField)
+	case "field":
+		return evalContextField(row, caches, q, defaultField)
+	case "seq", "near":
+		return evalContextSeq(row, q)
+	}
+	return true
+}
+
+func evalContextAnd(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
+	for _, arg := range q.Args {
+		if !matchContextQuery(row, caches, arg, defaultField) {
+			return false
+		}
+	}
+	return len(q.Args) > 0
+}
+
+func evalContextOr(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
+	for _, arg := range q.Args {
+		if matchContextQuery(row, caches, arg, defaultField) {
+			return true
+		}
+	}
+	return false
+}
+
+func evalContextField(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
+	field := strings.ReplaceAll(q.Field, ".", "_")
+	col := -1
+	if strings.HasSuffix(field, "ident") || field == "ident" || strings.HasSuffix(field, "id") {
+		col = 0
+	} else if strings.HasSuffix(field, "name") || field == "name" {
+		col = 1
+	}
+	if col == -1 {
+		return evalContextFieldAll(row, caches, q, defaultField)
+	}
+	if col < len(row) {
+		var c *TransformCache
+		if caches != nil && col < len(caches) {
+			c = caches[col]
+		}
+		return containsMatcher(c, row[col], q.Value, q.Mode, defaultField)
+	}
+	return false
+}
+
+func evalContextFieldAll(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
+	limit := len(row)
+	if limit > 2 {
+		limit = 2
+	}
+	for j := 0; j < limit; j++ {
+		var c *TransformCache
+		if caches != nil && j < len(caches) {
+			c = caches[j]
+		}
+		if containsMatcher(c, row[j], q.Value, q.Mode, defaultField) {
+			return true
+		}
+	}
+	return false
+}
+
+func evalContextSeq(row []string, q QueryNode) bool {
+	col := -1
+	field := strings.ReplaceAll(getFieldName(q), ".", "_")
+	if strings.HasSuffix(field, "ident") || field == "ident" || strings.HasSuffix(field, "id") {
+		col = 0
+	} else if strings.HasSuffix(field, "name") || field == "name" {
+		col = 1
+	}
+	if col == -1 {
+		limit := len(row)
+		if limit > 2 {
+			limit = 2
+		}
+		for j := 0; j < limit; j++ {
+			if len(findSeqOccurrences(row[j], q)) > 0 {
+				return true
+			}
+		}
+		return false
+	}
+	return col < len(row) && len(findSeqOccurrences(row[col], q)) > 0
 }
 
 func evalAnd(d Document, args []QueryNode) bool {
@@ -172,15 +391,15 @@ func containsMatcher(cache *TransformCache, text, term, mode, field string) bool
 	return strings.Contains(transText, transTerm)
 }
 
-func matchField(d Document, field, val, mode string) bool {
+func matchField(doc Document, field, val, mode string) bool {
 	field = strings.ReplaceAll(field, ".", "_")
 	switch field {
 	case "ident", "logical", "summary", "repo_id", "repo_name", "hand":
-		return matchStringField(d, field, val, mode)
+		return matchStringField(doc, field, val, mode)
 	case "title", "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name", "lang", "lang_ident", "lang_name", "script", "script_ident", "script_name":
-		return matchComplexField(d, field, val, mode)
+		return matchComplexField(doc, field, val, mode)
 	}
-	return docMatchesAll(d, val, mode)
+	return docMatchesAll(doc, val, mode)
 }
 
 func matchStringField(d Document, field, val, mode string) bool {
@@ -345,13 +564,26 @@ func matchDocument(doc Document, qStr string) SearchResult {
 }
 
 func extractTerms(q QueryNode) []QueryTerm {
+	return primitiveExtractTerms(q, "")
+}
+
+func primitiveExtractTerms(q QueryNode, prefix string) []QueryTerm {
 	if q.Op == "field" {
-		return []QueryTerm{{Field: q.Field, Value: q.Value, Mode: q.Mode}}
+		currentField := q.Field
+		if currentField == "" {
+			currentField = prefix
+		} else if prefix != "" {
+			currentField = prefix + "_" + currentField
+		}
+		if q.Arg != nil {
+			return primitiveExtractTerms(*q.Arg, currentField)
+		}
+		return []QueryTerm{{Field: currentField, Value: q.Value, Mode: q.Mode}}
 	}
 	var terms []QueryTerm
 	if q.Op == "and" || q.Op == "or" || q.Op == "seq" || q.Op == "near" {
 		for _, arg := range q.Args {
-			terms = append(terms, extractTerms(arg)...)
+			terms = append(terms, primitiveExtractTerms(arg, prefix)...)
 		}
 	}
 	return terms
@@ -575,6 +807,9 @@ func processPoint(p Point, depth int, sb *strings.Builder) int {
 
 func getFieldName(q QueryNode) string {
 	if q.Op == "field" {
+		if q.Arg != nil {
+			return getFieldName(*q.Arg)
+		}
 		return q.Field
 	}
 	if len(q.Args) > 0 {
@@ -585,6 +820,9 @@ func getFieldName(q QueryNode) string {
 
 func findSeqOccurrences(text string, q QueryNode) [][2]int {
 	if q.Op == "field" {
+		if q.Arg != nil {
+			return findSeqOccurrences(text, *q.Arg)
+		}
 		return findOccurrences(text, q.Value, q.Mode, q.Field)
 	}
 	var matches [][2]int

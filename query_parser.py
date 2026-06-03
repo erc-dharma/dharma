@@ -13,6 +13,7 @@ from pegen.parser import memoize, memoize_left_rec, logger, Parser
 class Node:
 	pass
 
+
 class And(Node):
 
 	def __init__(self, *children):
@@ -37,6 +38,7 @@ class And(Node):
 			"op": "and",
 			"args": [c.serialize() for c in self.children],
 		}
+
 
 class Or(Node):
 
@@ -63,6 +65,7 @@ class Or(Node):
 			"args": [c.serialize() for c in self.children],
 		}
 
+
 class Not(Node):
 
 	def __init__(self, child=None):
@@ -80,6 +83,7 @@ class Not(Node):
 
 	def serialize(self):
 		return {"op": "not", "arg": self.child.serialize()}
+
 
 class Seq(Node):
 
@@ -111,6 +115,7 @@ class Seq(Node):
 			"args": [self.left.serialize(), self.right.serialize()],
 		}
 
+
 class Near(Node):
 
 	def __init__(self, left, right, x=0, y=-1):
@@ -140,6 +145,7 @@ class Near(Node):
 			"y": self.y,
 			"args": [self.left.serialize(), self.right.serialize()],
 		}
+
 
 class Field(Node):
 
@@ -178,13 +184,11 @@ class Field(Node):
 		return None
 
 	def _complete_fields(self, name, mode=None):
+		# Process name and mode using resolution and expansion helper functions
 		final_name, final_mode = self._resolve_name_mode(name, mode)
-		if not isinstance(self.child, str):
-			return self.child._complete_fields(final_name, final_mode)
 		virtual_node = self._expand_virtual(final_name, final_mode)
 		if virtual_node:
-			return virtual_node
-		# Mapping for specific sub-fields
+			return virtual_node._complete_fields("", None)
 		mapping = {
 			"repo.ident": "repo_id",
 			"repo.name": "repo_name",
@@ -199,17 +203,24 @@ class Field(Node):
 		}
 		self.name = mapping.get(final_name, final_name)
 		self.mode = final_mode
+		if not isinstance(self.child, str):
+			self.child = self.child._complete_fields("", final_mode)
 		return self
 
 	def serialize(self):
+		# Serialize field node, nesting sub-query if child is a logical node object
 		res = {
 			"op": "field",
 			"field": self.name,
-			"value": self.child,
 		}
+		if isinstance(self.child, Node):
+			res["arg"] = self.child.serialize()
+		else:
+			res["value"] = self.child
 		if self.mode:
 			res["mode"] = self.mode
 		return res
+
 
 class _Null(Node):
 
