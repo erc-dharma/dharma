@@ -1,5 +1,10 @@
 # TODO
 
+Permettre la recherche de chiffres. Mais noter qu'on a des fractions
+Permettre recherche de la biblio et sur la traduction. Mais il va falloir être en mesure d'extraire des snippets même de ces champs-là.
+Ajouter les facettes sur: lang script editor
+Abrevier les champs summary et hand.
+
 === affichage recherche
 
 sur la page de résultats de recherche, afficher ou non les champs selon qu'ils
