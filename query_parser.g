@@ -272,17 +272,17 @@ PrimaryExpr:
 	| r=Text { Field(None, r) }
 
 OrExpr:
-	| r=OrExpr "OR" s=AndExpr { mkor(r, s) }
+	| r=OrExpr 'OR' s=AndExpr { mkor(r, s) }
 	| AndExpr
 
 AndExpr:
-	| r=AndExpr "AND" s=NotExpr { mkand(r, s) }
+	| r=AndExpr 'AND' s=NotExpr { mkand(r, s) }
 	| NotExpr
 
 # Shifted NOT precedence below NEAR and SEQ so that NOT binds to entire sequence/proximity blocks.
 # This prevents logical value errors where NOT was incorrectly treated as a simple textual leaf.
 NotExpr:
-	| "NOT" r=NotExpr { Not(r) }
+	| 'NOT' r=NotExpr { Not(r) }
 	| NearExpr
 
 # NearExpr now evaluates expressions derived from SeqExpr, binding higher than NOT.
@@ -291,8 +291,8 @@ NearExpr:
 	| SeqExpr
 
 NearOp:
-	| "NEAR" "/" dist=NUMBER { parse_distance(dist.string) }
-	| "NEAR" { (0, -1) }
+	| 'NEAR' "/" dist=NUMBER { parse_distance(dist.string) }
+	| 'NEAR' { (0, -1) }
 
 # SeqExpr now directly evaluates FieldExpr, giving proximity and sequence constraints maximum priority.
 SeqExpr:
@@ -300,8 +300,8 @@ SeqExpr:
 	| FieldExpr
 
 SeqOp:
-	| "SEQ" "/" dist=NUMBER { parse_distance(dist.string) }
-	| "SEQ" { (0, -1) }
+	| 'SEQ' "/" dist=NUMBER { parse_distance(dist.string) }
+	| 'SEQ' { (0, -1) }
 
 Text: r=DottedName { r }
 

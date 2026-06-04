@@ -37,7 +37,11 @@ search form below can be used for filtering results. For help on the query synta
 </ul>
 </form>
 
-% if matches
+% if error
+<div class="error">
+{{error}}
+</div>
+% elif matches
 	<p>Documents
 	{{first_entry}}{{"\N{en dash}"}}{{last_entry}} of {{match_count}}
 	% if query:

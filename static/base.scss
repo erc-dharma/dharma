@@ -897,3 +897,12 @@ fieldset {
 .glyphs-images figure > figcaption {
 	text-align: center;
 }
+
+.error {
+	border: solid transparent;
+	border-radius: $border-radius;
+	color: #721c24;
+	background-color: #f8d7da;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+}

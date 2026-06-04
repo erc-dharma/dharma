@@ -347,12 +347,12 @@ class GeneratedParser(Parser):
 
     @memoize_left_rec
     def OrExpr(self) -> Optional[Any]:
-        # OrExpr: OrExpr "OR" AndExpr | AndExpr
+        # OrExpr: OrExpr 'OR' AndExpr | AndExpr
         mark = self._mark()
         if (
             (r := self.OrExpr())
             and
-            (self.expect("OR"))
+            (self.expect('OR'))
             and
             (s := self.AndExpr())
         ):
@@ -367,12 +367,12 @@ class GeneratedParser(Parser):
 
     @memoize_left_rec
     def AndExpr(self) -> Optional[Any]:
-        # AndExpr: AndExpr "AND" NotExpr | NotExpr
+        # AndExpr: AndExpr 'AND' NotExpr | NotExpr
         mark = self._mark()
         if (
             (r := self.AndExpr())
             and
-            (self.expect("AND"))
+            (self.expect('AND'))
             and
             (s := self.NotExpr())
         ):
@@ -387,10 +387,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def NotExpr(self) -> Optional[Any]:
-        # NotExpr: "NOT" NotExpr | NearExpr
+        # NotExpr: 'NOT' NotExpr | NearExpr
         mark = self._mark()
         if (
-            (self.expect("NOT"))
+            (self.expect('NOT'))
             and
             (r := self.NotExpr())
         ):
@@ -425,10 +425,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def NearOp(self) -> Optional[Any]:
-        # NearOp: "NEAR" "/" NUMBER | "NEAR"
+        # NearOp: 'NEAR' "/" NUMBER | 'NEAR'
         mark = self._mark()
         if (
-            (self.expect("NEAR"))
+            (self.expect('NEAR'))
             and
             (self.expect("/"))
             and
@@ -437,7 +437,7 @@ class GeneratedParser(Parser):
             return parse_distance ( dist . string );
         self._reset(mark)
         if (
-            (self.expect("NEAR"))
+            (self.expect('NEAR'))
         ):
             return ( 0 , - 1 );
         self._reset(mark)
@@ -465,10 +465,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def SeqOp(self) -> Optional[Any]:
-        # SeqOp: "SEQ" "/" NUMBER | "SEQ"
+        # SeqOp: 'SEQ' "/" NUMBER | 'SEQ'
         mark = self._mark()
         if (
-            (self.expect("SEQ"))
+            (self.expect('SEQ'))
             and
             (self.expect("/"))
             and
@@ -477,7 +477,7 @@ class GeneratedParser(Parser):
             return parse_distance ( dist . string );
         self._reset(mark)
         if (
-            (self.expect("SEQ"))
+            (self.expect('SEQ'))
         ):
             return ( 0 , - 1 );
         self._reset(mark)
@@ -561,8 +561,8 @@ class GeneratedParser(Parser):
         self._reset(mark)
         return None;
 
-    KEYWORDS = ()
-    SOFT_KEYWORDS = ('AND', 'NEAR', 'NOT', 'OR', 'SEQ')
+    KEYWORDS = ('AND', 'NEAR', 'NOT', 'OR', 'SEQ')
+    SOFT_KEYWORDS = ()
 
 
 if __name__ == '__main__':

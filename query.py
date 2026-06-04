@@ -1,10 +1,37 @@
-import argparse, tokenize, traceback
+import argparse, tokenize, traceback, difflib
 from pegen.tokenizer import Tokenizer
 from dharma import common, tree, query_parser
 
 class InvalidQuery(Exception):
 
 	pass
+
+VALID_FIELDS = {
+	"ident",
+	"repo", "repo.ident", "repo.name",
+	"title",
+	"editor", "editor.ident", "editor.name",
+	"author", "author.ident", "author.name",
+	"summary",
+	"hand",
+	"logical",
+	"lang", "lang.ident", "lang.name",
+	"script", "script.ident", "script.name"
+}
+
+# Maps internal database fields back to their dotted representation
+REVERSE_MAPPING = {
+	"repo_id": "repo.ident",
+	"repo_name": "repo.name",
+	"editor_ident": "editor.ident",
+	"editor_name": "editor.name",
+	"author_ident": "author.ident",
+	"author_name": "author.name",
+	"lang_ident": "lang.ident",
+	"lang_name": "lang.name",
+	"script_ident": "script.ident",
+	"script_name": "script.name"
+}
 
 # Add slash character to split operators correctly
 char_token = "():=[]/"
@@ -58,16 +85,41 @@ def tokenize_query(s):
 	yield tokenize.TokenInfo(type=tokenize.ENDMARKER, string="",
 		start=(1, 0), end=(1, 0), line="")
 
-def parse_query(expr):
+def check_field_validity(node, valid_fields):
+	# Traverse the syntax tree recursively to ensure all fields exist
+	# Raise an InvalidQuery with spelling suggestions if needed
+	if isinstance(node, query_parser.Field) and node.name:
+		orig_name = REVERSE_MAPPING.get(node.name, node.name)
+		if orig_name not in valid_fields:
+			matches = difflib.get_close_matches(orig_name, list(valid_fields), n=1)
+			if matches:
+				raise InvalidQuery(f"Unknown search field: '{orig_name}'. Did you mean '{matches[0]}'?")
+			raise InvalidQuery(f"Unknown search field: '{orig_name}'")
+	if hasattr(node, "children"):
+		for child in node.children:
+			check_field_validity(child, valid_fields)
+	elif hasattr(node, "child") and node.child:
+		check_field_validity(node.child, valid_fields)
+	elif hasattr(node, "left") and node.left:
+		check_field_validity(node.left, valid_fields)
+		check_field_validity(node.right, valid_fields)
+
+def parse_query(expr, valid_fields=VALID_FIELDS):
 	# Tokenize and parse the query string into a syntax tree
-	gen = tokenize_query(expr)
-	tokenizer = Tokenizer(gen, verbose=False)
-	parser = query_parser.GeneratedParser(tokenizer, verbose=False)
-	root = parser.start()
+	# Catch internal errors and return readable English messages
+	try:
+		gen = tokenize_query(expr)
+		tokenizer = Tokenizer(gen, verbose=False)
+		parser = query_parser.GeneratedParser(tokenizer, verbose=False)
+		root = parser.start()
+	except (ValueError, tokenize.TokenError) as e:
+		raise InvalidQuery(f"Invalid expression: {e}")
 	if not root:
-		err = parser.make_syntax_error("<query expression>")
-		traceback.print_exception(err.__class__, err, None)
-		raise err
+		err = parser.make_syntax_error("query expression")
+		msg = "Syntax error" if getattr(err, 'text', None) else "Incomplete query"
+		raise InvalidQuery(msg)
+	if valid_fields is not None:
+		check_field_validity(root, valid_fields)
 	return root
 
 if __name__ == "__main__":

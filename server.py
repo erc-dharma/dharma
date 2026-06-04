@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup # pip install bs4
 from dharma import common, change, parallels, catalog, validate, ingest, tree
 from dharma import biblio, texts, editorial, prosody, render, languages
 from dharma import enrich, search, snip, glyphs
+from dharma.query import InvalidQuery
 
 # We don't use the name "templates" for the template folder because we also
 # put other stuff in the same directory, not just templates.
@@ -623,6 +624,7 @@ def redirect_to_texts():
 
 @app.get("/texts")
 def show_catalog():
+	# Retrieve query parameters with default values for pagination and sorting
 	query = flask.request.args.get("q", "").strip()
 	sort = flask.request.args.get("sort", "title")
 	page = flask.request.args.get("p", 1, type=int)
@@ -630,28 +632,24 @@ def show_catalog():
 		page = 1
 	offset = (page - 1) * SEARCH_PER_PAGE
 	try:
+		# Attempt to fetch search results from the backend service
 		context = search.query_search_service(query, offset, SEARCH_PER_PAGE, sort)
+	except InvalidQuery as e:
+		# Catch syntax errors in the query and return the search page with the error message
+		return flask.render_template("search.tpl", error=str(e), query=query, sort=sort, matches=[], match_count=0)
 	except Exception as e:
-		return flask.render_template("search.tpl", error=f"Search error: {e}")
-	matches = []
-	for match in context["matches"]:
-		matches.append(snip.process(match, query=query))
+		# Catch any other unexpected errors during the search process
+		return flask.render_template("search.tpl", error=f"Search error: {e}", query=query, sort=sort, matches=[], match_count=0)
+	# Process each match to generate contextual snippets highlighting the query terms
+	matches = [snip.process(match, query=query) for match in context["matches"]]
 	context["matches"] = matches
 	count = context.get("match_count", 0)
+	# Calculate pagination bounds to display the correct range of results
 	pages_nr = (count + SEARCH_PER_PAGE - 1) // SEARCH_PER_PAGE
-	first_entry = (page - 1) * SEARCH_PER_PAGE + 1
-	if first_entry > count:
-		first_entry = 0
-	last_entry = page * SEARCH_PER_PAGE
-	if last_entry > count:
-		last_entry = count
-	context.update({
-		"page": page,
-		"pages_nr": pages_nr,
-		"per_page": SEARCH_PER_PAGE,
-		"first_entry": first_entry,
-		"last_entry": last_entry,
-	})
+	first_entry = 0 if (page - 1) * SEARCH_PER_PAGE + 1 > count else (page - 1) * SEARCH_PER_PAGE + 1
+	last_entry = count if page * SEARCH_PER_PAGE > count else page * SEARCH_PER_PAGE
+	# Update context with pagination and query variables before rendering the template
+	context.update({"page": page, "pages_nr": pages_nr, "per_page": SEARCH_PER_PAGE, "first_entry": first_entry, "last_entry": last_entry, "q": query, "sort": sort})
 	return flask.render_template("search.tpl", **context)
 
 def render_markdown(f: texts.File):
