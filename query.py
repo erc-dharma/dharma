@@ -1,36 +1,28 @@
-"""Query tokenizer and parser.
-
-We need two query languages: one for the user, another one for the application.
-
-For the user-facing language, we use a simple query syntax that is similar to
-the one used in traditional search systems, like Lucene and Xapian. The parsing
-grammar is in query_parser.g.
-
-For the application language, we should use S-expressions (or maybe XML or JSON,
-but they are less readable and take longer to write). We need an application
-language because we want to be able to serialize queries for tests and for
-debugging. We shouldn't have to fill out a Web form each time we want to try out
-something.
-"""
-
 import argparse, tokenize, traceback
 from pegen.tokenizer import Tokenizer
 from dharma import common, tree, query_parser
 
 class InvalidQuery(Exception):
+
 	pass
 
-# Ajout des crochets pour la syntaxe SEQ[x-y]
-char_token = "():=[]"
+# Add slash character to split operators correctly
+char_token = "():=[]/"
 
 def make_token(s, t):
-	# Assigne le type OP (opérateur) aux délimiteurs, et NAME (texte) au reste
-	tok_type = tokenize.OP if t in char_token else tokenize.NAME
+	# Assign OP type to delimiters, NUMBER to digits, and NAME to text
+	if t in char_token:
+		tok_type = tokenize.OP
+	elif t.isdigit():
+		tok_type = tokenize.NUMBER
+	else:
+		tok_type = tokenize.NAME
 	token = tokenize.TokenInfo(type=tok_type, string=t,
 		start=(1, 0), end=(1, 0), line=s)
 	return token
 
 def read_string(s, i):
+	# Parse a string literal enclosed in double quotes
 	j = i
 	while j < len(s):
 		if s[j] == '"':
@@ -41,6 +33,7 @@ def read_string(s, i):
 	return j
 
 def tokenize_query(s):
+	# Yield recognized tokens iteratively from the input string
 	i = 0
 	while i < len(s):
 		if s[i].isspace():
@@ -66,6 +59,7 @@ def tokenize_query(s):
 		start=(1, 0), end=(1, 0), line="")
 
 def parse_query(expr):
+	# Tokenize and parse the query string into a syntax tree
 	gen = tokenize_query(expr)
 	tokenizer = Tokenizer(gen, verbose=False)
 	parser = query_parser.GeneratedParser(tokenizer, verbose=False)

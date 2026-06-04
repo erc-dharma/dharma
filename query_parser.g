@@ -1,8 +1,8 @@
 @subheader'''
 
 class Node:
-	pass
 
+	pass
 
 class And(Node):
 
@@ -29,7 +29,6 @@ class And(Node):
 			"args": [c.serialize() for c in self.children],
 		}
 
-
 class Or(Node):
 
 	def __init__(self, *children):
@@ -55,7 +54,6 @@ class Or(Node):
 			"args": [c.serialize() for c in self.children],
 		}
 
-
 class Not(Node):
 
 	def __init__(self, child=None):
@@ -73,7 +71,6 @@ class Not(Node):
 
 	def serialize(self):
 		return {"op": "not", "arg": self.child.serialize()}
-
 
 class Seq(Node):
 
@@ -105,7 +102,6 @@ class Seq(Node):
 			"args": [self.left.serialize(), self.right.serialize()],
 		}
 
-
 class Near(Node):
 
 	def __init__(self, left, right, x=0, y=-1):
@@ -135,7 +131,6 @@ class Near(Node):
 			"y": self.y,
 			"args": [self.left.serialize(), self.right.serialize()],
 		}
-
 
 class Field(Node):
 
@@ -198,7 +193,7 @@ class Field(Node):
 		return self
 
 	def serialize(self):
-		# Serialize field node, nesting sub-query if child is a logical node object
+		# Serialize field node nesting sub-query if child is a logical node object
 		res = {
 			"op": "field",
 			"field": self.name,
@@ -210,7 +205,6 @@ class Field(Node):
 		if self.mode:
 			res["mode"] = self.mode
 		return res
-
 
 class _Null(Node):
 
@@ -225,28 +219,32 @@ class _Null(Node):
 
 Null = _Null()
 
-def parse_seq_range(s):
-	# Parse textual interval bounds bypassing tokenizer hyphenation logic
-	if '-' not in s:
+def parse_distance(s):
+	# Extract and parse a numeric distance from a string or node
+	try:
+		if hasattr(s, "string"): s = s.string
+		clean_s = str(s).replace("/", "").strip()
+		return (0, int(clean_s))
+	except (ValueError, TypeError):
 		return (0, -1)
-	parts = s.split('-')
-	x = int(parts[0]) if parts[0] else 0
-	y = int(parts[1]) if parts[1] else -1
-	return (x, y)
 
 def mkbinop(klass, l, r):
+	# Instantiate or append to a binary operation node
 	if isinstance(l, klass):
 		l.children.append(r)
 		return l
 	return klass(l, r)
 
 def mkand(*elems):
+	# Generate an AND logical node
 	return mkbinop(And, *elems)
 
 def mkor(*elems):
+	# Generate an OR logical node
 	return mkbinop(Or, *elems)
 
 def mkmerge(*elems):
+	# Merge multiple logical elements correctly
 	match len(elems):
 		case 0:
 			return Null
@@ -293,7 +291,7 @@ NearExpr:
 	| SeqExpr
 
 NearOp:
-	| ("near" | "NEAR") '[' range=NAME ']' { parse_seq_range(range.string) }
+	| ("near" | "NEAR") "/" dist=NUMBER { parse_distance(dist.string) }
 	| ("near" | "NEAR") { (0, -1) }
 
 # SeqExpr now directly evaluates FieldExpr, giving proximity and sequence constraints maximum priority.
@@ -302,7 +300,7 @@ SeqExpr:
 	| FieldExpr
 
 SeqOp:
-	| ("seq" | "SEQ") '[' range=NAME ']' { parse_seq_range(range.string) }
+	| ("seq" | "SEQ") "/" dist=NUMBER { parse_distance(dist.string) }
 	| ("seq" | "SEQ") { (0, -1) }
 
 Text: r=DottedName { r }
