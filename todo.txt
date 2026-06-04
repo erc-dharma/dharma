@@ -1,5 +1,9 @@
 # TODO
 
+ajouter un mode de matching appelé "whole" qui matche si le champ entier matche.
+
+et il faut mettre les script en surbrillance ds resultats
+
 Chercher "Ajanta" et observer qu'on a un match avec rupture de danda: bha-dhvajaṁ | ḍam. Il y a certain caractères qui devraient être interprétés comme des séparateurs dans les textes; a priori
 
 
