@@ -35,7 +35,7 @@ have the form <span class="monospace">X_other</span>, where <span class="monospa
 Repositories:
 % for repo, repo_prod in from_json(row["repos"]):
    <span class="repo-id">{{repo}}</span>
-   (<a href="{{url_for('show_catalog', q='script:%s repo:%s' % (row["script"], repo))}}">{{repo_prod}}</a>){{loop.index == loop.length and "." or ","}}
+   (<a href="{{url_for('show_catalog', q='script.ident:%s repo.ident:%s' % (row["script"], repo))}}">{{repo_prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
@@ -45,7 +45,7 @@ Repositories:
 Editors:
 % for editor_id, editor, editor_prod in from_json(row["editors"]):
    {{editor}}
-   (<a href="{{url_for('show_catalog', q='script:%s editor_id:%s' % (row["script"], editor_id))}}">{{editor_prod}}</a>){{loop.index == loop.length and "." or ","}}
+   (<a href="{{url_for('show_catalog', q='script.ident:%s editor.ident:%s' % (row["script"], editor_id))}}">{{editor_prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif

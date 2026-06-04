@@ -26,7 +26,7 @@ Languages
 Repositories:
 % for repo, repo_prod in from_json(row["repos"]):
    <span class="repo-id">{{repo}}</span>
-   (<a href="{{url_for('show_catalog', q='lang:%s repo:%s' % (row["lang"], repo))}}">{{repo_prod}}</a>){{loop.index == loop.length and "." or ","}}
+   (<a href="{{url_for('show_catalog', q='lang.ident:%s repo.ident:%s' % (row["lang"], repo))}}">{{repo_prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
@@ -36,7 +36,7 @@ Repositories:
 Editors:
 % for editor_id, editor, editor_prod in from_json(row["editors"]):
    {{editor}}
-   (<a href="{{url_for('show_catalog', q='lang:%s editor_id:%s' % (row["lang"], editor_id))}}">{{editor_prod}}</a>){{loop.index == loop.length and "." or ","}}
+   (<a href="{{url_for('show_catalog', q='lang.ident:%s editor.ident:%s' % (row["lang"], editor_id))}}">{{editor_prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif

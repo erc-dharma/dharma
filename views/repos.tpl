@@ -16,7 +16,7 @@ href="https://github.com/erc-dharma">here</a>. The table below does not show the
 <div class="card-heading">
 	{{repo["title"]}}
 % if repo["repo_prod"] is not none:
-	(<a href="{{url_for('show_catalog', q='repo:' + repo['repo'])}}">{{repo["repo_prod"]}} {{numberize("text", repo["repo_prod"])}}</a>)
+	(<a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}}">{{repo["repo_prod"]}} {{numberize("text", repo["repo_prod"])}}</a>)
 % endif
 </div>
 <div class="card-body">
@@ -30,7 +30,7 @@ href="https://github.com/erc-dharma">here</a>. The table below does not show the
 <p>{{numberize('Editor', people)}}:
 % for editor_id, editor, prod in people:
 {{editor}}
-(<a href="{{url_for('show_catalog', q='repo:%s editor_id:%s' % (repo["repo"], editor_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
+(<a href="{{url_for('show_catalog', q='repo.ident:%s editor.ident:%s' % (repo["repo"], editor_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
@@ -39,7 +39,7 @@ href="https://github.com/erc-dharma">here</a>. The table below does not show the
 <p>{{numberize('Language', langs)}}:
 % for lang_id, lang, prod in langs:
 {{lang}}
-(<a href="{{url_for('show_catalog', q='repo:%s lang:%s' % (repo["repo"], lang_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
+(<a href="{{url_for('show_catalog', q='repo.ident:%s lang.ident:%s' % (repo["repo"], lang_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
@@ -48,7 +48,7 @@ href="https://github.com/erc-dharma">here</a>. The table below does not show the
 <p>{{numberize('Script', scripts)}}:
 % for script_id, script, prod in scripts:
 {{script}}
-(<a href="{{url_for('show_catalog', q='repo:%s script:%s' % (repo["repo"], script_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
+(<a href="{{url_for('show_catalog', q='repo.ident:%s script.ident:%s' % (repo["repo"], script_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
