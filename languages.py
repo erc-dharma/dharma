@@ -83,7 +83,7 @@ class Descriptor:
 	Dummy class for holding both a language and a script in a single object.
 	"""
 
-	def __init__(self, language="und", script="latin"):
+	def __init__(self, language: str, script: str):
 		self.language: str = language
 		self.script: str = script
 
@@ -166,7 +166,7 @@ def _extract_language_info(node, parent_lang: Descriptor) -> Descriptor:
 		elif inherit:
 			script_id = parent_lang.script
 		else:
-			script_id = "latin"
+			script_id = "script_other"
 	return Descriptor(lang_id, script_id)
 
 ##################### For annotating internal documents ########################
