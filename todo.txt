@@ -6,7 +6,6 @@ ajouter un mode de matching appelé "whole" qui matche si le champ entier matche
 
 Chercher "Ajanta" et observer qu'on a un match avec rupture de danda: bha-dhvajaṁ | ḍam. Il y a certain caractères qui devraient être interprétés comme des séparateurs dans les textes; a priori
 
-
 Permettre la recherche de chiffres. Mais noter qu'on a des fractions
 Permettre recherche de la biblio et sur la traduction. Mais il va falloir être en mesure d'extraire des snippets même de ces champs-là.
 Ajouter les facettes sur: lang script editor
@@ -21,8 +20,6 @@ descripteur "display" dont les valeurs pourraient être:
 = auto (only display this field if it contains a match)
 = never (never display this field, even if there is a match).
 et il faudrait que chaque champ ait un attribut bool "contains-match"
-
-dans le display /texts et /search, n'afficher que le 1er paragraphe des summary pour éviter qu'ils soient trop longs. en fait, pour search, il faudrait avoir trois modes: display-none, display-if-matching, display-first-if-matching
 
 ===
 
@@ -149,7 +146,6 @@ On devrait avoir des lignes fantômes pour le physical aussi, dans la recherche.
 XXX do commit several times (or maybe savepoint+release) when rebuilding the
 catalog.
 
-abrévier le summary dans tableau résultat à un seul <p> (ajouter [...] à la place des restants)
 
 ## internal repr
 

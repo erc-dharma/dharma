@@ -3,6 +3,7 @@ import unicodedata
 import requests
 from dharma import common, ingest, tree, enrich, query
 import icu
+import re
 
 # Unicode Private Use Area characters for search markers
 MARKER_START = "\uE000"
@@ -559,6 +560,107 @@ class BlockPruner:
 		except Exception: pass
 		return clone
 
+class FieldTruncater:
+
+	def __init__(self, max_chars=300):
+		# Initialize truncater with maximum character count and standard block definitions
+		self.max_chars = max_chars
+		self.events = []
+		self.block_tags = {"para", "verse", "quote", "dlist", "elist"}
+
+	def truncate(self, node):
+		# Main entry point to isolate the first block and truncate its text if necessary
+		if not node: return
+		removed_blocks = self._isolate_first_block(node)
+		self.events = []
+		self._linearize(node)
+		total_chars = self._count_chars()
+		cutoff = total_chars
+		if total_chars > self.max_chars:
+			cutoff = self._find_cutoff_index()
+		if cutoff < total_chars or removed_blocks:
+			node.clear()
+			self._rebuild_tree(node, cutoff)
+
+	def _isolate_first_block(self, node):
+		# Retain only the first block element and discard all subsequent siblings
+		children_to_keep = []
+		original_count = len(list(node))
+		for child in list(node):
+			children_to_keep.append(child)
+			if getattr(child, "name", None) in self.block_tags: break
+		removed = len(children_to_keep) < original_count
+		if removed:
+			node.clear()
+			for c in children_to_keep: node.append(c)
+		return removed
+
+	def _linearize(self, node):
+		# Flatten the DOM tree into events while explicitly ignoring search nodes
+		if getattr(node, "name", None) == "search": return
+		if isinstance(node, tree.String):
+			for char in node.data: self.events.append(("char", char))
+		elif isinstance(node, tree.Tag):
+			self.events.append(("open", node))
+			for child in list(node): self._linearize(child)
+			self.events.append(("close", node.name))
+
+	def _count_chars(self):
+		# Return the total number of character events
+		return sum(1 for e in self.events if e[0] == "char")
+
+	def _find_cutoff_index(self):
+		# Build plain text to find sentence boundaries within the character limit
+		char_events = [e[1] for e in self.events if e[0] == "char"]
+		full_text = "".join(char_events)
+		if len(full_text) <= self.max_chars: return len(full_text)
+		return self._find_sentence_cutoff(full_text)
+
+	def _find_sentence_cutoff(self, text):
+		# Helper to find cutoff by sentences to respect the character constraint
+		sentences = re.split(r'(?<=[.!?])\s+', text)
+		current_text = ""
+		for s in sentences:
+			if not current_text: current_text = s
+			elif len(current_text) + 1 + len(s) <= self.max_chars:
+				current_text += " " + s
+			else: break
+		return len(current_text)
+
+	def _rebuild_tree(self, root, cutoff):
+		# Reconstruct the tree up to the cutoff index and append an omission marker
+		dom_stack = [root]
+		char_count = 0
+		added_omission = False
+		for ev in self.events:
+			res = self._process_rebuild_event(ev, root, dom_stack, cutoff, char_count)
+			char_count, added_omission = res[0], res[1] or added_omission
+		if not added_omission: self._add_omission(dom_stack[-1])
+
+	def _process_rebuild_event(self, ev, root, dom_stack, cutoff, char_count):
+		# Process a single event during tree reconstruction
+		added = False
+		if ev[0] == "open" and ev[1] is not root:
+			clone = tree.Tag(ev[1].name)
+			for k, v in ev[1].items(): clone[k] = v
+			dom_stack[-1].append(clone)
+			dom_stack.append(clone)
+		elif ev[0] == "char":
+			if char_count < cutoff: dom_stack[-1].append(tree.String(ev[1]))
+			char_count += 1
+			if char_count == cutoff:
+				self._add_omission(dom_stack[-1])
+				added = True
+		elif ev[0] == "close" and ev[1] != root.name: dom_stack.pop()
+		return char_count, added
+
+	def _add_omission(self, parent_node):
+		# Append a space text node before the omission tag to ensure correct typography
+		parent_node.append(tree.String(" "))
+		om = tree.Tag("omission")
+		om.append(tree.String("[\N{horizontal ellipsis}]"))
+		parent_node.append(om)
+
 def extract_one_text(xpath):
 	# Extract a single text representation using xpath
 	def extractor(doc):
@@ -578,7 +680,6 @@ def _get_direct_children(node, tag_name):
 
 def get_flat_people(xpath):
 	# Extract a flat list of people identifiers and names
-	# We use _get_direct_children to strictly limit extraction to direct attributes
 	def extractor(doc):
 		res = []
 		for node in doc.find(xpath):
@@ -591,7 +692,6 @@ def get_flat_people(xpath):
 
 def get_flat_matrix(parent_xpath, child_tag):
 	# Extract a flat matrix linking languages and scripts
-	# We use _get_direct_children to avoid capturing nested nodes' tags
 	def extractor(doc):
 		matrix = []
 		for parent in doc.find(parent_xpath):
@@ -727,6 +827,10 @@ def process_single_match(item):
 		doc = tree.parse_string(xml_str)
 		highlight_document(doc, item)
 		SnippetGenerator(doc).generate()
+		truncater = FieldTruncater(max_chars=300)
+		for path in ["/document/summary", "/document/hand"]:
+			node = doc.first(path)
+			if node: truncater.truncate(node)
 		return doc
 	except Exception as e:
 		import traceback
@@ -736,7 +840,6 @@ def process_single_match(item):
 
 def highlight_document(doc, item_data):
 	# Traverse configured fields and apply coordinated highlighting
-	# Call synchronization to cross-pollinate highlights before DOM application
 	_synchronize_matrix_highlights(item_data)
 	counter = [0]
 	for field, config in SEARCH_CONFIG.items():
@@ -749,7 +852,6 @@ def highlight_document(doc, item_data):
 
 def _synchronize_matrix_highlights(item_data):
 	# Cross-pollinate highlights between lang and script matrices
-	# This compensates for the Go backend only highlighting primary entities
 	lang_hl = _extract_parent_highlights(item_data.get("lang"))
 	script_hl = _extract_parent_highlights(item_data.get("script"))
 	_inject_child_highlights(item_data.get("lang"), script_hl)
@@ -757,7 +859,6 @@ def _synchronize_matrix_highlights(item_data):
 
 def _extract_parent_highlights(matrix):
 	# Extract highlighting markers from parent elements in a matrix
-	# We use this to build a dictionary of known highlights by their clean IDs
 	highlights = {}
 	if not isinstance(matrix, list): return highlights
 	for row in matrix:
@@ -768,7 +869,6 @@ def _extract_parent_highlights(matrix):
 
 def _inject_child_highlights(matrix, parent_highlights):
 	# Inject missing highlighting markers into child elements using parent data
-	# This ensures nested scripts and languages get proper visual representation
 	if not isinstance(matrix, list): return
 	for row in matrix:
 		col = 2
@@ -800,7 +900,6 @@ def apply_list_highlight(nodes, marked_list, counter):
 
 def apply_people_highlight(nodes, flat_list, counter):
 	# Distribute highlighted markers across structured names and identifiers
-	# Using _get_direct_children to restrict highlighting to current node level
 	for i, node in enumerate(nodes):
 		id_idx = 2 * i
 		name_idx = 2 * i + 1
@@ -813,7 +912,6 @@ def apply_people_highlight(nodes, flat_list, counter):
 
 def apply_matrix_highlight(nodes, matrix, child_tag, counter):
 	# Propagate highlighting logic within bi-dimensional structures
-	# Utilizing _get_direct_children avoids erroneous propagation to nested components
 	for node, row in zip(nodes, matrix):
 		if len(row) > 0:
 			targets = _get_direct_children(node, "identifier")
@@ -826,7 +924,6 @@ def apply_matrix_highlight(nodes, matrix, child_tag, counter):
 
 def _apply_matrix_child_highlight(node, row, child_tag, counter):
 	# Traverse subordinated components of matrix structures
-	# Extract direct children accurately to maintain correct sync with matrix indices
 	children = _get_direct_children(node, child_tag)
 	col = 2
 	for child in children:
