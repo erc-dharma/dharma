@@ -66,7 +66,7 @@ def _iter_edition_languages(root: tree.Tag):
 		if isinstance(child, tree.Tag):
 			yield from _iter_edition_languages(child)
 
-def _extract_edition_languages(root: tree.Tag):
+def _extract_edition_languages(root: tree.Tag | None):
 	"""Produces two maps of the form...
 
 		{lang: {script, script...}, lang: {script, script...}...}
@@ -74,9 +74,13 @@ def _extract_edition_languages(root: tree.Tag):
 	"""
 	langs = {}
 	scripts = set()
-	for lang, script in _iter_edition_languages(root):
-		langs.setdefault(lang, set()).add(script)
-		scripts.add(script)
+	if root is not None:
+		for lang, script in _iter_edition_languages(root):
+			langs.setdefault(lang, set()).add(script)
+			scripts.add(script)
+	else:
+		langs["und"] = {"script_other"}
+		scripts.add("script_other")
 	# Fetch the corresponding names.
 	db = common.db("texts")
 	lang_names = {}
@@ -96,9 +100,10 @@ def _extract_edition_languages(root: tree.Tag):
 			scripts.setdefault(script, set()).add(lang)
 	return langs, scripts, lang_names, script_names
 
-def _add_edition_languages(t: tree.Tag):
-	"""Add language and script use info to the tree. Need to create a
-	structure like this:
+def _add_edition_languages(t: tree.Tree, logical: tree.Tag | None):
+	"""Add language and script use info to the tree.
+
+	We need to create a structure like this:
 
 	<document>
 	        <languages>
@@ -136,7 +141,7 @@ def _add_edition_languages(t: tree.Tag):
 	Or maybe it would be better to write a generic serialization function if
 	we need to use maps, etc. for something else.
 	"""
-	langs, scripts, lang_names, script_names = _extract_edition_languages(t)
+	langs, scripts, lang_names, script_names = _extract_edition_languages(logical)
 	lang_nodes = {}
 	for lang in langs:
 		node = tree.Tag("language")
@@ -1399,9 +1404,9 @@ def process(t: tree.Tree):
 	languages.finish_internal(t)
 	# TODO _put_grantha_in_bold(t)
 	# And extract languages from the logical division.
-	if (root := t.first("/document/edition/logical")):
-		assert isinstance(root, tree.Tag)
-		_add_edition_languages(root)
+	root = t.first("/document/edition/logical")
+	assert root is None or isinstance(root, tree.Tag)
+	_add_edition_languages(t, root)
 
 def fetch_file_data(ident):
 	# XXX should do this from the File() object, not from the db, because
