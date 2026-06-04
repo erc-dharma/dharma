@@ -347,12 +347,12 @@ class GeneratedParser(Parser):
 
     @memoize_left_rec
     def OrExpr(self) -> Optional[Any]:
-        # OrExpr: OrExpr ("or" | "OR") AndExpr | AndExpr
+        # OrExpr: OrExpr "OR" AndExpr | AndExpr
         mark = self._mark()
         if (
             (r := self.OrExpr())
             and
-            (self._tmp_3())
+            (self.expect("OR"))
             and
             (s := self.AndExpr())
         ):
@@ -367,12 +367,12 @@ class GeneratedParser(Parser):
 
     @memoize_left_rec
     def AndExpr(self) -> Optional[Any]:
-        # AndExpr: AndExpr ("and" | "AND") NotExpr | NotExpr
+        # AndExpr: AndExpr "AND" NotExpr | NotExpr
         mark = self._mark()
         if (
             (r := self.AndExpr())
             and
-            (self._tmp_4())
+            (self.expect("AND"))
             and
             (s := self.NotExpr())
         ):
@@ -387,10 +387,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def NotExpr(self) -> Optional[Any]:
-        # NotExpr: ("not" | "NOT") NotExpr | NearExpr
+        # NotExpr: "NOT" NotExpr | NearExpr
         mark = self._mark()
         if (
-            (self._tmp_5())
+            (self.expect("NOT"))
             and
             (r := self.NotExpr())
         ):
@@ -425,10 +425,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def NearOp(self) -> Optional[Any]:
-        # NearOp: ("near" | "NEAR") "/" NUMBER | ("near" | "NEAR")
+        # NearOp: "NEAR" "/" NUMBER | "NEAR"
         mark = self._mark()
         if (
-            (self._tmp_6())
+            (self.expect("NEAR"))
             and
             (self.expect("/"))
             and
@@ -437,7 +437,7 @@ class GeneratedParser(Parser):
             return parse_distance ( dist . string );
         self._reset(mark)
         if (
-            (self._tmp_7())
+            (self.expect("NEAR"))
         ):
             return ( 0 , - 1 );
         self._reset(mark)
@@ -465,10 +465,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def SeqOp(self) -> Optional[Any]:
-        # SeqOp: ("seq" | "SEQ") "/" NUMBER | ("seq" | "SEQ")
+        # SeqOp: "SEQ" "/" NUMBER | "SEQ"
         mark = self._mark()
         if (
-            (self._tmp_8())
+            (self.expect("SEQ"))
             and
             (self.expect("/"))
             and
@@ -477,7 +477,7 @@ class GeneratedParser(Parser):
             return parse_distance ( dist . string );
         self._reset(mark)
         if (
-            (self._tmp_9())
+            (self.expect("SEQ"))
         ):
             return ( 0 , - 1 );
         self._reset(mark)
@@ -561,120 +561,8 @@ class GeneratedParser(Parser):
         self._reset(mark)
         return None;
 
-    @memoize
-    def _tmp_3(self) -> Optional[Any]:
-        # _tmp_3: "or" | "OR"
-        mark = self._mark()
-        if (
-            (literal := self.expect("or"))
-        ):
-            return literal;
-        self._reset(mark)
-        if (
-            (literal := self.expect("OR"))
-        ):
-            return literal;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_4(self) -> Optional[Any]:
-        # _tmp_4: "and" | "AND"
-        mark = self._mark()
-        if (
-            (literal := self.expect("and"))
-        ):
-            return literal;
-        self._reset(mark)
-        if (
-            (literal := self.expect("AND"))
-        ):
-            return literal;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_5(self) -> Optional[Any]:
-        # _tmp_5: "not" | "NOT"
-        mark = self._mark()
-        if (
-            (literal := self.expect("not"))
-        ):
-            return literal;
-        self._reset(mark)
-        if (
-            (literal := self.expect("NOT"))
-        ):
-            return literal;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_6(self) -> Optional[Any]:
-        # _tmp_6: "near" | "NEAR"
-        mark = self._mark()
-        if (
-            (literal := self.expect("near"))
-        ):
-            return literal;
-        self._reset(mark)
-        if (
-            (literal := self.expect("NEAR"))
-        ):
-            return literal;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_7(self) -> Optional[Any]:
-        # _tmp_7: "near" | "NEAR"
-        mark = self._mark()
-        if (
-            (literal := self.expect("near"))
-        ):
-            return literal;
-        self._reset(mark)
-        if (
-            (literal := self.expect("NEAR"))
-        ):
-            return literal;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_8(self) -> Optional[Any]:
-        # _tmp_8: "seq" | "SEQ"
-        mark = self._mark()
-        if (
-            (literal := self.expect("seq"))
-        ):
-            return literal;
-        self._reset(mark)
-        if (
-            (literal := self.expect("SEQ"))
-        ):
-            return literal;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_9(self) -> Optional[Any]:
-        # _tmp_9: "seq" | "SEQ"
-        mark = self._mark()
-        if (
-            (literal := self.expect("seq"))
-        ):
-            return literal;
-        self._reset(mark)
-        if (
-            (literal := self.expect("SEQ"))
-        ):
-            return literal;
-        self._reset(mark)
-        return None;
-
     KEYWORDS = ()
-    SOFT_KEYWORDS = ('AND', 'NEAR', 'NOT', 'OR', 'SEQ', 'and', 'near', 'not', 'or', 'seq')
+    SOFT_KEYWORDS = ('AND', 'NEAR', 'NOT', 'OR', 'SEQ')
 
 
 if __name__ == '__main__':
