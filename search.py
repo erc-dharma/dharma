@@ -121,15 +121,19 @@ class TextExtractor:
 	def __init__(self):
 		# Initialize extraction buffer
 		self.buf = []
+
 	def on_text(self, node):
 		# Append translated string to buffer
 		self.buf.append(node.data)
+
 	def on_virtual(self, char):
 		# Append virtual structural character to buffer
 		self.buf.append(char)
+
 	def on_skipped_node(self, node):
 		# Ignore explicitly skipped nodes
 		pass
+
 	def get_result(self):
 		# Concatenate and return final extracted text
 		return "".join(str(s) for s in self.buf).rstrip()
@@ -568,31 +572,37 @@ def extract_list_text(xpath):
 		return [extract_text(n) for n in doc.find(xpath)]
 	return extractor
 
+def _get_direct_children(node, tag_name):
+	# Return a list of direct children matching the tag name to prevent deep traversal
+	return [c for c in list(node) if getattr(c, "name", None) == tag_name]
+
 def get_flat_people(xpath):
 	# Extract a flat list of people identifiers and names
+	# We use _get_direct_children to strictly limit extraction to direct attributes
 	def extractor(doc):
 		res = []
 		for node in doc.find(xpath):
-			id_nodes = node.find("identifier")
+			id_nodes = _get_direct_children(node, "identifier")
 			res.append(extract_text(id_nodes[0]) if id_nodes else "")
-			name_nodes = node.find("name")
+			name_nodes = _get_direct_children(node, "name")
 			res.append(extract_text(name_nodes[0]) if name_nodes else "")
 		return res
 	return extractor
 
 def get_flat_matrix(parent_xpath, child_tag):
 	# Extract a flat matrix linking languages and scripts
+	# We use _get_direct_children to avoid capturing nested nodes' tags
 	def extractor(doc):
 		matrix = []
 		for parent in doc.find(parent_xpath):
 			row = []
-			pid = parent.find("identifier")
-			pname = parent.find("name")
+			pid = _get_direct_children(parent, "identifier")
+			pname = _get_direct_children(parent, "name")
 			row.append(extract_text(pid[0]) if pid else "")
 			row.append(extract_text(pname[0]) if pname else "")
-			for child in parent.find(child_tag):
-				cid = child.find("identifier")
-				cname = child.find("name")
+			for child in _get_direct_children(parent, child_tag):
+				cid = _get_direct_children(child, "identifier")
+				cname = _get_direct_children(child, "name")
 				row.append(extract_text(cid[0]) if cid else "")
 				row.append(extract_text(cname[0]) if cname else "")
 			matrix.append(row)
@@ -726,6 +736,8 @@ def process_single_match(item):
 
 def highlight_document(doc, item_data):
 	# Traverse configured fields and apply coordinated highlighting
+	# Call synchronization to cross-pollinate highlights before DOM application
+	_synchronize_matrix_highlights(item_data)
 	counter = [0]
 	for field, config in SEARCH_CONFIG.items():
 		xpath = config.get("highlight")
@@ -734,6 +746,39 @@ def highlight_document(doc, item_data):
 		nodes = doc.find(xpath)
 		if not marked_data or not nodes: continue
 		_dispatch_highlight(nodes, marked_data, config, counter)
+
+def _synchronize_matrix_highlights(item_data):
+	# Cross-pollinate highlights between lang and script matrices
+	# This compensates for the Go backend only highlighting primary entities
+	lang_hl = _extract_parent_highlights(item_data.get("lang"))
+	script_hl = _extract_parent_highlights(item_data.get("script"))
+	_inject_child_highlights(item_data.get("lang"), script_hl)
+	_inject_child_highlights(item_data.get("script"), lang_hl)
+
+def _extract_parent_highlights(matrix):
+	# Extract highlighting markers from parent elements in a matrix
+	# We use this to build a dictionary of known highlights by their clean IDs
+	highlights = {}
+	if not isinstance(matrix, list): return highlights
+	for row in matrix:
+		if len(row) > 0:
+			clean_id = row[0].replace(MARKER_START, "").replace(MARKER_END, "")
+			highlights[clean_id] = (row[0], row[1] if len(row) > 1 else "")
+	return highlights
+
+def _inject_child_highlights(matrix, parent_highlights):
+	# Inject missing highlighting markers into child elements using parent data
+	# This ensures nested scripts and languages get proper visual representation
+	if not isinstance(matrix, list): return
+	for row in matrix:
+		col = 2
+		while col < len(row):
+			clean_id = row[col].replace(MARKER_START, "").replace(MARKER_END, "")
+			if clean_id in parent_highlights:
+				row[col] = parent_highlights[clean_id][0]
+				if col + 1 < len(row):
+					row[col+1] = parent_highlights[clean_id][1]
+			col += 2
 
 def _dispatch_highlight(nodes, marked_data, config, counter):
 	# Route the highlighting procedure according to field topography
@@ -755,39 +800,42 @@ def apply_list_highlight(nodes, marked_list, counter):
 
 def apply_people_highlight(nodes, flat_list, counter):
 	# Distribute highlighted markers across structured names and identifiers
+	# Using _get_direct_children to restrict highlighting to current node level
 	for i, node in enumerate(nodes):
 		id_idx = 2 * i
 		name_idx = 2 * i + 1
 		if id_idx < len(flat_list):
-			targets = node.find("identifier")
+			targets = _get_direct_children(node, "identifier")
 			if targets: apply_string_highlight(targets, flat_list[id_idx], counter)
 		if name_idx < len(flat_list):
-			targets = node.find("name")
+			targets = _get_direct_children(node, "name")
 			if targets: apply_string_highlight(targets, flat_list[name_idx], counter)
 
 def apply_matrix_highlight(nodes, matrix, child_tag, counter):
 	# Propagate highlighting logic within bi-dimensional structures
+	# Utilizing _get_direct_children avoids erroneous propagation to nested components
 	for node, row in zip(nodes, matrix):
 		if len(row) > 0:
-			targets = node.find("identifier")
+			targets = _get_direct_children(node, "identifier")
 			if targets: apply_string_highlight(targets, row[0], counter)
 		if len(row) > 1:
-			targets = node.find("name")
+			targets = _get_direct_children(node, "name")
 			if targets: apply_string_highlight(targets, row[1], counter)
 		if child_tag:
 			_apply_matrix_child_highlight(node, row, child_tag, counter)
 
 def _apply_matrix_child_highlight(node, row, child_tag, counter):
 	# Traverse subordinated components of matrix structures
-	children = node.find(child_tag)
+	# Extract direct children accurately to maintain correct sync with matrix indices
+	children = _get_direct_children(node, child_tag)
 	col = 2
 	for child in children:
 		if col < len(row):
-			targets = child.find("identifier")
+			targets = _get_direct_children(child, "identifier")
 			if targets: apply_string_highlight(targets, row[col], counter)
 		col += 1
 		if col < len(row):
-			targets = child.find("name")
+			targets = _get_direct_children(child, "name")
 			if targets: apply_string_highlight(targets, row[col], counter)
 		col += 1
 
