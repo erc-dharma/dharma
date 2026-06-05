@@ -1,5 +1,7 @@
 # TODO
 
+Les script sont plus mis en surbrillance, voir https://dharmalekha.info/texts?q=script:br%C4%81hm%C4%AB_other
+
 Enrichir les agrégations des éléments manquants:
 Sur la page https://dharmalekha.info/languages, il manque "scripts"
 Sur la page https://dharmalekha.info/scripts, il manque "languages"
