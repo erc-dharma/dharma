@@ -14,17 +14,16 @@ href="https://github.com/erc-dharma">here</a>. The table below does not show the
 % for repo in rows:
 <div class="card" id="repo-{{repo["repo"]}}">
 <div class="card-heading">
-	{{repo["title"]}}
+% if repo["has_description_page"]:
+<a href="/repositories/{{repo["repo"]}}">{{repo["title"]}}</a>
+% else
+{{repo["title"]}}
+% endif
 % if repo["repo_prod"] is not none:
 	(<a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}}">{{repo["repo_prod"]}} {{numberize("text", repo["repo_prod"])}}</a>)
 % endif
 </div>
 <div class="card-body">
-% if repo["has_description_page"]:
-<p>
-<a href="/repositories/{{repo["repo"]}}">Presentation</a>.
-</p>
-% endif
 % if repo["people"]:
 % set people = from_json(repo["people"])
 <p>{{numberize('Editor', people)}}:
