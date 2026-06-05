@@ -44,6 +44,7 @@
    <li class="submenu">
       <a href="#">Resources <i class="fa-solid fa-caret-down"></i></a>
       <ul class="hidden">
+         <li><a href="/bibliography">Bibliography</a></li>
          <li><a href="/bestow">BESTOW</a></li>
          <li><a href="/development-of-tamil-fractions">Development of Tamil Fractions</a></li>
          <li><a href="/chola-fractional-calculations">Chola Fractional Calculations</a></li>
