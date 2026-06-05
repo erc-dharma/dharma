@@ -1,13 +1,24 @@
 # TODO
 
-il faut signaler les erreurs de syntaxe dans les requêtes
+Il faut simplifier la structure matrix des champs lang et script.
 
-Chercher "Ajanta" et observer qu'on a un match avec rupture de danda: bha-dhvajaṁ | ḍam. Il y a certain caractères qui devraient être interprétés comme des séparateurs dans les textes; a priori
+Vérifier si, dans la fonction qui parcourt l'ensemble des documentss pour les examiner, on s'arrête au premier match de chaque document ou si l'on poursuit jusqu'à la fin du document.
+
+Voir si on ne peut pas simplifier les tableaux documents et documents_search. On se sert de documents pour les agrégation, donc il faut le garder, mais on peut peut-être simplifier la structure.
+
+Enrichir les agrégations des éléments manquants (manque script dans au moins une page, peut-être autre chose; il faudrait avoir: repo, contributor, lang, script)
+
+Dans la page repositories, rendre le titre clickable pour accéder à la page du dépôt.
+
+Il faut expliquer à quoi sert le module snip par contraste avec le module render.
+
+
+
+Chercher "Ajanta" et observer qu'on a un match avec rupture de danda: bha-dhvajaṁ | ḍam. Il y a certain caractères qui devraient être interprétés comme des séparateurs dans les textes; a priori, la ponctuation normale et les dandas.
 
 Permettre la recherche de chiffres. Mais noter qu'on a des fractions
 Permettre recherche de la biblio et sur la traduction. Mais il va falloir être en mesure d'extraire des snippets même de ces champs-là.
 Ajouter les facettes sur: lang script editor
-Abrevier les champs summary et hand.
 
 === affichage recherche
 

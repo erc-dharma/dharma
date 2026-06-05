@@ -214,7 +214,8 @@ form ul {
   justify-content: center;
   list-style: none;
   padding: 0;
-  column-gap: 0.3em; }
+  column-gap: 0.3em;
+  row-gap: 0.5em; }
 
 /************************************** Menu **********************************/
 #menu-bar #dharma-logo {
