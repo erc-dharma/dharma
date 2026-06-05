@@ -15,15 +15,17 @@ href="https://github.com/erc-dharma">here</a>. The table below does not show the
 <div class="card" id="repo-{{repo["repo"]}}">
 <div class="card-heading">
 % if repo["has_description_page"]:
-<a href="/repositories/{{repo["repo"]}}">{{repo["title"]}}</a>
+<b><a href="/repositories/{{repo["repo"]}}">{{repo["title"]}}</a></b>
 % else
-{{repo["title"]}}
-% endif
-% if repo["repo_prod"] is not none:
-	(<a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}}">{{repo["repo_prod"]}} {{numberize("text", repo["repo_prod"])}}</a>)
+<b>{{repo["title"]}}</b>
 % endif
 </div>
 <div class="card-body">
+% if repo["repo_prod"] is not none:
+<p>
+Total texts: <a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}}">{{repo["repo_prod"]}}</a>.
+</p>
+% endif
 % if repo["people"]:
 % set people = from_json(repo["people"])
 <p>{{numberize('Editor', people)}}:
@@ -51,7 +53,7 @@ href="https://github.com/erc-dharma">here</a>. The table below does not show the
 % endfor
 </p>
 % endif
-<p><a href="https://github.com/erc-dharma/{{format_url(repo['repo'])}}"><i class="fa-brands fa-github"></i> <span class="repo-id">{{repo["repo"]}}</span></a></p>
+<p><a href="https://github.com/erc-dharma/{{format_url(repo['repo'])}}"><i class="fa-brands fa-git"></i> <span class="repo-id">{{repo["repo"]}}</span></a></p>
 % if repo["commit_hash"]:
 <p>
 Last updated {{repo["commit_date"] | format_date}}

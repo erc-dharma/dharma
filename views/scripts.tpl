@@ -24,12 +24,15 @@ have the form <span class="monospace">X_other</span>, where <span class="monospa
 
 <div class="card-heading">
 	<b>{{row["inverted_name"]}}</b> [<span class="monospace">{{row["script"]}}</span>]
-% if row["prod"] is not none:
-	(<a href="{{url_for('show_catalog', q='script:' + row['script'])}}">{{row["prod"]}} {{numberize("text", row["prod"])}}</a>)
-% endif
 </div> ## class="card-heading"
 
 <div class="card-body">
+% if row["prod"] is not none:
+<p>
+Total texts: <a href="{{url_for('show_catalog', q='script:' + row['script'])}}">{{row["prod"]}}</a>.
+</p>
+% endif
+
 % if row["repos"]:
 <p>
 Repositories:

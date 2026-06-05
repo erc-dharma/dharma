@@ -15,12 +15,14 @@ Languages
 
 <div class="card-heading">
 	<b>{{row["inverted_name"]}}</b> [<span class="monospace">{{row["lang"]}}</span>]
-% if row["prod"] is not none:
-	(<a href="{{url_for('show_catalog', q='lang:' + row['lang'])}}">{{row["prod"]}} {{numberize("text", row["prod"])}}</a>)
-% endif
 </div> ## class="card-heading"
 
 <div class="card-body">
+% if row["prod"] is not none:
+<p>
+Total texts: <a href="{{url_for('show_catalog', q='lang:' + row['lang'])}}">{{row["prod"]}}</a>.
+</p>
+% endif
 % if row["repos"]:
 <p>
 Repositories:

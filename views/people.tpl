@@ -13,7 +13,7 @@ Contributors to this database
 
 <div class="card-heading">
 <b>{{row['inverted_name']}}</b>
-(<span class="member-id">{{row['dh_id']}}</span>)
+[<span class="member-id">{{row['dh_id']}}</span>]
 </div> ## class="card-heading"
 
 <div class="card-body">
