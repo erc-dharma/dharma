@@ -14,13 +14,8 @@ def copy_node_contents(node):
 	node.unwrap()
 	return ret
 
-def make_document_record(file, doc: tree.Tree):
+def make_document_record(doc: tree.Tree):
 	rec = {}
-	rec["title"] = copy_node_contents(doc.first("/document/title"))
-	authors = []
-	for node in doc.find("/document/author"):
-		authors.append(node.text())
-	rec["authors"] = authors
 	langs = []
 	for node in doc.find("/document/languages/language/identifier"):
 		langs.append(node.text())
@@ -37,33 +32,60 @@ def make_document_record(file, doc: tree.Tree):
 	for node in doc.find("/document/editor/identifier"):
 		editors_ids.append(node.text())
 	rec["editors"] = editors_ids
-	rec["summary"] = copy_node_contents(doc.first("/document/summary"))
 	return rec
 
 def insert(file: texts.File):
+	# Process the file once and persist records into both catalog and search databases.
 	db = common.db("texts")
 	logging.info(f"processing {file!r}")
+	doc, cat_data = _extract_catalog_data(file)
+	_insert_catalog(db, cat_data)
+	search_data = _extract_search_data(file, doc)
+	_insert_search(db, search_data)
+
+def _extract_catalog_data(file: texts.File):
+	# Ingest the file and build the catalog record to avoid duplicate tree parsing.
 	try:
-		doc_tree = ingest.process_file(file)
-		internal = copy.deepcopy(doc_tree)
-		enrich.process(internal)
-		data = make_document_record(file, internal)
-		enrich.process(doc_tree)
+		doc = ingest.process_file(file)
+		enrich.process(doc)
+		data = make_document_record(doc)
 	except tree.Error:
-		data = {}
-		data["langs"] = ["und"]
-		data["scripts"] = ["script_other"]
-		data["editors"] = []
-		data["summary"] = None
-	data["name"] = file.name
-	data["repo"] = file.repo
-	data["status"] = file.status
-	db.execute("""
-	insert or replace into documents(name, repo, editors,
-		langs, status, scripts)
-	values (:name, :repo, :editors, :langs, :status, :scripts)""", data)
+		doc = tree.Tree()
+		doc.append(tree.Tag("document"))
+		data = {"langs": ["und"], "scripts": ["script_other"], "editors": []}
+	data.update({"name": file.name, "repo": file.repo, "status": file.status})
+	return doc, data
+
+def _extract_search_data(file: texts.File, doc: tree.Tree):
+	# Augment the parsed document with file info and prepare data for the search index.
 	import search
-	search.add_document(file)
+	file_data = enrich.fetch_file_data(file.name)
+	enrich.add_file_info(doc, file_data)
+	search_data = search.prepare_search_data(doc)
+	for field, config in search.SEARCH_CONFIG.items():
+		if config["type"] in ["list", "people"]:
+			search_data[field] = search_data.get(field) or []
+	return search_data
+
+def _insert_catalog(db, data):
+	# Persist the extracted catalog metadata into the main documents table.
+	db.execute("""
+	insert or replace into documents(name, repo, editors, langs, status, scripts)
+	values (:name, :repo, :editors, :langs, :status, :scripts)
+	""", data)
+
+def _insert_search(db, data):
+	# Persist the search-specific data into the full-text search table.
+	db.execute("""
+	insert or replace into documents_search(
+		ident, logical, title, summary, repo_id, repo_name, hand,
+		author, editor, lang, script, source
+	)
+	values (
+		:ident, :logical, :title, :summary, :repo_id, :repo_name, :hand,
+		:author, :editor, :lang, :script, :source
+	)
+	""", data)
 
 # Rebuild the full catalog with the data already present in the db, i.e. without
 # fetching files from github repos but instead from the db. This should be used
