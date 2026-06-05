@@ -1,6 +1,15 @@
 # TODO
 
-Voir si on ne peut pas simplifier les tableaux documents et documents_search. On se sert de documents pour les agrégation, donc il faut le garder, mais on peut peut-être simplifier la structure.
+Add table for biblio citations and print the biblio cleanly:
+
+create table if not exists biblio_cited(
+	ident text primary key
+		check(typeof(ident) = 'text' and length(ident) > 0),
+	short_title text,
+		check(typeof(short_title) = 'text' and length(short_title) > 0),
+	foreign key(ident) references files(name),
+	foreign key(short_title) references biblio(short_title)
+);
 
 Enrichir les agrégations des éléments manquants:
 Sur la page https://dharmalekha.info/languages, il manque "scripts"
