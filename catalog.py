@@ -1,10 +1,6 @@
 import logging, copy
 from dharma import tree, texts, common, ingest, enrich
 
-def delete(name):
-	db = common.db("texts")
-	db.execute("delete from documents where name = ?", (name,))
-
 def copy_node_contents(node):
 	assert isinstance(node, tree.Tag) or node is None
 	if node is None or node.empty:
@@ -42,6 +38,7 @@ def insert(file: texts.File):
 	_insert_catalog(db, cat_data)
 	search_data = _extract_search_data(file, doc)
 	_insert_search(db, search_data)
+	_insert_biblio_cited(db, file.name, doc)
 
 def _extract_catalog_data(file: texts.File):
 	# Ingest the file and build the catalog record to avoid duplicate tree parsing.
@@ -73,6 +70,13 @@ def _insert_catalog(db, data):
 	insert or replace into documents(name, repo, editors, langs, status, scripts)
 	values (:name, :repo, :editors, :langs, :status, :scripts)
 	""", data)
+
+def _insert_biblio_cited(db, ident, doc):
+	# Extract explicit citations from the XML and persist them to build the project bibliography.
+	for node in doc.find("/document/citations/citation"):
+		db.execute("""
+		insert or ignore into biblio_cited(ident, short_title)
+		values (?, ?)""", (ident, node.text()))
 
 def _insert_search(db, data):
 	# Persist the search-specific data into the full-text search table.

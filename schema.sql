@@ -583,6 +583,17 @@ create view if not exists biblio_by_tag(tag, key) as
 	from biblio join json_each(biblio.data -> '$.tags')
 	order by tag;
 
+-- For sorting the short titles that are cited in a given document. We store all
+-- short titles cited in the document, even if they don't correspond to an
+-- existing entry. This is why we don't have a foreign key on short_title.
+create table if not exists biblio_cited(
+	ident text check(typeof(ident) = 'text' and length(ident) > 0),
+	short_title text,
+		check(typeof(short_title) = 'text' and length(short_title) > 0),
+	primary key(ident, short_title),
+	foreign key(ident) references files(name)
+);
+
 create view if not exists repos_display(repo, title, repo_prod, people,
 	langs, scripts, commit_hash, commit_date) as
 	with repos_editors_stats as (

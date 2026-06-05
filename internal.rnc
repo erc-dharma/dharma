@@ -45,11 +45,16 @@ document = element document {
 	translation*,
 	commentary?,
 	bibliography?
+	citations?
 }
 
 hash = element hash {
 	xsd:string { pattern = "([0-9a-f]{40}|[0-9a-f]{64})" }}
 date = element date { text }
+
+citations = element citations {
+	element citation { text }+
+}
 
 # Source languages given in the edition division.
 languages = element languages {

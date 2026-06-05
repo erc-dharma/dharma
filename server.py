@@ -494,11 +494,12 @@ SEARCH_PER_PAGE = 20
 @app.get("/bibliography/entry/<short_title>")
 @common.transaction("texts")
 def display_biblio_entry(short_title):
+	# Calculate the correct page index for a cited bibliographic entry.
 	db = common.db("texts")
 	index = db.execute("""
 		select pos - 1
-		from (select row_number() over(order by sort_key) as pos,
-		    short_title from biblio)
+		from (select row_number() over(order by sort_key) as pos, short_title
+		from biblio where short_title in (select short_title from biblio_cited))
 		where short_title = ?""", (short_title,)).fetchone()
 	if not index:
 		return flask.abort(404)
@@ -509,15 +510,20 @@ def display_biblio_entry(short_title):
 @app.get("/bibliography/page/<int:page>")
 @common.transaction("texts")
 def display_biblio_page(page):
+	# Fetch only bibliographic entries that are actually cited in the documents.
 	db = common.db("texts")
-	(entries_nr,) = db.execute("select count(*) from biblio").fetchone()
-	pages_nr = (entries_nr + BIBLIO_PER_PAGE - 1) // BIBLIO_PER_PAGE
+	(entries_nr,) = db.execute("""
+		select count(*) from biblio
+		where short_title in (select short_title from biblio_cited)""").fetchone()
+	pages_nr = max(1, (entries_nr + BIBLIO_PER_PAGE - 1) // BIBLIO_PER_PAGE)
 	if page < 1:
 		page = 1
 	elif page > pages_nr:
 		page = pages_nr
 	entries = []
-	for (entry,) in db.execute("""select data from biblio
+	for (entry,) in db.execute("""
+		select data from biblio
+		where short_title in (select short_title from biblio_cited)
 		order by sort_key limit ? offset ?""",
 		(BIBLIO_PER_PAGE, (page - 1) * BIBLIO_PER_PAGE)):
 		entry = biblio.format_entry(entry)
@@ -525,13 +531,10 @@ def display_biblio_page(page):
 	first_entry = (page - 1) * BIBLIO_PER_PAGE + 1
 	if first_entry > entries_nr:
 		first_entry = 0
-	last_entry = page * BIBLIO_PER_PAGE
-	if last_entry > entries_nr:
-		last_entry = entries_nr
-	ret = flask.render_template("biblio.tpl", page=page, pages_nr=pages_nr,
+	last_entry = min(page * BIBLIO_PER_PAGE, entries_nr)
+	return flask.render_template("biblio.tpl", page=page, pages_nr=pages_nr,
 		entries=entries, entries_nr=entries_nr, per_page=BIBLIO_PER_PAGE,
 		first_entry=first_entry, last_entry=last_entry)
-	return ret
 
 @app.get("/bibliography")
 def display_biblio():

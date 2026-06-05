@@ -35,6 +35,7 @@ class _Document:
 		self.editors: list[tuple[str, str]] = []
 		# For bestow.
 		self.extra = tree.Tree()
+		self.citations: set[str] = set()
 
 	def serialize(self):
 		f = tree.Serializer()
@@ -95,9 +96,23 @@ class _Document:
 			f.push(tree.Tag("extra"))
 			f.extend(self.extra)
 			f.join()
+		self._serialize_citations(f)
 		f.join()
 		_add_lang_to_parents(f.tree)
 		return f.tree
+
+	def _serialize_citations(self, f):
+		# Append citations at the end of the document for downstream processing and debugging.
+		if not self.citations:
+			return
+		f.push(tree.Tag("citations"))
+		for cite in sorted(self.citations):
+			f.push(tree.Tag("citation"))
+			short_title = tree.String(cite)
+			short_title.notes["lang"] = languages.Descriptor("und", "latin")
+			f.append(short_title)
+			f.join()
+		f.join()
 
 def _XML(s):
 	r = tree.parse_string(f"<root>{s}</root>")
@@ -209,6 +224,7 @@ class _Parser(tree.Serializer):
 
 	def bib_entry(self, short_title, location=[]):
 		assert short_title
+		self.document.citations.add(short_title)
 		entry = self.bib_entries.get(short_title)
 		if not entry:
 			db = common.db("texts")
@@ -229,6 +245,8 @@ class _Parser(tree.Serializer):
 		return biblio.format_entry(entry, location=location, siglum=siglum)
 
 	def bib_reference(self, short_title, rend="default", location=[], contents=[]):
+		if short_title:
+			self.document.citations.add(short_title)
 		entry, external = self._get_bib_entry(short_title)
 		if not entry:
 			if not short_title:
