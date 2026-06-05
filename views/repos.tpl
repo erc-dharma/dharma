@@ -53,7 +53,7 @@ Total texts: <a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}
 % endfor
 </p>
 % endif
-<p><a href="https://github.com/erc-dharma/{{format_url(repo['repo'])}}"><i class="fa-brands fa-git"></i> <span class="repo-id">{{repo["repo"]}}</span></a></p>
+<p><a href="https://github.com/erc-dharma/{{format_url(repo['repo'])}}"><i class="fa-brands fa-git-alt"></i> <span class="repo-id">{{repo["repo"]}}</span></a></p>
 % if repo["commit_hash"]:
 <p>
 Last updated {{repo["commit_date"] | format_date}}
