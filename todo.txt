@@ -4,7 +4,10 @@ Vérifier si, dans la fonction qui parcourt l'ensemble des documentss pour les e
 
 Voir si on ne peut pas simplifier les tableaux documents et documents_search. On se sert de documents pour les agrégation, donc il faut le garder, mais on peut peut-être simplifier la structure.
 
-Enrichir les agrégations des éléments manquants (manque script dans au moins une page, peut-être autre chose; il faudrait avoir: repo, contributor, lang, script)
+Enrichir les agrégations des éléments manquants:
+Sur la page https://dharmalekha.info/languages, il manque "scripts"
+Sur la page https://dharmalekha.info/scripts, il manque "languages"
+Sur la page https://dharmalekha.info/contributors, il manque "scripts"
 
 Dans la page repositories, rendre le titre clickable pour accéder à la page du dépôt.
 
