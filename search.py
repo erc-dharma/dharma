@@ -824,9 +824,35 @@ def highlight_document(doc, item_data):
 		xpath = config.get("highlight")
 		if not xpath: continue
 		marked_data = item_data.get(field)
-		nodes = doc.find(xpath)
-		if not marked_data or not nodes: continue
-		_dispatch_highlight(nodes, marked_data, config, counter)
+		if not marked_data: continue
+		nodes = list(doc.find(xpath))
+		if nodes:
+			_dispatch_highlight(nodes, marked_data, config, counter)
+		if field == "script":
+			_highlight_language_scripts(doc, marked_data, counter)
+
+def _highlight_language_scripts(doc, marked_data, counter):
+	# Traverse script nodes and apply highlights exactly as returned by the search engine.
+	lang_scripts = list(doc.find("/document/languages/language/script"))
+	if not lang_scripts or not marked_data: return
+	id_map = {}
+	for i in range(0, len(marked_data), 2):
+		marked_id = marked_data[i]
+		clean_id = marked_id.replace(MARKER_START, "").replace(MARKER_END, "").strip()
+		marked_name = marked_data[i+1] if i + 1 < len(marked_data) else ""
+		if clean_id:
+			id_map[clean_id] = (marked_id, marked_name)
+	for node in lang_scripts:
+		id_nodes = _get_direct_children(node, "identifier")
+		if not id_nodes: continue
+		clean_id = extract_text(id_nodes[0]).strip()
+		if clean_id in id_map:
+			marked_id, marked_name = id_map[clean_id]
+			if MARKER_START in marked_id:
+				apply_string_highlight(id_nodes, marked_id, counter)
+			name_nodes = _get_direct_children(node, "name")
+			if name_nodes and MARKER_START in marked_name:
+				apply_string_highlight(name_nodes, marked_name, counter)
 
 def _dispatch_highlight(nodes, marked_data, config, counter):
 	# Route the highlighting procedure according to field topography
