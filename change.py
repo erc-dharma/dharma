@@ -35,7 +35,7 @@ but writers still do block each other, which is why we use just one and
 serialize writes.
 """
 
-import os, sys, time, select, errno, logging, fcntl, argparse, traceback
+import os, sys, time, select, errno, logging, fcntl, argparse
 from dharma import common, texts, biblio, catalog, people, languages
 from dharma import glyphs, prosody, repos
 
@@ -75,7 +75,7 @@ def clone_repo(name):
 			return False
 		raise
 	common.command("git", "clone", "--depth=1", f"git@github.com:erc-dharma/{name}.git",
-		path, capture_output=False)
+		path)
 	return True
 
 # Github apparently doesn't like it when we pull too often. We often get a
@@ -94,7 +94,7 @@ def update_repo(name):
 	if clone_repo(name):
 		return
 	return common.command("git", "-C", common.path_of("repos", name),
-		"pull", capture_output=False)
+		"pull")
 
 def latest_commit_in_repo(name):
 	r = common.command("git", "-C", common.path_of("repos", name),
@@ -246,8 +246,7 @@ def update_project() -> bool:
 	return modified
 
 def backup_biblio():
-	common.command("bash", "-x", common.path_of("backup_biblio.sh"),
-		capture_output=False)
+	common.command("bash", "-x", common.path_of("backup_biblio.sh"))
 
 def handle_changes(name):
 	if name == "project-documentation":
@@ -416,8 +415,7 @@ def main():
 		except KeyboardInterrupt:
 			break
 		except Exception as e:
-			logging.error(e)
-			traceback.print_exception(e)
+			logging.exception(e)
 			# Don't immediately retry to avoid a busy loop. Might
 			# want to distinguish network errors from programming
 			# errors, etc.; in the first case, we could retry

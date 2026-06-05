@@ -622,7 +622,6 @@ creator_types = ["author", "editor", "bookAuthor"]
 def render_journal_article(rec, w):
 	w.entry_front(rec)
 	w.quoted(rec["title"])
-	print(w.tree.xml())
 	if rec["_shorthand"]:
 		w.by_authors(rec)
 	if rec["publicationTitle"] or rec["journalAbbreviation"]:

@@ -313,26 +313,31 @@ func evalContextSeq(row []string, caches []*TransformCache, q QueryNode) bool {
 		col = 1
 	}
 	if col == -1 {
-		limit := len(row)
-		if limit > 2 {
-			limit = 2
-		}
-		for j := 0; j < limit; j++ {
-			var c *TransformCache
-			if caches != nil && j < len(caches) {
-				c = caches[j]
-			}
-			if len(findSeqOccurrences(c, row[j], q)) > 0 {
-				return true
-			}
-		}
-		return false
+		return evalContextSeqAll(row, caches, q)
 	}
 	var c *TransformCache
 	if caches != nil && col < len(caches) {
 		c = caches[col]
 	}
-	return col < len(row) && len(findSeqOccurrences(c, row[col], q)) > 0
+	return col < len(row) && hasSeqOccurrences(c, row[col], q)
+}
+
+// Helper to evaluate all columns to avoid exceeding 25 lines limit.
+func evalContextSeqAll(row []string, caches []*TransformCache, q QueryNode) bool {
+	limit := len(row)
+	if limit > 2 {
+		limit = 2
+	}
+	for j := 0; j < limit; j++ {
+		var c *TransformCache
+		if caches != nil && j < len(caches) {
+			c = caches[j]
+		}
+		if hasSeqOccurrences(c, row[j], q) {
+			return true
+		}
+	}
+	return false
 }
 
 func evalAnd(d Document, args []QueryNode) bool {
@@ -725,107 +730,185 @@ func getFieldName(q QueryNode) string {
 	return ""
 }
 
-func findSeqOccurrences(cache *TransformCache, text string, q QueryNode) [][2]int {
+// MatchIter yields the start and end coordinates of a match lazily.
+// It is used to short-circuit the execution to improve efficiency.
+type MatchIter func() (int, int, bool)
+
+// Evaluates if a sequence is present without computing all occurrences.
+// We use a lazy iterator to stop as soon as the first sequence is validated.
+func hasSeqOccurrences(cache *TransformCache, text string, q QueryNode) bool {
+	_, _, ok := buildMatchIter(cache, text, q)()
+	return ok
+}
+
+// Builds the appropriate lazy iterator according to the query operator.
+// It routes to term, sequence, or proximity iterator builders.
+func buildMatchIter(cache *TransformCache, text string, q QueryNode) MatchIter {
 	if q.Op == "field" {
 		if q.Arg != nil {
-			return findSeqOccurrences(cache, text, *q.Arg)
+			return buildMatchIter(cache, text, *q.Arg)
 		}
-		return findOccurrences(cache, text, q.Value, q.Mode, q.Field)
+		return buildTermIter(cache, text, q.Value, q.Mode, q.Field)
 	}
-	var matches [][2]int
+	if q.Op == "seq" && len(q.Args) >= 2 {
+		l := buildMatchIter(cache, text, q.Args[0])
+		r := buildMatchIter(cache, text, q.Args[1])
+		return buildSeqIter(l, r, q.X, q.Y)
+	}
 	if q.Op == "near" && len(q.Args) >= 2 {
-		matches = append(matches, evalSeqPair(cache, text, q.Args[0], q.Args[1], q.X, q.Y)...)
-		matches = append(matches, evalSeqPair(cache, text, q.Args[1], q.Args[0], q.X, q.Y)...)
-		if len(matches) > 1 {
-			sort.Slice(matches, func(i, j int) bool {
-				if matches[i][0] != matches[j][0] {
-					return matches[i][0] < matches[j][0]
+		return buildNearIter(cache, text, q.Args[0], q.Args[1], q.X, q.Y)
+	}
+	return func() (int, int, bool) { return 0, 0, false }
+}
+
+// Generates an iterator for a single text term.
+// Translates the term and searches lazily using string index capabilities.
+func buildTermIter(cache *TransformCache, text, term, mode, field string) MatchIter {
+	if mode == "" {
+		mode = "normal"
+		if field == "logical" {
+			mode = "normalized"
+		}
+	}
+	tText := cache.get(text, mode)
+	tTerm := transform(term, mode)
+	if !strings.Contains(tText, tTerm) {
+		return func() (int, int, bool) { return 0, 0, false }
+	}
+	mapper := func(s string) (string, []int) { return transformWithBounds(s, mode) }
+	tText, bounds := mapper(text)
+	tTerm, _ = mapper(term)
+	return makeTermIterClosure(tText, tTerm, bounds, len(tTerm), 0)
+}
+
+// Helper closure to keep buildTermIter under 25 lines.
+// Returns the actual stateful function for term iteration.
+func makeTermIterClosure(tText, tTerm string, bounds []int, tLen, start int) MatchIter {
+	return func() (int, int, bool) {
+		if tLen == 0 {
+			return 0, 0, false
+		}
+		idx := strings.Index(tText[start:], tTerm)
+		if idx == -1 {
+			return 0, 0, false
+		}
+		absStart := start + idx
+		oStart := bounds[2*absStart]
+		oEnd := bounds[2*(absStart+tLen-1)+1]
+		start = absStart + 1
+		return oStart, oEnd, true
+	}
+}
+
+// Interleaves two iterators to match a sequence with distance constraints.
+// Uses a cache to keep track of the right-hand sequence matches efficiently.
+func buildSeqIter(left, right MatchIter, x, y int) MatchIter {
+	var rCache [][2]int
+	rDone := false
+	lStart, lEnd, lOk := left()
+	rIdx := 0
+	return func() (int, int, bool) {
+		for lOk {
+			target := lEnd + x
+			fillRightCache(&rCache, &rDone, right, target)
+			for i := rIdx; i < len(rCache); i++ {
+				if y != -1 && rCache[i][0]-lEnd >= y {
+					break
 				}
-				return matches[i][1] < matches[j][1]
-			})
-			unique := matches[:1]
-			for i := 1; i < len(matches); i++ {
-				if matches[i] != matches[i-1] {
-					unique = append(unique, matches[i])
+				if rCache[i][0] >= target {
+					rIdx = i + 1
+					return lStart, rCache[i][1], true
 				}
 			}
-			matches = unique
+			lStart, lEnd, lOk = left()
+			rIdx = 0
 		}
-		return matches
+		return 0, 0, false
 	}
-	if q.Op != "seq" || len(q.Args) < 2 {
-		return matches
-	}
-	return evalSeqPair(cache, text, q.Args[0], q.Args[1], q.X, q.Y)
 }
 
-func evalSeqPair(cache *TransformCache, text string, left, right QueryNode, x, y int) [][2]int {
-	var matches [][2]int
-	leftOpt := findSeqOccurrences(cache, text, left)
-	if len(leftOpt) == 0 {
-		return matches
-	}
-	rightOpt := findSeqOccurrences(cache, text, right)
-	if len(rightOpt) == 0 {
-		return matches
-	}
-	seen := make(map[[2]int]struct{})
-	for _, l := range leftOpt {
-		matches = append(matches, pairMatchRight(l, rightOpt, seen, x, y)...)
-	}
-	return matches
-}
-
-func pairMatchRight(l [2]int, rightOpt [][2]int, seen map[[2]int]struct{}, x, y int) [][2]int {
-	var matches [][2]int
-	target := l[1] + x
-	low, high := 0, len(rightOpt)
-	for low < high {
-		mid := int(uint(low+high) >> 1)
-		if rightOpt[mid][0] < target {
-			low = mid + 1
+// Populates the right-hand cache for sequence matching.
+// Keeps functions short and maintains state.
+func fillRightCache(rCache *[][2]int, rDone *bool, right MatchIter, target int) {
+	for !*rDone && (len(*rCache) == 0 || (*rCache)[len(*rCache)-1][0] < target) {
+		rs, re, rok := right()
+		if rok {
+			*rCache = append(*rCache, [2]int{rs, re})
 		} else {
-			high = mid
+			*rDone = true
 		}
 	}
-	for i := low; i < len(rightOpt); i++ {
-		r := rightOpt[i]
-		if y != -1 && r[0]-l[1] >= y {
-			break
-		}
-		pair := [2]int{l[0], r[1]}
-		if _, ok := seen[pair]; !ok {
-			seen[pair] = struct{}{}
-			matches = append(matches, pair)
-		}
-	}
-	return matches
 }
 
+// Handles proximity logic by checking both sequences symmetrically.
+// Returns the earliest valid match from either sequence direction.
+func buildNearIter(cache *TransformCache, text string, l, r QueryNode, x, y int) MatchIter {
+	s1 := buildSeqIter(buildMatchIter(cache, text, l), buildMatchIter(cache, text, r), x, y)
+	s2 := buildSeqIter(buildMatchIter(cache, text, r), buildMatchIter(cache, text, l), x, y)
+	var n1, n2 *[2]int
+	return func() (int, int, bool) {
+		updateNearState(&n1, s1)
+		updateNearState(&n2, s2)
+		if n1[0] != -1 && (n2[0] == -1 || n1[0] <= n2[0]) {
+			res := *n1
+			n1 = nil
+			return res[0], res[1], true
+		}
+		if n2[0] != -1 {
+			res := *n2
+			n2 = nil
+			return res[0], res[1], true
+		}
+		return 0, 0, false
+	}
+}
+
+// Helper to extract next match into the state variable for near queries.
+// Reduces length of buildNearIter.
+func updateNearState(state **[2]int, seq MatchIter) {
+	if *state == nil {
+		start, end, ok := seq()
+		*state = &[2]int{-1, -1}
+		if ok {
+			*state = &[2]int{start, end}
+		}
+	}
+}
+
+// Checks if a complex sequence query evaluates to true against the document.
 func matchSeqField(d Document, q QueryNode) bool {
-	field := getFieldName(q)
-	field = strings.ReplaceAll(field, ".", "_")
+	field := strings.ReplaceAll(getFieldName(q), ".", "_")
 	switch field {
 	case "ident":
-		return len(findSeqOccurrences(d.Cache.Ident, d.Ident, q)) > 0
+		return hasSeqOccurrences(d.Cache.Ident, d.Ident, q)
 	case "logical":
-		return len(findSeqOccurrences(d.Cache.Logical, d.Logical, q)) > 0
+		return hasSeqOccurrences(d.Cache.Logical, d.Logical, q)
 	case "summary":
-		return len(findSeqOccurrences(d.Cache.Summary, d.Summary, q)) > 0
+		return hasSeqOccurrences(d.Cache.Summary, d.Summary, q)
 	case "repo_id":
-		return len(findSeqOccurrences(d.Cache.RepoID, d.RepoID, q)) > 0
+		return hasSeqOccurrences(d.Cache.RepoID, d.RepoID, q)
 	case "repo_name":
-		return len(findSeqOccurrences(d.Cache.RepoName, d.RepoName, q)) > 0
+		return hasSeqOccurrences(d.Cache.RepoName, d.RepoName, q)
 	case "hand":
-		return len(findSeqOccurrences(d.Cache.Hand, d.Hand, q)) > 0
+		return hasSeqOccurrences(d.Cache.Hand, d.Hand, q)
 	}
 	return matchComplexSeqField(d, field, q)
 }
 
+// Dispatches sequence evaluation for metadata arrays to keep methods short.
 func matchComplexSeqField(d Document, field string, q QueryNode) bool {
-	switch field {
-	case "title":
+	if ok := matchSeqPeopleField(d, field, q); ok {
+		return true
+	}
+	if field == "title" {
 		return listSeqMatches(d.Title, d.Cache.Title, q)
+	}
+	return docSeqMatchesAll(d, q)
+}
+
+// Evaluates the presence of sequence elements within people data.
+func matchSeqPeopleField(d Document, field string, q QueryNode) bool {
+	switch field {
 	case "author":
 		return listSeqMatches(d.Author, d.Cache.Author, q)
 	case "author_ident":
@@ -851,22 +934,24 @@ func matchComplexSeqField(d Document, field string, q QueryNode) bool {
 	case "script_name":
 		return listSeqMatchesParity(d.Script, d.Cache.Script, q, 1)
 	}
-	return docSeqMatchesAll(d, q)
+	return false
 }
 
+// Evaluates a sequence match within a complex list context.
 func listSeqMatches(list []string, caches []*TransformCache, q QueryNode) bool {
 	for i, item := range list {
 		var c *TransformCache
 		if caches != nil && i < len(caches) {
 			c = caches[i]
 		}
-		if len(findSeqOccurrences(c, item, q)) > 0 {
+		if hasSeqOccurrences(c, item, q) {
 			return true
 		}
 	}
 	return false
 }
 
+// Evaluates sequence elements targeting odd or even parameters.
 func listSeqMatchesParity(list []string, caches []*TransformCache, q QueryNode, parity int) bool {
 	for i, item := range list {
 		if i%2 == parity {
@@ -874,7 +959,7 @@ func listSeqMatchesParity(list []string, caches []*TransformCache, q QueryNode, 
 			if caches != nil && i < len(caches) {
 				c = caches[i]
 			}
-			if len(findSeqOccurrences(c, item, q)) > 0 {
+			if hasSeqOccurrences(c, item, q) {
 				return true
 			}
 		}
@@ -882,14 +967,15 @@ func listSeqMatchesParity(list []string, caches []*TransformCache, q QueryNode, 
 	return false
 }
 
+// Broadly explores all standard attributes looking for an early validation.
 func docSeqMatchesAll(d Document, q QueryNode) bool {
-	if len(findSeqOccurrences(d.Cache.Logical, d.Logical, q)) > 0 || len(findSeqOccurrences(d.Cache.Ident, d.Ident, q)) > 0 {
+	if hasSeqOccurrences(d.Cache.Logical, d.Logical, q) || hasSeqOccurrences(d.Cache.Ident, d.Ident, q) {
 		return true
 	}
-	if len(findSeqOccurrences(d.Cache.Summary, d.Summary, q)) > 0 || len(findSeqOccurrences(d.Cache.RepoID, d.RepoID, q)) > 0 {
+	if hasSeqOccurrences(d.Cache.Summary, d.Summary, q) || hasSeqOccurrences(d.Cache.RepoID, d.RepoID, q) {
 		return true
 	}
-	if len(findSeqOccurrences(d.Cache.RepoName, d.RepoName, q)) > 0 || len(findSeqOccurrences(d.Cache.Hand, d.Hand, q)) > 0 {
+	if hasSeqOccurrences(d.Cache.RepoName, d.RepoName, q) || hasSeqOccurrences(d.Cache.Hand, d.Hand, q) {
 		return true
 	}
 	if listSeqMatches(d.Title, d.Cache.Title, q) || listSeqMatches(d.Author, d.Cache.Author, q) {

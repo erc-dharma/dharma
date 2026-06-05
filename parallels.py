@@ -1,4 +1,4 @@
-import os, string, unicodedata, re, html, sqlite3, sys
+import os, string, unicodedata, re, html, sqlite3, sys, logging
 from dharma import common, tree, texts
 
 # TODO try multisets: https://en.wikipedia.org/wiki/Jaccard_index
@@ -194,7 +194,7 @@ def make_jaccard(type):
 	for id, normalized in db.execute("select id, normalized from passages where type = ?", (type,)):
 		data.append((id, set(trigrams(normalized))))
 	for i, (id1, ngrams1) in enumerate(data, 1):
-		print("%d %d/%d" % (type, i, len(data)))
+		logging.debug("%d %d/%d" % (type, i, len(data)))
 		for id2, ngrams2 in data:
 			if id1 >= id2:
 				continue
@@ -224,11 +224,7 @@ def make_database():
 		db.execute(f"delete from {tbl}")
 	id = 0
 	for file in iter_all_texts_in_db():
-		try:
-			db.execute("insert into sources(file) values(?)", (file.name,))
-		except sqlite3.IntegrityError as e:
-			print(e, file=sys.stderr)
-			continue
+		db.execute("insert into sources(file) values(?)", (file.name,))
 		for row in process_file(file.full_path, id):
 			db.execute("""insert into passages(type, id, file, number, contents, normalized) values(?, ?, ?, ?, ?, ?)""", row)
 			id = row[1]

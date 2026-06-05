@@ -4,7 +4,7 @@ This is only a preliminary step. The output XML document must be passed to the
 `enrich` module to obtain the "final" internal representation that used for search, display, etc. This "final" internal representation is described in the schema `internal.rnc`.
 """
 
-import os, sys, re, html, urllib.parse, posixpath, copy
+import os, sys, re, html, urllib.parse, posixpath, copy, logging
 from dharma import common, prosody, people, tree, glyphs, biblio, languages
 from dharma import enrich
 
@@ -2080,7 +2080,7 @@ def append_sources(p, bib_refs, finish_list=True):
 
 @_handler("*")
 def _parse_remainder(self, node):
-	print(f"UNKNOWN {node!r}", file=sys.stderr)
+	logging.debug(f"node {node!r} not handled")
 	self.append(node.text())
 
 def process_file(file) -> tree.Tree:

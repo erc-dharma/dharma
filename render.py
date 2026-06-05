@@ -1,7 +1,7 @@
 """
 Conversion from the internal representation to HTML.
 """
-import sys, collections
+import sys, collections, logging
 from dharma import tree, common
 
 _HANDLERS = []
@@ -415,7 +415,7 @@ def _render_match(self, node):
 @_handler("*")
 def _render_tag(self, node):
 	assert isinstance(node, tree.Tag)
-	print(f"render: UNKNOWN: {node.name}", file=sys.stderr)
+	logging.debug(f"render: UNKNOWN: {node.name}")
 
 class Document:
 

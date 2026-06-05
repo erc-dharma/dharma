@@ -245,6 +245,5 @@ def parse_prosody():
 if __name__ == "__main__":
 	@common.transaction("texts")
 	def main():
-		#print(common.to_json(parse_prosody()))
 		update()
 	main()
