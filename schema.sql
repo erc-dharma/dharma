@@ -258,12 +258,12 @@ create table if not exists documents_search(
 	hand text check(hand is null or typeof(hand) = 'text'),
 	summary text check(summary is null or typeof(summary) = 'text'),
 	logical text check(logical is null or typeof(logical) = 'text'),
-	-- matrix: list of lists [[lang_id, lang_name, script_id, script_name...], ...].
+	-- flat list of pairs [lang_id, lang_name, lang2_id, lang2_name...].
 	lang json check(
 		typeof(lang) = 'text'
 		and json_valid(lang)
 		and json_type(lang) = 'array'),
-	-- matrix: list of lists [[script_id, script_name, lang_id, lang_name...], ...].
+	-- flat list of pairs [script_id, script_name, script2_id, script2_name...].
 	script json check(
 		typeof(script) = 'text'
 		and json_valid(script)

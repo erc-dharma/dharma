@@ -1,3 +1,4 @@
+"""This module is used to produce snippets in search results."""
 # TODO this uses much code from render.py, should refactor
 
 import sys, collections, urllib.parse

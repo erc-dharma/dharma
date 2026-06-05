@@ -151,10 +151,8 @@ func matchScopedField(d Document, q QueryNode) bool {
 		return matchScopedSingle(d, q, field)
 	case "title":
 		return matchScopedList(d, q, field)
-	case "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name":
+	case "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name", "lang", "lang_ident", "lang_name", "script", "script_ident", "script_name":
 		return matchScopedPeople(d, q, field)
-	case "lang", "lang_ident", "lang_name", "script", "script_ident", "script_name":
-		return matchScopedMatrix(d, q, field)
 	}
 	return false
 }
@@ -198,6 +196,12 @@ func matchScopedPeople(d Document, q QueryNode, field string) bool {
 	if strings.HasPrefix(field, "editor") {
 		list = d.Editor
 		caches = d.Cache.Editor
+	} else if strings.HasPrefix(field, "lang") {
+		list = d.Lang
+		caches = d.Cache.Lang
+	} else if strings.HasPrefix(field, "script") {
+		list = d.Script
+		caches = d.Cache.Script
 	}
 	for i := 0; i < len(list); i += 2 {
 		if i+1 >= len(list) {
@@ -226,43 +230,6 @@ func matchOnePerson(idStr, nameStr string, caches []*TransformCache, i int, q Qu
 		return matchContextQuery([]string{"", nameStr}, []*TransformCache{nil, nameC}, *q.Arg, field)
 	}
 	return matchContextQuery([]string{idStr, nameStr}, []*TransformCache{idC, nameC}, *q.Arg, field)
-}
-
-func matchScopedMatrix(d Document, q QueryNode, field string) bool {
-	mat := d.Lang
-	caches := d.Cache.Lang
-	if strings.HasPrefix(field, "script") {
-		mat = d.Script
-		caches = d.Cache.Script
-	}
-	for i, row := range mat {
-		var rowCaches []*TransformCache
-		if caches != nil && i < len(caches) {
-			rowCaches = caches[i]
-		}
-		if matchOneMatrixRow(row, rowCaches, q, field) {
-			return true
-		}
-	}
-	return false
-}
-
-func matchOneMatrixRow(row []string, rowCaches []*TransformCache, q QueryNode, field string) bool {
-	if strings.HasSuffix(field, "ident") && len(row) > 0 {
-		var c *TransformCache
-		if rowCaches != nil && len(rowCaches) > 0 {
-			c = rowCaches[0]
-		}
-		return matchContextQuery([]string{row[0]}, []*TransformCache{c}, *q.Arg, field)
-	}
-	if strings.HasSuffix(field, "name") && len(row) > 1 {
-		var c *TransformCache
-		if rowCaches != nil && len(rowCaches) > 1 {
-			c = rowCaches[1]
-		}
-		return matchContextQuery([]string{"", row[1]}, []*TransformCache{nil, c}, *q.Arg, field)
-	}
-	return matchContextQuery(row, rowCaches, *q.Arg, field)
 }
 
 func matchContextQuery(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
@@ -444,24 +411,18 @@ func matchComplexField(d Document, field, val, mode string) bool {
 		return listMatchesParity(d.Editor, d.Cache.Editor, val, mode, field, 0)
 	case "editor_name":
 		return listMatchesParity(d.Editor, d.Cache.Editor, val, mode, field, 1)
-	}
-	return matchMatrixField(d, field, val, mode)
-}
-
-func matchMatrixField(d Document, field, val, mode string) bool {
-	switch field {
 	case "lang":
-		return matrixMatchesCol(d.Lang, d.Cache.Lang, val, mode, field, -1)
+		return listMatches(d.Lang, d.Cache.Lang, val, mode, field)
 	case "lang_ident":
-		return matrixMatchesCol(d.Lang, d.Cache.Lang, val, mode, field, 0)
+		return listMatchesParity(d.Lang, d.Cache.Lang, val, mode, field, 0)
 	case "lang_name":
-		return matrixMatchesCol(d.Lang, d.Cache.Lang, val, mode, field, 1)
+		return listMatchesParity(d.Lang, d.Cache.Lang, val, mode, field, 1)
 	case "script":
-		return matrixMatchesCol(d.Script, d.Cache.Script, val, mode, field, -1)
+		return listMatches(d.Script, d.Cache.Script, val, mode, field)
 	case "script_ident":
-		return matrixMatchesCol(d.Script, d.Cache.Script, val, mode, field, 0)
+		return listMatchesParity(d.Script, d.Cache.Script, val, mode, field, 0)
 	case "script_name":
-		return matrixMatchesCol(d.Script, d.Cache.Script, val, mode, field, 1)
+		return listMatchesParity(d.Script, d.Cache.Script, val, mode, field, 1)
 	}
 	return false
 }
@@ -479,10 +440,10 @@ func docMatchesAll(d Document, val, mode string) bool {
 	if listMatches(d.Title, d.Cache.Title, val, mode, "title") || listMatches(d.Author, d.Cache.Author, val, mode, "author") {
 		return true
 	}
-	if listMatches(d.Editor, d.Cache.Editor, val, mode, "editor") || matrixMatchesCol(d.Lang, d.Cache.Lang, val, mode, "lang", -1) {
+	if listMatches(d.Editor, d.Cache.Editor, val, mode, "editor") || listMatches(d.Lang, d.Cache.Lang, val, mode, "lang") {
 		return true
 	}
-	return matrixMatchesCol(d.Script, d.Cache.Script, val, mode, "script", -1)
+	return listMatches(d.Script, d.Cache.Script, val, mode, "script")
 }
 
 func listMatches(list []string, caches []*TransformCache, q, mode, field string) bool {
@@ -514,55 +475,13 @@ func listMatchesParity(list []string, caches []*TransformCache, q, mode, field s
 	return false
 }
 
-func matrixMatchesCol(mat [][]string, caches [][]*TransformCache, q, mode, field string, col int) bool {
-	for i, row := range mat {
-		var rowCaches []*TransformCache
-		if caches != nil && i < len(caches) {
-			rowCaches = caches[i]
-		}
-		if col == -1 {
-			if scanRowLimit(row, rowCaches, q, mode, field) {
-				return true
-			}
-		} else if col < len(row) && scanRowCol(row, rowCaches, q, mode, field, col) {
-			return true
-		}
-	}
-	return false
-}
-
-func scanRowLimit(row []string, rowCaches []*TransformCache, q, mode, field string) bool {
-	limit := len(row)
-	if limit > 2 {
-		limit = 2
-	}
-	for j := 0; j < limit; j++ {
-		var c *TransformCache
-		if rowCaches != nil && j < len(rowCaches) {
-			c = rowCaches[j]
-		}
-		if containsMatcher(c, row[j], q, mode, field) {
-			return true
-		}
-	}
-	return false
-}
-
-func scanRowCol(row []string, rowCaches []*TransformCache, q, mode, field string, col int) bool {
-	var c *TransformCache
-	if rowCaches != nil && col < len(rowCaches) {
-		c = rowCaches[col]
-	}
-	return containsMatcher(c, row[col], q, mode, field)
-}
-
 func matchDocument(doc Document, qStr string) SearchResult {
 	res := SearchResult{
 		Ident: doc.Ident, Logical: doc.Logical,
 		Title: cloneList(doc.Title), Summary: doc.Summary,
 		RepoID: doc.RepoID, RepoName: doc.RepoName, Hand: doc.Hand,
 		Author: cloneList(doc.Author), Editor: cloneList(doc.Editor),
-		Lang: cloneMatrix(doc.Lang), Script: cloneMatrix(doc.Script),
+		Lang: cloneList(doc.Lang), Script: cloneList(doc.Script),
 	}
 	if qStr == "" {
 		return res
@@ -636,28 +555,15 @@ func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
 	processListTermsParity(res.Editor, doc.Editor, doc.Cache.Editor, termsForFields(terms, "editor", "editor_ident"), "editor_ident", 0)
 	processListTermsParity(res.Editor, doc.Editor, doc.Cache.Editor, termsForFields(terms, "editor", "editor_name"), "editor_name", 1)
-	highlightMatrixFields(res, doc, terms)
-}
-
-func highlightMatrixFields(res *SearchResult, doc Document, terms []QueryTerm) {
-	processMatrixTermsCol(res.Lang, doc.Lang, doc.Cache.Lang, termsForFields(terms, "lang", "lang_ident"), "lang_ident", 0)
-	processMatrixTermsCol(res.Lang, doc.Lang, doc.Cache.Lang, termsForFields(terms, "lang", "lang_name"), "lang_name", 1)
-	processMatrixTermsCol(res.Script, doc.Script, doc.Cache.Script, termsForFields(terms, "script", "script_ident"), "script_ident", 0)
-	processMatrixTermsCol(res.Script, doc.Script, doc.Cache.Script, termsForFields(terms, "script", "script_name"), "script_name", 1)
+	processListTermsParity(res.Lang, doc.Lang, doc.Cache.Lang, termsForFields(terms, "lang", "lang_ident"), "lang_ident", 0)
+	processListTermsParity(res.Lang, doc.Lang, doc.Cache.Lang, termsForFields(terms, "lang", "lang_name"), "lang_name", 1)
+	processListTermsParity(res.Script, doc.Script, doc.Cache.Script, termsForFields(terms, "script", "script_ident"), "script_ident", 0)
+	processListTermsParity(res.Script, doc.Script, doc.Cache.Script, termsForFields(terms, "script", "script_name"), "script_name", 1)
 }
 
 func cloneList(src []string) []string {
 	dst := make([]string, len(src))
 	copy(dst, src)
-	return dst
-}
-
-func cloneMatrix(src [][]string) [][]string {
-	dst := make([][]string, len(src))
-	for i, row := range src {
-		dst[i] = make([]string, len(row))
-		copy(dst[i], row)
-	}
 	return dst
 }
 
@@ -704,40 +610,6 @@ func processListTermsParity(targets []string, sources []string, caches []*Transf
 	return matched
 }
 
-func processMatrixTermsCol(targets [][]string, sources [][]string, caches [][]*TransformCache, terms []QueryTerm, fieldName string, col int) bool {
-	matched := false
-	for i, row := range sources {
-		var rowCaches []*TransformCache
-		if caches != nil && i < len(caches) {
-			rowCaches = caches[i]
-		}
-		if col == -1 {
-			limit := len(row)
-			if limit > 2 {
-				limit = 2
-			}
-			for j := 0; j < limit; j++ {
-				var c *TransformCache
-				if rowCaches != nil && j < len(rowCaches) {
-					c = rowCaches[j]
-				}
-				if processFieldTerms(c, &targets[i][j], row[j], terms, fieldName) {
-					matched = true
-				}
-			}
-		} else if col < len(row) {
-			var c *TransformCache
-			if rowCaches != nil && col < len(rowCaches) {
-				c = rowCaches[col]
-			}
-			if processFieldTerms(c, &targets[i][col], row[col], terms, fieldName) {
-				matched = true
-			}
-		}
-	}
-	return matched
-}
-
 type StringMapper func(string) (string, []int)
 
 func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2]int {
@@ -748,15 +620,11 @@ func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2
 			mode = "normal"
 		}
 	}
-
-	// Fast-path cache rejection
-	// Avoids the heavy transformWithBounds allocation if the term simply does not exist in the text.
 	transText := cache.get(text, mode)
 	transTerm := transform(term, mode)
 	if !strings.Contains(transText, transTerm) {
 		return nil
 	}
-
 	mapper := func(s string) (string, []int) {
 		return transformWithBounds(s, mode)
 	}
@@ -868,7 +736,6 @@ func findSeqOccurrences(cache *TransformCache, text string, q QueryNode) [][2]in
 	if q.Op == "near" && len(q.Args) >= 2 {
 		matches = append(matches, evalSeqPair(cache, text, q.Args[0], q.Args[1], q.X, q.Y)...)
 		matches = append(matches, evalSeqPair(cache, text, q.Args[1], q.Args[0], q.X, q.Y)...)
-
 		if len(matches) > 1 {
 			sort.Slice(matches, func(i, j int) bool {
 				if matches[i][0] != matches[j][0] {
@@ -902,33 +769,34 @@ func evalSeqPair(cache *TransformCache, text string, left, right QueryNode, x, y
 	if len(rightOpt) == 0 {
 		return matches
 	}
-
 	seen := make(map[[2]int]struct{})
-
 	for _, l := range leftOpt {
-		target := l[1] + x
+		matches = append(matches, pairMatchRight(l, rightOpt, seen, x, y)...)
+	}
+	return matches
+}
 
-		low, high := 0, len(rightOpt)
-		for low < high {
-			mid := int(uint(low+high) >> 1)
-			if rightOpt[mid][0] < target {
-				low = mid + 1
-			} else {
-				high = mid
-			}
+func pairMatchRight(l [2]int, rightOpt [][2]int, seen map[[2]int]struct{}, x, y int) [][2]int {
+	var matches [][2]int
+	target := l[1] + x
+	low, high := 0, len(rightOpt)
+	for low < high {
+		mid := int(uint(low+high) >> 1)
+		if rightOpt[mid][0] < target {
+			low = mid + 1
+		} else {
+			high = mid
 		}
-
-		for i := low; i < len(rightOpt); i++ {
-			r := rightOpt[i]
-			dist := r[0] - l[1]
-			if y != -1 && dist >= y {
-				break
-			}
-			pair := [2]int{l[0], r[1]}
-			if _, ok := seen[pair]; !ok {
-				seen[pair] = struct{}{}
-				matches = append(matches, pair)
-			}
+	}
+	for i := low; i < len(rightOpt); i++ {
+		r := rightOpt[i]
+		if y != -1 && r[0]-l[1] >= y {
+			break
+		}
+		pair := [2]int{l[0], r[1]}
+		if _, ok := seen[pair]; !ok {
+			seen[pair] = struct{}{}
+			matches = append(matches, pair)
 		}
 	}
 	return matches
@@ -970,24 +838,18 @@ func matchComplexSeqField(d Document, field string, q QueryNode) bool {
 		return listSeqMatchesParity(d.Editor, d.Cache.Editor, q, 0)
 	case "editor_name":
 		return listSeqMatchesParity(d.Editor, d.Cache.Editor, q, 1)
-	}
-	return matchMatrixSeqField(d, field, q)
-}
-
-func matchMatrixSeqField(d Document, field string, q QueryNode) bool {
-	switch field {
 	case "lang":
-		return matrixSeqMatchesCol(d.Lang, d.Cache.Lang, q, -1)
+		return listSeqMatches(d.Lang, d.Cache.Lang, q)
 	case "lang_ident":
-		return matrixSeqMatchesCol(d.Lang, d.Cache.Lang, q, 0)
+		return listSeqMatchesParity(d.Lang, d.Cache.Lang, q, 0)
 	case "lang_name":
-		return matrixSeqMatchesCol(d.Lang, d.Cache.Lang, q, 1)
+		return listSeqMatchesParity(d.Lang, d.Cache.Lang, q, 1)
 	case "script":
-		return matrixSeqMatchesCol(d.Script, d.Cache.Script, q, -1)
+		return listSeqMatches(d.Script, d.Cache.Script, q)
 	case "script_ident":
-		return matrixSeqMatchesCol(d.Script, d.Cache.Script, q, 0)
+		return listSeqMatchesParity(d.Script, d.Cache.Script, q, 0)
 	case "script_name":
-		return matrixSeqMatchesCol(d.Script, d.Cache.Script, q, 1)
+		return listSeqMatchesParity(d.Script, d.Cache.Script, q, 1)
 	}
 	return docSeqMatchesAll(d, q)
 }
@@ -1020,39 +882,6 @@ func listSeqMatchesParity(list []string, caches []*TransformCache, q QueryNode, 
 	return false
 }
 
-func matrixSeqMatchesCol(mat [][]string, caches [][]*TransformCache, q QueryNode, col int) bool {
-	for i, row := range mat {
-		var rowCaches []*TransformCache
-		if caches != nil && i < len(caches) {
-			rowCaches = caches[i]
-		}
-		if col == -1 {
-			limit := len(row)
-			if limit > 2 {
-				limit = 2
-			}
-			for j := 0; j < limit; j++ {
-				var c *TransformCache
-				if rowCaches != nil && j < len(rowCaches) {
-					c = rowCaches[j]
-				}
-				if len(findSeqOccurrences(c, row[j], q)) > 0 {
-					return true
-				}
-			}
-		} else if col < len(row) {
-			var c *TransformCache
-			if rowCaches != nil && col < len(rowCaches) {
-				c = rowCaches[col]
-			}
-			if len(findSeqOccurrences(c, row[col], q)) > 0 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func docSeqMatchesAll(d Document, q QueryNode) bool {
 	if len(findSeqOccurrences(d.Cache.Logical, d.Logical, q)) > 0 || len(findSeqOccurrences(d.Cache.Ident, d.Ident, q)) > 0 {
 		return true
@@ -1066,8 +895,8 @@ func docSeqMatchesAll(d Document, q QueryNode) bool {
 	if listSeqMatches(d.Title, d.Cache.Title, q) || listSeqMatches(d.Author, d.Cache.Author, q) {
 		return true
 	}
-	if listSeqMatches(d.Editor, d.Cache.Editor, q) || matrixSeqMatchesCol(d.Lang, d.Cache.Lang, q, -1) {
+	if listSeqMatches(d.Editor, d.Cache.Editor, q) || listSeqMatches(d.Lang, d.Cache.Lang, q) {
 		return true
 	}
-	return matrixSeqMatchesCol(d.Script, d.Cache.Script, q, -1)
+	return listSeqMatches(d.Script, d.Cache.Script, q)
 }

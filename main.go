@@ -54,8 +54,9 @@ type DocCache struct {
 	Title    []*TransformCache
 	Author   []*TransformCache
 	Editor   []*TransformCache
-	Lang     [][]*TransformCache
-	Script   [][]*TransformCache
+	// Modifié pour refléter une liste simple
+	Lang   []*TransformCache
+	Script []*TransformCache
 }
 
 type Document struct {
@@ -68,25 +69,27 @@ type Document struct {
 	Hand     string
 	Author   []string
 	Editor   []string
-	Lang     [][]string
-	Script   [][]string
-	Cache    *DocCache
+	// Modifié pour refléter une liste simple
+	Lang   []string
+	Script []string
+	Cache  *DocCache
 }
 
 type SearchResult struct {
-	Ident    string     `json:"ident"`
-	Logical  string     `json:"logical"`
-	Title    []string   `json:"title"`
-	Summary  string     `json:"summary"`
-	RepoID   string     `json:"repo_id"`
-	RepoName string     `json:"repo_name"`
-	Hand     string     `json:"hand"`
-	Author   []string   `json:"author"`
-	Editor   []string   `json:"editor"`
-	Lang     [][]string `json:"lang"`
-	Script   [][]string `json:"script"`
-	Source   string     `json:"source"`
-	Original string     `json:"original,omitempty"`
+	Ident    string   `json:"ident"`
+	Logical  string   `json:"logical"`
+	Title    []string `json:"title"`
+	Summary  string   `json:"summary"`
+	RepoID   string   `json:"repo_id"`
+	RepoName string   `json:"repo_name"`
+	Hand     string   `json:"hand"`
+	Author   []string `json:"author"`
+	Editor   []string `json:"editor"`
+	// Modifié pour refléter une liste simple
+	Lang     []string `json:"lang"`
+	Script   []string `json:"script"`
+	Source   string   `json:"source"`
+	Original string   `json:"original,omitempty"`
 }
 
 type SearchResponse struct {
@@ -373,7 +376,8 @@ func scanOne(rows *sql.Rows) (Document, error) {
 		Ident: ident, Logical: logStr, Title: parseList(titleJson),
 		Summary: sum, RepoID: rid, RepoName: rname, Hand: hand,
 		Author: parseList(authJson), Editor: parseList(edJson),
-		Lang: parseMatrix(langJson), Script: parseMatrix(scrJson),
+		// On utilise parseList au lieu de parseMatrix pour analyser le JSON aplati
+		Lang: parseList(langJson), Script: parseList(scrJson),
 	}
 	doc.Cache = buildDocCache(&doc)
 	return doc, nil
@@ -408,11 +412,12 @@ func buildDocCache(d *Document) *DocCache {
 	if CacheConfig["editor"] {
 		c.Editor = buildListCache(len(d.Editor))
 	}
+	// Initialisation des caches pour les nouvelles listes simples
 	if CacheConfig["lang"] {
-		c.Lang = buildMatrixCache(d.Lang)
+		c.Lang = buildListCache(len(d.Lang))
 	}
 	if CacheConfig["script"] {
-		c.Script = buildMatrixCache(d.Script)
+		c.Script = buildListCache(len(d.Script))
 	}
 	return c
 }
@@ -425,28 +430,12 @@ func buildListCache(size int) []*TransformCache {
 	return list
 }
 
-func buildMatrixCache(mat [][]string) [][]*TransformCache {
-	res := make([][]*TransformCache, len(mat))
-	for i, row := range mat {
-		res[i] = buildListCache(len(row))
-	}
-	return res
-}
-
 func parseList(jsonStr string) []string {
 	var list []string
 	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
 		return []string{}
 	}
 	return list
-}
-
-func parseMatrix(jsonStr string) [][]string {
-	var mat [][]string
-	if err := json.Unmarshal([]byte(jsonStr), &mat); err != nil {
-		return [][]string{}
-	}
-	return mat
 }
 
 func enrichMatches(tx *sql.Tx, matches []SearchResult, docs []Document, fields []string) {

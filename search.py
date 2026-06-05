@@ -679,7 +679,7 @@ def _get_direct_children(node, tag_name):
 	return [c for c in list(node) if getattr(c, "name", None) == tag_name]
 
 def get_flat_people(xpath):
-	# Extract a flat list of people identifiers and names
+	# Extract a flat list of identifiers and names for people or linear data
 	def extractor(doc):
 		res = []
 		for node in doc.find(xpath):
@@ -688,25 +688,6 @@ def get_flat_people(xpath):
 			name_nodes = _get_direct_children(node, "name")
 			res.append(extract_text(name_nodes[0]) if name_nodes else "")
 		return res
-	return extractor
-
-def get_flat_matrix(parent_xpath, child_tag):
-	# Extract a flat matrix linking languages and scripts
-	def extractor(doc):
-		matrix = []
-		for parent in doc.find(parent_xpath):
-			row = []
-			pid = _get_direct_children(parent, "identifier")
-			pname = _get_direct_children(parent, "name")
-			row.append(extract_text(pid[0]) if pid else "")
-			row.append(extract_text(pname[0]) if pname else "")
-			for child in _get_direct_children(parent, child_tag):
-				cid = _get_direct_children(child, "identifier")
-				cname = _get_direct_children(child, "name")
-				row.append(extract_text(cid[0]) if cid else "")
-				row.append(extract_text(cname[0]) if cname else "")
-			matrix.append(row)
-		return matrix
 	return extractor
 
 SEARCH_CONFIG = {
@@ -756,16 +737,14 @@ SEARCH_CONFIG = {
 		"highlight": "/document/editor"
 	},
 	"lang": {
-		"extractor": get_flat_matrix("/document/languages/language", "script"),
-		"type": "matrix",
-		"highlight": "/document/languages/language",
-		"child": "script"
+		"extractor": get_flat_people("/document/languages/language"),
+		"type": "people",
+		"highlight": "/document/languages/language"
 	},
 	"script": {
-		"extractor": get_flat_matrix("/document/scripts/script", "language"),
-		"type": "matrix",
-		"highlight": "/document/scripts/script",
-		"child": "language"
+		"extractor": get_flat_people("/document/scripts/script"),
+		"type": "people",
+		"highlight": "/document/scripts/script"
 	}
 }
 
@@ -840,7 +819,6 @@ def process_single_match(item):
 
 def highlight_document(doc, item_data):
 	# Traverse configured fields and apply coordinated highlighting
-	_synchronize_matrix_highlights(item_data)
 	counter = [0]
 	for field, config in SEARCH_CONFIG.items():
 		xpath = config.get("highlight")
@@ -850,42 +828,10 @@ def highlight_document(doc, item_data):
 		if not marked_data or not nodes: continue
 		_dispatch_highlight(nodes, marked_data, config, counter)
 
-def _synchronize_matrix_highlights(item_data):
-	# Cross-pollinate highlights between lang and script matrices
-	lang_hl = _extract_parent_highlights(item_data.get("lang"))
-	script_hl = _extract_parent_highlights(item_data.get("script"))
-	_inject_child_highlights(item_data.get("lang"), script_hl)
-	_inject_child_highlights(item_data.get("script"), lang_hl)
-
-def _extract_parent_highlights(matrix):
-	# Extract highlighting markers from parent elements in a matrix
-	highlights = {}
-	if not isinstance(matrix, list): return highlights
-	for row in matrix:
-		if len(row) > 0:
-			clean_id = row[0].replace(MARKER_START, "").replace(MARKER_END, "")
-			highlights[clean_id] = (row[0], row[1] if len(row) > 1 else "")
-	return highlights
-
-def _inject_child_highlights(matrix, parent_highlights):
-	# Inject missing highlighting markers into child elements using parent data
-	if not isinstance(matrix, list): return
-	for row in matrix:
-		col = 2
-		while col < len(row):
-			clean_id = row[col].replace(MARKER_START, "").replace(MARKER_END, "")
-			if clean_id in parent_highlights:
-				row[col] = parent_highlights[clean_id][0]
-				if col + 1 < len(row):
-					row[col+1] = parent_highlights[clean_id][1]
-			col += 2
-
 def _dispatch_highlight(nodes, marked_data, config, counter):
 	# Route the highlighting procedure according to field topography
 	if config["type"] == "list" and isinstance(marked_data, list):
 		apply_list_highlight(nodes, marked_data, counter)
-	elif config["type"] == "matrix" and isinstance(marked_data, list):
-		apply_matrix_highlight(nodes, marked_data, config.get("child"), counter)
 	elif config["type"] == "people" and isinstance(marked_data, list):
 		apply_people_highlight(nodes, marked_data, counter)
 	else:
@@ -910,32 +856,6 @@ def apply_people_highlight(nodes, flat_list, counter):
 			targets = _get_direct_children(node, "name")
 			if targets: apply_string_highlight(targets, flat_list[name_idx], counter)
 
-def apply_matrix_highlight(nodes, matrix, child_tag, counter):
-	# Propagate highlighting logic within bi-dimensional structures
-	for node, row in zip(nodes, matrix):
-		if len(row) > 0:
-			targets = _get_direct_children(node, "identifier")
-			if targets: apply_string_highlight(targets, row[0], counter)
-		if len(row) > 1:
-			targets = _get_direct_children(node, "name")
-			if targets: apply_string_highlight(targets, row[1], counter)
-		if child_tag:
-			_apply_matrix_child_highlight(node, row, child_tag, counter)
-
-def _apply_matrix_child_highlight(node, row, child_tag, counter):
-	# Traverse subordinated components of matrix structures
-	children = _get_direct_children(node, child_tag)
-	col = 2
-	for child in children:
-		if col < len(row):
-			targets = _get_direct_children(child, "identifier")
-			if targets: apply_string_highlight(targets, row[col], counter)
-		col += 1
-		if col < len(row):
-			targets = _get_direct_children(child, "name")
-			if targets: apply_string_highlight(targets, row[col], counter)
-		col += 1
-
 def apply_string_highlight(nodes, marked_string, counter):
 	# Instantiate highlighting for solitary character sequences
 	if MARKER_START in marked_string:
@@ -954,7 +874,7 @@ def add_document(file):
 	enrich.add_file_info(doc, data)
 	search_data = prepare_search_data(doc)
 	for field, config in SEARCH_CONFIG.items():
-		if config["type"] in ["list", "matrix", "people"]:
+		if config["type"] in ["list", "people"]:
 			val = search_data.get(field) or []
 			search_data[field] = val
 	db = common.db("texts")
