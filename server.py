@@ -249,36 +249,6 @@ def show_parallels_full(text, category, id):
 	return flask.render_template("parallels_enum.tpl", category=category, file=text,
 		number=number, data=rows, contents=contents)
 
-@app.get("/catalog")
-def legacy_show_catalog():
-	return flask.redirect(flask.url_for("show_catalog"))
-
-# Legacy
-@app.get("/old_texts")
-def show_catalog_old():
-	q = flask.request.args.get("q", "")
-	s = flask.request.args.get("s", "")
-	page = flask.request.args.get("p", "")
-	if page.isdigit():
-		page = int(page)
-		if page <= 0:
-			page = 1
-	else:
-		page = 1
-	rows, entries_nr, per_page, last_updated = catalog.search(q, s, page)
-	pages_nr = (entries_nr + per_page - 1) // per_page
-	first_entry = (page - 1) * per_page + 1
-	if first_entry > entries_nr:
-		first_entry = 0
-	last_entry = page * per_page
-	if last_entry > entries_nr:
-		last_entry = entries_nr
-	return flask.render_template("texts.tpl",
-		rows=rows, q=q, s=s, page=page, entries_nr=entries_nr,
-		pages_nr=pages_nr,
-		first_entry=first_entry, last_entry=last_entry,
-		per_page=per_page, last_updated=last_updated)
-
 @app.get("/bestow")
 @common.transaction("texts")
 def show_bestow():
@@ -371,10 +341,6 @@ def display_list():
 	texts = [t for (t,) in db.execute("""select name from documents
 		where name glob 'DHARMA_INS*'""")]
 	return flask.render_template("display.tpl", texts=texts)
-
-@app.get("/display/<text>")
-def legacy_display_text(text):
-	return flask.redirect(flask.url_for("display_text", text=text), code=302)
 
 # Redirect all forms
 # /texts/DHARMA_INSPallava00196.xml

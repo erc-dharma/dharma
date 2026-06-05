@@ -189,22 +189,11 @@ create table if not exists people_github(
 create table if not exists documents(
 	name text primary key,
 	repo text,
-	title html check(
-		title is null
-		or typeof(title) = 'text' and length(title) > 0),
-	authors json check(
-		typeof(authors) = 'text'
-		and json_valid(authors)
-		and json_type(authors) = 'array'),
+	-- Dharma members ids viz. the xxxx in part:xxxx.
 	editors json check(
 		typeof(editors) = 'text'
 		and json_valid(editors)
 		and json_type(editors) = 'array'),
-	-- Dharma members ids viz. the xxxx in part:xxxx.
-	editors_ids json check(
-		typeof(editors_ids) = 'text'
-		and json_valid(editors_ids)
-		and json_type(editors_ids) = 'array'),
 	-- Languages (as assigned by the user in each file).
 	-- There is always at least one assigned language, even when none are
 	-- explicitly given in the source file. (In this case, we assign it the
@@ -216,20 +205,18 @@ create table if not exists documents(
 		and json_array_length(langs) >= 1),
 	-- Scripts (as assigned by the user in each file). There is always at
 	-- least one assigned script, even when none are explicitly given in the
-	-- source file. (In this case, we assign it the script "source_other".)
+	-- source file. (In this case, we assign it the script "script_other".)
 	scripts json check(
 		typeof(scripts) = 'text'
 		and json_valid(scripts)
 		and json_type(scripts) = 'array'
 		and json_array_length(scripts) >= 1),
-	summary html check(
-		summary is null
-		or typeof(summary) = 'text' and length(summary) > 0),
 	-- How valid/invalid the XML document is. 0 is valid, the larger the
 	-- value, the more corrupt the document is. See the enum in validate.py
 	status integer check(
 		typeof(status) = 'integer' and status between 0 and 3),
-	foreign key(name) references files(name)
+	foreign key(name) references files(name),
+	foreign key(repo) references repos(repo)
 );
 
 -- Data to be accessed by the external search tool. For simplicity, we stick
@@ -271,22 +258,6 @@ create table if not exists documents_search(
 	source xml check(typeof(source) = 'text' and length(source) > 0),
 	foreign key(ident) references files(name),
 	foreign key(repo_id) references repos(repo)
-);
-
--- Inverted index for the catalog display. We have exactly one row for each text
--- in the documents table.
-create virtual table if not exists documents_index using fts5(
-	name unindexed, -- references documents(name)
-	ident,
-	repo,
-	title,
-	author,
-	editor,
-	editor_id,
-	lang,
-	script,
-	summary,
-	tokenize = "trigram"
 );
 
 -- This table is modeled as a tree. Each record has a parent, which is either
@@ -352,7 +323,7 @@ create view if not exists scripts_display(script, name, inverted_name, prod,
 			count(*) as editor_prod
 		from documents
 			join json_each(documents.scripts) as scripts_iter
-			join json_each(documents.editors_ids) as editor_iter
+			join json_each(documents.editors) as editor_iter
 		group by script, editor
 		order by script, editor_prod desc
 	), scripts_repos_prod as (
@@ -477,7 +448,7 @@ create view if not exists langs_display(lang, name, inverted_name, prod,
 			count(*) as editor_prod
 		from documents
 			join json_each(documents.langs) as langs_iter
-			join json_each(documents.editors_ids) as editor_iter
+			join json_each(documents.editors) as editor_iter
 		group by lang, editor
 		order by lang, editor_prod desc
 	), langs_repos_prod as (
@@ -620,7 +591,7 @@ create view if not exists repos_display(repo, title, repo_prod, people,
 			people_main.print_name as editor,
 			count(*) as editor_prod
 		from documents
-			join json_each(documents.editors_ids)
+			join json_each(documents.editors)
 			join people_main on people_main.dh_id = json_each.value
 		group by repo, json_each.value
 		order by repo asc, editor_prod desc, people_main.inverted_name asc
@@ -688,27 +659,27 @@ create view if not exists repos_display(repo, title, repo_prod, people,
 create view if not exists people_display as
 	with texts_prod as (
 		select json_each.value as dh_id, count(*) as texts_prod
-		from documents join json_each(documents.editors_ids)
+		from documents join json_each(documents.editors)
 		group by dh_id
 	), people_langs as (
 		select editors_iter.value as dh_id, langs_iter.value as lang,
 			count(*) as freq
 		from documents
-			join json_each(documents.editors_ids) as editors_iter
+			join json_each(documents.editors) as editors_iter
 			join json_each(documents.langs) as langs_iter
 		group by dh_id, lang
 		order by dh_id, freq desc
 	), people_repos as (
 		select editors_iter.value as dh_id, repo, count(*) as freq
 		from documents
-			join json_each(documents.editors_ids) as editors_iter
+			join json_each(documents.editors) as editors_iter
 		group by dh_id, repo
 		order by freq desc
 	), people_scripts as (
 		select editors_iter.value as dh_id, scripts_iter.value as script,
 			count(*) as freq
 		from documents
-			join json_each(documents.editors_ids) as editors_iter
+			join json_each(documents.editors) as editors_iter
 			join json_each(documents.scripts) as scripts_iter
 		group by dh_id, script
 		order by dh_id, freq desc
