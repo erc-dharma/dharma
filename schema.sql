@@ -704,6 +704,14 @@ create view if not exists people_display as
 			join json_each(documents.editors_ids) as editors_iter
 		group by dh_id, repo
 		order by freq desc
+	), people_scripts as (
+		select editors_iter.value as dh_id, scripts_iter.value as script,
+			count(*) as freq
+		from documents
+			join json_each(documents.editors_ids) as editors_iter
+			join json_each(documents.scripts) as scripts_iter
+		group by dh_id, script
+		order by dh_id, freq desc
 	), people_langs_json as (
 		select dh_id,
 			json_group_array(json_array(lang, name, freq)) as langs_prod
@@ -716,13 +724,19 @@ create view if not exists people_display as
 			join repos on people_repos.repo = repos.repo
 		group by dh_id
 		order by dh_id, repos.repo
+	), people_scripts_json as (
+		select dh_id, json_group_array(json_array(script, name, freq)) as script_prod
+		from people_scripts
+			join scripts_list on people_scripts.script = scripts_list.id
+		group by dh_id order by dh_id, freq, inverted_name
 	) select
 		people_main.dh_id as dh_id, inverted_name, affiliation, idhal,
-		idref, orcid, viaf, wikidata, texts_prod, langs_prod, repos_prod
+		idref, orcid, viaf, wikidata, texts_prod, langs_prod, repos_prod, script_prod
 	from people_main
 		left join texts_prod on people_main.dh_id = texts_prod.dh_id
 		left join people_langs_json on people_main.dh_id = people_langs_json.dh_id
-		left join people_repos_json on people_main.dh_id = people_repos_json.dh_id;
+		left join people_repos_json on people_main.dh_id = people_repos_json.dh_id
+		left join people_scripts_json on people_main.dh_id = people_scripts_json.dh_id;
 
 create view if not exists errors_display as
 	select documents.name, repos.repo, commit_hash, code_hash,

@@ -52,6 +52,19 @@ Contributors to this database
 </p>
 % endif
 
+% if row["script_prod"]:
+% set scripts_prod = from_json(row["script_prod"])
+<p>{{numberize("Script", scripts_prod | length)}}:
+% for script_id, script_name, freq in scripts_prod:
+	% if loop.index < loop.length:
+		{{script_name}} (<a href="{{url_for('show_catalog', q='editor.ident:%s script.ident:%s' % (row["dh_id"], script_id))}}">{{freq}}</a>),
+	% else:
+		{{script_name}} (<a href="{{url_for('show_catalog', q='editor.ident:%s script.ident:%s' % (row["dh_id"], script_id))}}">{{freq}}</a>)
+	% endif
+% endfor
+</p>
+% endif
+
 % if row["idhal"] or row["idref"] or row["orcid"] or row["viaf"] or row["wikidata"]:
 <p>
 % if row['idhal']:
