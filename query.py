@@ -101,7 +101,7 @@ def check_field_validity(node, valid_fields):
 			node.name = FIELD_ALIASES[node.name]
 		orig_name = REVERSE_MAPPING.get(node.name, node.name)
 		if orig_name not in valid_fields:
-			matches = difflib.get_close_matches(orig_name, list(valid_fields), n=1)
+			matches = difflib.get_close_matches(orig_name, list(valid_fields) + list(FIELD_ALIASES), n=1)
 			if matches:
 				raise InvalidQuery(f"Unknown search field: '{orig_name}'. Did you mean '{matches[0]}'?")
 			raise InvalidQuery(f"Unknown search field: '{orig_name}'")
