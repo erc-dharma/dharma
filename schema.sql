@@ -312,6 +312,9 @@ create table if not exists scripts_by_code(
 		deferrable initially deferred
 );
 
+-- TODO Sur la page https://dharmalekha.info/languages, on devrait afficher
+-- "scripts". Et sur la page https://dharmalekha.info/scripts, il manque
+-- "languages".
 create view if not exists scripts_display(script, name, inverted_name, prod,
 	editors, repos) as
 	with scripts_prod as (

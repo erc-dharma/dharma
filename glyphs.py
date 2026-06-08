@@ -1,6 +1,10 @@
 import logging, urllib.parse, posixpath
 from dharma import common, texts, tree
 
+# TODO We could add global table of gaiji symbols actually found in
+# inscriptions. We would add links to inscriptions within this table so that we
+# can find which inscriptions, etc. contain which symbols.
+
 _HANDLERS = []
 
 def _handler(path):

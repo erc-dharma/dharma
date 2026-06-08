@@ -3,6 +3,13 @@
 import os, os.path, unicodedata, typing
 from dharma import common, validate
 
+# TODO We must do NFC normalization at some point; when? not before storing the
+# file in the db (might need the original later on for e.g. hashing); simplest
+# would be to do that just before parsing the file, but this will mess up
+# columns numbers. still should do it, because we don't refer to columns for
+# now and because all string comparisons will be messed up. do the final
+# normalization step (new lines, etc.) when outputting documents.
+
 _valid_prefixes = {"DHARMA_INS", "DHARMA_DiplEd", "DHARMA_CritEd"}
 """Files that start with these prefixes are assumed to be TEI editions (but
 there are other additional criteria, see the code)."""

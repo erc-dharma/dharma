@@ -59,6 +59,11 @@ https://hackage-content.haskell.org/package/pandoc-types-1.23.1.1/docs/Text-Pand
 # TODO Permettre les div imbriquées, et vérifier que les résultats est le bon.
 # Autoriser tous types de div, pas seulement text part.
 
+# TODO hi rend=grantha à uniformiser avec rendition.  et ne mettre du gras que
+# si le parent est en tamoul. Dans enrich.py, quand on a un passage en grantha,
+# il faut le mettre en  gras. Cela suppose d'entourer de <span> tous ces
+# passages.
+
 import re, sys
 from dharma import tree, common, languages
 
@@ -1418,7 +1423,6 @@ def process(t: tree.Tree):
 			del node["name"]
 	_complete_verse_lines(t)
 	languages.finish_internal(t)
-	# TODO _put_grantha_in_bold(t)
 	# And extract languages from the logical division.
 	root = t.first("/document/edition/logical")
 	assert root is None or isinstance(root, tree.Tag)
