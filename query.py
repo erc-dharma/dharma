@@ -14,9 +14,17 @@ VALID_FIELDS = {
 	"author", "author.ident", "author.name",
 	"summary",
 	"hand",
+	"translation",
+	"bibliography",
 	"logical",
 	"lang", "lang.ident", "lang.name",
 	"script", "script.ident", "script.name"
+}
+
+# Map shorthand aliases to their canonical field names to allow brief queries
+FIELD_ALIASES = {
+	"trans": "translation",
+	"bibl": "bibliography"
 }
 
 # Maps internal database fields back to their dotted representation
@@ -86,9 +94,11 @@ def tokenize_query(s):
 		start=(1, 0), end=(1, 0), line="")
 
 def check_field_validity(node, valid_fields):
-	# Traverse the syntax tree recursively to ensure all fields exist
+	# Traverse the syntax tree recursively to ensure all fields exist and resolve aliases
 	# Raise an InvalidQuery with spelling suggestions if needed
 	if isinstance(node, query_parser.Field) and node.name:
+		if node.name in FIELD_ALIASES:
+			node.name = FIELD_ALIASES[node.name]
 		orig_name = REVERSE_MAPPING.get(node.name, node.name)
 		if orig_name not in valid_fields:
 			matches = difflib.get_close_matches(orig_name, list(valid_fields), n=1)

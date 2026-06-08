@@ -1335,12 +1335,14 @@ def format_entry(rec, location=[], siglum=None):
 	out = Writer()
 	out.push(tree.Tag("para", class_="bib-entry", anchor=f"bib-{rec['shortTitle']}"))
 	if siglum:
+		out.push(tree.Tag("display"))
 		out.push(tree.Tag("span", class_="bold"))
 		out.append("[")
 		out.append(siglum)
 		out.append("]")
 		out.join()
 		out.space()
+		out.join()
 	renderers[rec["itemType"]](rec, out)
 	if location:
 		out.entry_loc(location)

@@ -1,7 +1,7 @@
 import sys
 import unicodedata
 import requests
-from dharma import common, ingest, tree, enrich, query
+from dharma import common, tree, query
 import icu
 import re
 
@@ -35,6 +35,8 @@ class InternalWalker:
 		children = list(root)
 		if root.name in ["logical", "title", "span", "search", "link", "identifier", "omission"]:
 			for node in children: self._walk_node(node)
+		elif root.name in ["translation", "bibliography"]:
+			self._handle_section(root, children)
 		elif root.name == "para": self._handle_para(children)
 		elif root.name == "split": self._handle_split(root)
 		elif root.name == "verse": self._handle_verse(root)
@@ -44,6 +46,13 @@ class InternalWalker:
 			self.handler.on_skipped_node(root)
 		else:
 			for node in children: self._walk_node(node)
+
+	def _handle_section(self, root, children):
+		# Process a section node while skipping its header element
+		head = root.first("stuck-child::head")
+		for node in children:
+			if node is head: continue
+			self._walk_node(node)
 
 	def _handle_para(self, children):
 		# Handle paragraph nodes appending virtual space
@@ -321,8 +330,7 @@ class BlockPruner:
 		self.milestone_tags = {"npage", "nline", "ncell"}
 		self.distance_tags = {"verse-line", "item"}
 		self.strict_tags = {"key", "value"}
-		self.block_tags = {"para", "verse", "quote", "dlist", "elist"}
-		self.snippet_items = self.distance_tags | self.strict_tags | self.block_tags
+		self.snippet_items = self.distance_tags | self.strict_tags | BLOCK_TAGS
 
 	def prune(self):
 		# Bypass pruning entirely if context limit is negative
@@ -566,7 +574,6 @@ class FieldTruncater:
 		# Initialize truncater with maximum character count and standard block definitions
 		self.max_chars = max_chars
 		self.events = []
-		self.block_tags = {"para", "verse", "quote", "dlist", "elist"}
 
 	def truncate(self, node):
 		# Main entry point to isolate the first block and truncate its text if necessary
@@ -588,7 +595,7 @@ class FieldTruncater:
 		original_count = len(list(node))
 		for child in list(node):
 			children_to_keep.append(child)
-			if getattr(child, "name", None) in self.block_tags: break
+			if getattr(child, "name", None) in BLOCK_TAGS: break
 		removed = len(children_to_keep) < original_count
 		if removed:
 			node.clear()
@@ -664,8 +671,8 @@ class FieldTruncater:
 def extract_one_text(xpath):
 	# Extract a single text representation using xpath
 	def extractor(doc):
-		nodes = doc.find(xpath)
-		return extract_text(nodes[0]) if nodes else ""
+		node = doc.first(xpath)
+		return extract_text(node) if node else ""
 	return extractor
 
 def extract_list_text(xpath):
@@ -700,6 +707,16 @@ SEARCH_CONFIG = {
 		"extractor": extract_one_text("/document/edition/logical"),
 		"type": "string",
 		"highlight": "/document/edition/logical"
+	},
+	"translation": {
+		"extractor": extract_one_text("/document/translation"),
+		"type": "string",
+		"highlight": "/document/edition/translation"
+	},
+	"bibliography": {
+		"extractor": extract_one_text("/document/bibliography"),
+		"type": "string",
+		"highlight": "/document/edition/bibliography"
 	},
 	"title": {
 		"extractor": extract_list_text("/document/title"),
@@ -913,9 +930,15 @@ def cli_search(query):
 	print(t.first("//logical").xml())
 	doc = snip.process(t)
 
+@common.transaction("texts")
 def main():
+	import ingest, enrich
 	doc = tree.parse_string(sys.stdin.read())
-	print(prepare_search_data(doc))
+	doc = ingest.process_tree(doc)
+	enrich.process(doc)
+	translation = doc.first("/document/bibliography")
+	assert translation
+	print(extract_text(translation))
 
 if __name__ == "__main__":
 	main()

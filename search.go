@@ -147,7 +147,7 @@ func matchQuery(doc Document, q QueryNode) bool {
 func matchScopedField(d Document, q QueryNode) bool {
 	field := strings.ReplaceAll(q.Field, ".", "_")
 	switch field {
-	case "ident", "logical", "summary", "repo_id", "repo_name", "hand", "repo":
+	case "ident", "logical", "summary", "repo_id", "repo_name", "hand", "repo", "translation", "bibliography":
 		return matchScopedSingle(d, q, field)
 	case "title":
 		return matchScopedList(d, q, field)
@@ -157,6 +157,7 @@ func matchScopedField(d Document, q QueryNode) bool {
 	return false
 }
 
+// Delegate single string field matching based on the requested column
 func matchScopedSingle(d Document, q QueryNode, field string) bool {
 	switch field {
 	case "ident":
@@ -171,6 +172,10 @@ func matchScopedSingle(d Document, q QueryNode, field string) bool {
 		return matchContextQuery([]string{d.RepoName}, []*TransformCache{d.Cache.RepoName}, *q.Arg, field)
 	case "hand":
 		return matchContextQuery([]string{d.Hand}, []*TransformCache{d.Cache.Hand}, *q.Arg, field)
+	case "translation":
+		return matchContextQuery([]string{d.Translation}, []*TransformCache{d.Cache.Translation}, *q.Arg, field)
+	case "bibliography":
+		return matchContextQuery([]string{d.Bibliography}, []*TransformCache{d.Cache.Bibliography}, *q.Arg, field)
 	case "repo":
 		return matchContextQuery([]string{d.RepoID, d.RepoName}, []*TransformCache{d.Cache.RepoID, d.Cache.RepoName}, *q.Arg, field)
 	}
@@ -371,10 +376,11 @@ func containsMatcher(cache *TransformCache, text, term, mode, field string) bool
 	return strings.Contains(transText, transTerm)
 }
 
+// Route generalized queries to either simple or complex evaluation paths
 func matchField(doc Document, field, val, mode string) bool {
 	field = strings.ReplaceAll(field, ".", "_")
 	switch field {
-	case "ident", "logical", "summary", "repo_id", "repo_name", "hand":
+	case "ident", "logical", "summary", "repo_id", "repo_name", "hand", "translation", "bibliography":
 		return matchStringField(doc, field, val, mode)
 	case "title", "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name", "lang", "lang_ident", "lang_name", "script", "script_ident", "script_name":
 		return matchComplexField(doc, field, val, mode)
@@ -382,6 +388,7 @@ func matchField(doc Document, field, val, mode string) bool {
 	return docMatchesAll(doc, val, mode)
 }
 
+// Check for pattern occurrences within specific single text fields
 func matchStringField(d Document, field, val, mode string) bool {
 	switch field {
 	case "ident":
@@ -396,6 +403,10 @@ func matchStringField(d Document, field, val, mode string) bool {
 		return containsMatcher(d.Cache.RepoName, d.RepoName, val, mode, field)
 	case "hand":
 		return containsMatcher(d.Cache.Hand, d.Hand, val, mode, field)
+	case "translation":
+		return containsMatcher(d.Cache.Translation, d.Translation, val, mode, field)
+	case "bibliography":
+		return containsMatcher(d.Cache.Bibliography, d.Bibliography, val, mode, field)
 	}
 	return false
 }
@@ -432,11 +443,15 @@ func matchComplexField(d Document, field, val, mode string) bool {
 	return false
 }
 
+// Evaluate global queries across all indexed components simultaneously
 func docMatchesAll(d Document, val, mode string) bool {
 	if containsMatcher(d.Cache.Logical, d.Logical, val, mode, "logical") || containsMatcher(d.Cache.Ident, d.Ident, val, mode, "ident") {
 		return true
 	}
 	if containsMatcher(d.Cache.Summary, d.Summary, val, mode, "summary") || containsMatcher(d.Cache.RepoID, d.RepoID, val, mode, "repo_id") {
+		return true
+	}
+	if containsMatcher(d.Cache.Translation, d.Translation, val, mode, "translation") || containsMatcher(d.Cache.Bibliography, d.Bibliography, val, mode, "bibliography") {
 		return true
 	}
 	if containsMatcher(d.Cache.RepoName, d.RepoName, val, mode, "repo_name") || containsMatcher(d.Cache.Hand, d.Hand, val, mode, "hand") {
@@ -480,11 +495,13 @@ func listMatchesParity(list []string, caches []*TransformCache, q, mode, field s
 	return false
 }
 
+// Construct a highlighted result object from a matched document
 func matchDocument(doc Document, qStr string) SearchResult {
 	res := SearchResult{
 		Ident: doc.Ident, Logical: doc.Logical,
 		Title: cloneList(doc.Title), Summary: doc.Summary,
 		RepoID: doc.RepoID, RepoName: doc.RepoName, Hand: doc.Hand,
+		Translation: doc.Translation, Bibliography: doc.Bibliography,
 		Author: cloneList(doc.Author), Editor: cloneList(doc.Editor),
 		Lang: cloneList(doc.Lang), Script: cloneList(doc.Script),
 	}
@@ -548,6 +565,7 @@ func applyHighlights(res *SearchResult, doc Document, qStr string) {
 	highlightFields(res, doc, terms)
 }
 
+// Apply hit markers across all strings matched by the query tree
 func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	processFieldTerms(doc.Cache.Logical, &res.Logical, doc.Logical, termsForFields(terms, "logical"), "logical")
 	processFieldTerms(doc.Cache.Ident, &res.Ident, doc.Ident, termsForFields(terms, "ident"), "ident")
@@ -555,6 +573,8 @@ func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	processFieldTerms(doc.Cache.RepoID, &res.RepoID, doc.RepoID, termsForFields(terms, "repo_id"), "repo_id")
 	processFieldTerms(doc.Cache.RepoName, &res.RepoName, doc.RepoName, termsForFields(terms, "repo_name"), "repo_name")
 	processFieldTerms(doc.Cache.Hand, &res.Hand, doc.Hand, termsForFields(terms, "hand"), "hand")
+	processFieldTerms(doc.Cache.Translation, &res.Translation, doc.Translation, termsForFields(terms, "translation"), "translation")
+	processFieldTerms(doc.Cache.Bibliography, &res.Bibliography, doc.Bibliography, termsForFields(terms, "bibliography"), "bibliography")
 	processListTerms(res.Title, doc.Title, doc.Cache.Title, termsForFields(terms, "title"), "title")
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_ident"), "author_ident", 0)
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
@@ -875,7 +895,7 @@ func updateNearState(state **[2]int, seq MatchIter) {
 	}
 }
 
-// Checks if a complex sequence query evaluates to true against the document.
+// Checks if a complex sequence query evaluates to true against the document
 func matchSeqField(d Document, q QueryNode) bool {
 	field := strings.ReplaceAll(getFieldName(q), ".", "_")
 	switch field {
@@ -891,6 +911,10 @@ func matchSeqField(d Document, q QueryNode) bool {
 		return hasSeqOccurrences(d.Cache.RepoName, d.RepoName, q)
 	case "hand":
 		return hasSeqOccurrences(d.Cache.Hand, d.Hand, q)
+	case "translation":
+		return hasSeqOccurrences(d.Cache.Translation, d.Translation, q)
+	case "bibliography":
+		return hasSeqOccurrences(d.Cache.Bibliography, d.Bibliography, q)
 	}
 	return matchComplexSeqField(d, field, q)
 }
@@ -967,15 +991,18 @@ func listSeqMatchesParity(list []string, caches []*TransformCache, q QueryNode, 
 	return false
 }
 
-// Broadly explores all standard attributes looking for an early validation.
+// Broadly explores all standard attributes looking for an early validation
 func docSeqMatchesAll(d Document, q QueryNode) bool {
 	if hasSeqOccurrences(d.Cache.Logical, d.Logical, q) || hasSeqOccurrences(d.Cache.Ident, d.Ident, q) {
 		return true
 	}
-	if hasSeqOccurrences(d.Cache.Summary, d.Summary, q) || hasSeqOccurrences(d.Cache.RepoID, d.RepoID, q) {
+	if hasSeqOccurrences(d.Cache.Summary, d.Summary, q) || hasSeqOccurrences(d.Cache.Translation, d.Translation, q) {
 		return true
 	}
 	if hasSeqOccurrences(d.Cache.RepoName, d.RepoName, q) || hasSeqOccurrences(d.Cache.Hand, d.Hand, q) {
+		return true
+	}
+	if hasSeqOccurrences(d.Cache.RepoID, d.RepoID, q) || hasSeqOccurrences(d.Cache.Bibliography, d.Bibliography, q) {
 		return true
 	}
 	if listSeqMatches(d.Title, d.Cache.Title, q) || listSeqMatches(d.Author, d.Cache.Author, q) {

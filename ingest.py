@@ -1616,12 +1616,14 @@ def _parse_p(p, para):
 		return _parse_lg(p, para)
 	p.push(tree.Tag("para"))
 	if (n := _get_n(para)):
+		p.push("display")
 		# See e.g. http://localhost:8023/display/DHARMA_INSSII0400223
 		# Should be displayed like <lb/> is in the edition.
 		p.push(tree.Tag("span", class_="lb", tip="Line start"))
 		p.append(f"⟨{n}⟩")
 		p.join()
 		p.append(" ")
+		p.join("display")
 	p.dispatch_children(para)
 	p.join()
 

@@ -242,9 +242,11 @@ create table if not exists documents_search(
 		typeof(editor) = 'text'
 		and json_valid(editor)
 		and json_type(editor) = 'array'),
-	hand text check(hand is null or typeof(hand) = 'text'),
-	summary text check(summary is null or typeof(summary) = 'text'),
-	logical text check(logical is null or typeof(logical) = 'text'),
+	hand text not null,
+	summary text not null,
+	logical text not null,
+	translation text not null,
+	bibliography text not null,
 	-- flat list of pairs [lang_id, lang_name, lang2_id, lang2_name...].
 	lang json check(
 		typeof(lang) = 'text'

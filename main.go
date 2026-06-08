@@ -24,17 +24,19 @@ const (
 )
 
 var CacheConfig = map[string]bool{
-	"logical":   true,
-	"ident":     true,
-	"title":     true,
-	"summary":   true,
-	"repo_id":   true,
-	"repo_name": true,
-	"hand":      true,
-	"author":    true,
-	"editor":    true,
-	"lang":      true,
-	"script":    true,
+	"logical":      true,
+	"ident":        true,
+	"title":        true,
+	"summary":      true,
+	"repo_id":      true,
+	"repo_name":    true,
+	"hand":         true,
+	"translation":  true,
+	"bibliography": true,
+	"author":       true,
+	"editor":       true,
+	"lang":         true,
+	"script":       true,
 }
 
 type TransformCache struct {
@@ -45,30 +47,34 @@ type TransformCache struct {
 }
 
 type DocCache struct {
-	Logical  *TransformCache
-	Ident    *TransformCache
-	Summary  *TransformCache
-	RepoID   *TransformCache
-	RepoName *TransformCache
-	Hand     *TransformCache
-	Title    []*TransformCache
-	Author   []*TransformCache
-	Editor   []*TransformCache
+	Logical      *TransformCache
+	Ident        *TransformCache
+	Summary      *TransformCache
+	RepoID       *TransformCache
+	RepoName     *TransformCache
+	Hand         *TransformCache
+	Translation  *TransformCache
+	Bibliography *TransformCache
+	Title        []*TransformCache
+	Author       []*TransformCache
+	Editor       []*TransformCache
 	// Modifié pour refléter une liste simple
 	Lang   []*TransformCache
 	Script []*TransformCache
 }
 
 type Document struct {
-	Ident    string
-	Logical  string
-	Title    []string
-	Summary  string
-	RepoID   string
-	RepoName string
-	Hand     string
-	Author   []string
-	Editor   []string
+	Ident        string
+	Logical      string
+	Title        []string
+	Summary      string
+	RepoID       string
+	RepoName     string
+	Hand         string
+	Translation  string
+	Bibliography string
+	Author       []string
+	Editor       []string
 	// Modifié pour refléter une liste simple
 	Lang   []string
 	Script []string
@@ -76,15 +82,17 @@ type Document struct {
 }
 
 type SearchResult struct {
-	Ident    string   `json:"ident"`
-	Logical  string   `json:"logical"`
-	Title    []string `json:"title"`
-	Summary  string   `json:"summary"`
-	RepoID   string   `json:"repo_id"`
-	RepoName string   `json:"repo_name"`
-	Hand     string   `json:"hand"`
-	Author   []string `json:"author"`
-	Editor   []string `json:"editor"`
+	Ident        string   `json:"ident"`
+	Logical      string   `json:"logical"`
+	Title        []string `json:"title"`
+	Summary      string   `json:"summary"`
+	RepoID       string   `json:"repo_id"`
+	RepoName     string   `json:"repo_name"`
+	Hand         string   `json:"hand"`
+	Translation  string   `json:"translation"`
+	Bibliography string   `json:"bibliography"`
+	Author       []string `json:"author"`
+	Editor       []string `json:"editor"`
 	// Modifié pour refléter une liste simple
 	Lang     []string `json:"lang"`
 	Script   []string `json:"script"`
@@ -276,6 +284,7 @@ func parsePretty(pParam string) bool {
 	return p == "true" || p == "1" || p == "yes"
 }
 
+// handle the core search request logic and manage transactions
 func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string, pretty bool) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -284,6 +293,8 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 	}
 	defer tx.Rollback()
 	if err := syncCorpus(tx); err != nil {
+		// we print the exact error to the terminal to ease debugging
+		log.Printf("sync error details: %v", err)
 		http.Error(w, "Sync error", 500)
 		return
 	}
@@ -339,7 +350,7 @@ func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 	}
 	rows, err := tx.Query(`select
 		ident, logical, title, summary, repo_id, repo_name, hand,
-		author, editor, lang, script
+		translation, bibliography, author, editor, lang, script
 		from documents_search order by ident`)
 	if err != nil {
 		return nil, err
@@ -367,16 +378,16 @@ func scanRows(rows *sql.Rows, count int) ([]Document, error) {
 }
 
 func scanOne(rows *sql.Rows) (Document, error) {
-	var ident, logStr, titleJson, sum, rid, rname, hand, authJson, edJson, langJson, scrJson string
-	err := rows.Scan(&ident, &logStr, &titleJson, &sum, &rid, &rname, &hand, &authJson, &edJson, &langJson, &scrJson)
+	var ident, logStr, titleJson, sum, rid, rname, hand, trans, biblio, authJson, edJson, langJson, scrJson string
+	err := rows.Scan(&ident, &logStr, &titleJson, &sum, &rid, &rname, &hand, &trans, &biblio, &authJson, &edJson, &langJson, &scrJson)
 	if err != nil {
 		return Document{}, err
 	}
 	doc := Document{
 		Ident: ident, Logical: logStr, Title: parseList(titleJson),
 		Summary: sum, RepoID: rid, RepoName: rname, Hand: hand,
+		Translation: trans, Bibliography: biblio,
 		Author: parseList(authJson), Editor: parseList(edJson),
-		// On utilise parseList au lieu de parseMatrix pour analyser le JSON aplati
 		Lang: parseList(langJson), Script: parseList(scrJson),
 	}
 	doc.Cache = buildDocCache(&doc)
@@ -403,6 +414,12 @@ func buildDocCache(d *Document) *DocCache {
 	if CacheConfig["hand"] {
 		c.Hand = &TransformCache{}
 	}
+	if CacheConfig["translation"] {
+		c.Translation = &TransformCache{}
+	}
+	if CacheConfig["bibliography"] {
+		c.Bibliography = &TransformCache{}
+	}
 	if CacheConfig["title"] {
 		c.Title = buildListCache(len(d.Title))
 	}
@@ -412,7 +429,6 @@ func buildDocCache(d *Document) *DocCache {
 	if CacheConfig["editor"] {
 		c.Editor = buildListCache(len(d.Editor))
 	}
-	// Initialisation des caches pour les nouvelles listes simples
 	if CacheConfig["lang"] {
 		c.Lang = buildListCache(len(d.Lang))
 	}
@@ -496,6 +512,7 @@ func filterFields(matches []SearchResult, fields []string) []map[string]interfac
 	return filtered
 }
 
+// Assign core string attributes dynamically to the result map
 func assignBasicField(mMap map[string]interface{}, m SearchResult, f string) {
 	switch f {
 	case "ident":
@@ -512,6 +529,10 @@ func assignBasicField(mMap map[string]interface{}, m SearchResult, f string) {
 		mMap["repo_name"] = m.RepoName
 	case "hand":
 		mMap["hand"] = m.Hand
+	case "translation":
+		mMap["translation"] = m.Translation
+	case "bibliography":
+		mMap["bibliography"] = m.Bibliography
 	}
 }
 

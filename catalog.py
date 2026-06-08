@@ -83,11 +83,13 @@ def _insert_search(db, data):
 	db.execute("""
 	insert or replace into documents_search(
 		ident, logical, title, summary, repo_id, repo_name, hand,
-		author, editor, lang, script, source
+		author, editor, lang, script, source, translation,
+		bibliography
 	)
 	values (
 		:ident, :logical, :title, :summary, :repo_id, :repo_name, :hand,
-		:author, :editor, :lang, :script, :source
+		:author, :editor, :lang, :script, :source, :translation,
+		:bibliography
 	)
 	""", data)
 
