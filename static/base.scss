@@ -12,6 +12,7 @@ $menu-background: #4a4866;
 $menu-foreground: white;
 $menu-hover: #8788b0;
 $menu-height: 3rem;
+$menu-height-mobile: 4rem; /* Modifié pour le tactile */
 
 $border-radius: 0.3em;
 
@@ -72,9 +73,6 @@ $border-radius: 0.3em;
 a {
 	text-decoration: none;
 }
-/* For links that point to the same page viz. internal navigation.
- * Don't change color when visited. XXX don't hardcode the class!
- */
 a.nav-link {
 	color: blue;
 }
@@ -90,7 +88,6 @@ a.nav-link {
 	border-color: black;
 }
 
-
 /* Cards */
 .card-data {
 	display: grid;
@@ -100,7 +97,6 @@ a.nav-link {
 .card-data > * {
 	padding: 0 0.5em;
 }
-/* Card data keys are at odd numbers, values are at even numbers */
 .card-data > :nth-child(odd) {
 	text-align: right;
 	max-width: 10em;
@@ -136,7 +132,6 @@ a.nav-link {
 	padding: 0.5em 0.6em;
 	background: #fafafa;
 }
-
 
 .toc-heading {
 	font-size: larger;
@@ -221,7 +216,6 @@ body {
 	color: black;
 	background-color: white;
 	overflow-wrap: break-word;
-	/* Omitting the unit to make it work for <h1>, etc. */
 	line-height: 1.5;
 }
 
@@ -249,16 +243,7 @@ th {
 	background-color: var(--card-heading-background);
 }
 
-
-input {
-	font-family: inherit;
-	font-size: inherit;
-}
-select {
-	font-family: inherit;
-	font-size: inherit;
-}
-button {
+input, select, button {
 	font-family: inherit;
 	font-size: inherit;
 }
@@ -289,11 +274,6 @@ form ul {
 	display: block;
 }
 
-/* I used:
- * https://codepen.io/alvarotrigo/pen/MWEJEWG
- * https://webdesign.tutsplus.com/how-to-build-a-responsive-navigation-bar-with-flexbox--cms-33535t
- */
-
 #menu-bar {
 	display: flex;
 	justify-content: space-between;
@@ -302,7 +282,7 @@ form ul {
 	margin: 0;
 	background: $menu-background;
 	color: $menu-foreground;
-	height: $menu-height;
+	height: $menu-height; /* Standard desktop */
 	font-size: larger;
 }
 #menu-bar ul {
@@ -330,7 +310,7 @@ form ul {
 	margin-right: 0;
 	margin-bottom: 0;
 	padding: 0;
-	width: 100%; /* Force it to be on its own row */
+	width: 100%;
 	background: inherit;
 }
 #menu > .submenu > ul {
@@ -416,20 +396,36 @@ main {
 
 }
 
-// See https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Printing
+/* Ajustements Mobile (Menu) */
+@media (max-width: 1100px) {
+    #menu-bar {
+        height: $menu-height-mobile;
+    }
+    #menu-bar #menu-toggle {
+        padding: 0.8rem; /* Légèrement réduit */
+    }
+    #menu {
+        margin-top: $menu-height-mobile;
+        padding-top: 0.5rem;   /* Réduit */
+        padding-bottom: 0.5rem; /* Réduit */
+    }
+    #menu li {
+        padding: 0.2rem 1rem; /* Réduit la marge verticale entre les éléments */
+    }
+    #menu a {
+        padding: 0.6rem 1rem; /* Plus compact tout en restant facile à cliquer */
+        font-size: 1.1rem;    /* Légèrement ajusté pour l'harmonie */
+    }
+}
+
 @media print {
-	// Hide everything except main
 	header, #sidebar {
 		display: none;
 	}
-	// Go back to using % instead of vh and vw. Chrome is OK with vh and vw,
-	// it prints the full documents, but Firefox only shows the first
-	// page. Bug reported by Manu.
 	html, body, #contents {
 		height: 100%;
 		width: 100%;
 	}
-	// Remove space around main. TODO: remove the apparatus button.
 	main {
 		display: block;
 		position: absolute;
@@ -440,13 +436,8 @@ main {
 	}
 }
 
-/******************************* Catalog, old version *************************/
-
-
-.catalog-list div.catalog-card:first-child {
-	border-radius: $border-radius;
-}
-.catalog-list div.catalog-card:last-child {
+/* Catalog, old version */
+.catalog-list div.catalog-card:first-child, .catalog-list div.catalog-card:last-child {
 	border-radius: $border-radius;
 }
 .catalog-list div.catalog-card:nth-child(odd) {
@@ -478,7 +469,6 @@ main {
 	background-color: $tooltip-selection-background;
 	border-radius: $border-radius;
 }
-/* div that contains the tooltip (used for all tooltips) */
 #tip-box {
 	position: absolute;
 	top: 0;
@@ -501,22 +491,17 @@ main {
 /*************************** Parallels display ********************************/
 
 div.parallel-verse {
-	/* Same properties as a normal <p> */
 	margin-block-start: 1em;
 	margin-block-end: 1em;
 }
 div.parallel-verse > p {
-	/* No space between hemistiches */
 	margin-block-start: 0em;
 	margin-block-end: 0em;
-	/* Hanging indent */
 	padding-left: 2em;
 	text-indent: -2em;
 }
 
 /************************************ Verses **********************************/
-
-// Numbered verse lines are Manu's requests. See e.g. DHARMA_INSTamilNadu00102.
 
 .verse-heading {
 	font-size: initial;
@@ -525,7 +510,6 @@ div.parallel-verse > p {
 	margin-block-end: 0;
 }
 .verse-lines {
-	/* Same properties as a normal <p> */
 	margin-block-start: 1em;
 	margin-block-end: 1em;
 	padding-left: 0.5em;
@@ -533,10 +517,8 @@ div.parallel-verse > p {
 	border-color: gray;
 }
 .verse-lines p {
-	/* No space between hemistiches */
 	margin-block-start: 0em;
 	margin-block-end: 0em;
-	/* Hanging indent */
 	padding-left: 2em;
 	text-indent: -2em;
 	text-align: left;
@@ -567,7 +549,6 @@ div.parallel-verse > p {
 	justify-content: flex-start;
 	list-style: none;
 	padding: 0;
-	/* column-gap: 0.7em; */
 	border-bottom: solid 2px;
 }
 .ed-tabs li {
@@ -598,10 +579,6 @@ sup {
 
 /***************************************** Lists ******************************/
 
-/* Examples in:
- * http://localhost:8023/display/DHARMA_INSIDENKAlasantan
- * http://localhost:8023/display/DHARMA_INSSII0400223
- */
 .list-plain {
 	list-style: none;
 }
@@ -614,13 +591,10 @@ sup {
 .list {
 	padding-left: 2.4em;
 }
-/* More space between list items. This is mostly for plain lists, because it
- * is hard to distinguish paragraph lines from item lines.
- */
 .list li:not(:last-child) {
 	margin-bottom: 0.8em;
 }
-dl.list { /* XXX ugly on mobile! */
+dl.list {
 	display: grid;
 	grid-template-columns: max-content auto;
 }
@@ -631,8 +605,6 @@ dl.list > dt {
 dl.list > dd {
 	grid-column-start: 2;
 }
-/* End lists */
-
 
 /* Editions */
 .grantha {
@@ -684,8 +656,6 @@ dl.list > dd {
 	font-style: italic;
 }
 
-// This class is for delimitors that surround some text, as '¿' and '?' in
-// ¿dva?ndrāditya.
 .surrounding {
 	font-weight: normal;
 }
@@ -710,19 +680,12 @@ dl.list > dd {
 }
 
 .fw-contents {
-	/* Main text color, not gray, since this belongs to the text,
-	 * sort-of. See
-	 * https://github.com/erc-dharma/project-documentation/issues/269
-	 */
 	color: black;
 }
 .tipped .fw-contents {
 	color: var(--tooltip-selection-foreground);
 }
 
-/* More space between lines for
- * https://dharmalekha.info/texts/DHARMA_INSCirkali00033
- */
 .logical, .physical, .full {
 	line-height: 1.7;
 }
@@ -835,7 +798,6 @@ pre {
 	}
 }
 
-// Put <p>Summary: </p><p>Something</p> on the same line
 .metadata-item > p:first-child {
 	@include hanging;
 }
