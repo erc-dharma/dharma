@@ -207,9 +207,12 @@ abbr {
 	font-variant: small-caps;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Tamil:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil+Supplement&display=swap');
+
 /* Global stuff */
 body {
-	font-family: 'Noto Serif', serif;
+	font-family: 'Noto Serif', 'Noto Serif Tamil', 'Noto Sans Tamil Supplement', serif;
 	hyphens: auto;
 	padding: 0;
 	margin: 0;
