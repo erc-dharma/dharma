@@ -1,7 +1,11 @@
 import os, sys, re
 from dharma import common, tree, unicode, relaxng, xslt
 
-# What should we use for representing error locations? Maybe just the patch the
+# TODO Script maturity is for use only with the class "Brahmi and derivatives"
+# (and its subcategories); for any other script classes it is not optional but
+# "forbidden". For Brahmi, it is mandatory. Amend rules accordingly.
+
+# TODO What should we use for representing error locations? Maybe just the patch the
 # tree directly, since we're already doing that in python. But then must be able
 # to address text nodes, etc.
 

@@ -1,3 +1,5 @@
+# TODO Add a "status" search field to catalog to filter by error status.
+
 import sys
 import unicodedata
 import requests

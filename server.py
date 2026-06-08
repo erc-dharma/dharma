@@ -2,11 +2,18 @@ import os, unicodedata, datetime, html, urllib, urllib.parse, ntpath, io
 import unicodedata
 import flask, werkzeug.security # pip install flask
 from bs4 import BeautifulSoup # pip install bs4
+# TODO Ultimately, we should remove the bs4 dependency, but for this we need a
+# HTML parser _and also_ a serialization method that does the appropriate thing
+# for self-closing tags.
 
 from dharma import common, change, parallels, catalog, validate, ingest, tree
 from dharma import biblio, texts, editorial, prosody, render, languages
 from dharma import enrich, search, snip, glyphs
 from dharma.query import InvalidQuery
+
+# TODO Should use the w3c validator API https://validator.w3.org/docs/api.html
+# with random urls to detect issues; submit URLs like so:
+# https://validator.w3.org/nu/?out=json&doc=$URL
 
 # We don't use the name "templates" for the template folder because we also
 # put other stuff in the same directory, not just templates.
@@ -384,6 +391,10 @@ def github_download_url(repo, commit, path):
 	path = urllib.parse.quote(path, safe="/")
 	f"https://raw.githubusercontent.com/erc-dharma/{repo}/{commit}/{path}"
 
+# TODO when displaying inscriptions. For invalid inscriptions, show the xml, but
+# without formatting tags, etc. need to convert the error (line,column) to an
+# offset use xmlparser.ErrorByteIndex instead of donig a manual conversion
+# https://docs.python.org/3/library/pyexpat.html
 def display_inscription(text):
 	query = flask.request.args.get("q", "")
 	display = flask.request.args.get("display", "physical")
@@ -630,7 +641,10 @@ def render_markdown(f: texts.File):
 		title.decompose()
 	else:
 		page_title = "Untitled"
-	contents = str(soup.find("body"))
+	body = soup.find("body")
+	assert body is not None
+	body.name = "div"
+	contents = str(body)
 	assert contents
 	return flask.render_template("markdown.tpl", title=page_title,
 		contents=contents)

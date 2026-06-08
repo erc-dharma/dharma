@@ -1,5 +1,7 @@
 // Memory-based search logic and AST evaluation.
 
+// TODO ajouter support de la recherche levenshtein, avec TRE ou autre chose.
+
 package main
 
 import (

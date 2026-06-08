@@ -1667,6 +1667,21 @@ def attr_value_style(node, attr):
 				return "attr-n"
 	return ""
 
+
+# TODO XML source formatting in the Web interface.
+#
+# Put the tab button in the sidebar, call it "view source". Should allow resizing
+# the sidebar, too. when it is completely closed, what to display?
+#
+# * when displaying the sidebar, add toc headings for navigating the xml: header,
+# 	edition, translation, etc.
+# * Need to have a pretty-print func that preserves space and
+# 	doesn't add unnecessary space.
+# * Also add line numbers
+# * Style the thing with a color for comments and tags, maybe different colors
+# 	for milestones and logical elements.
+# * Add error messages with popups in the XML.
+
 class Formatter:
 
 	def __init__(self, html=True, strip_comments=True,

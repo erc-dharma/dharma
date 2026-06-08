@@ -43,6 +43,22 @@ https://pandoc.org/using-the-pandoc-api.html
 https://hackage-content.haskell.org/package/pandoc-types-1.23.1.1/docs/Text-Pandoc-Definition.html
 """
 
+# TODO Il faut couvrir tous les sections principales avec des div, pour éviter
+# qu'il y ait un mix de para et de div a un même niveau, et idem recursivement.
+# On devrait avoir des div phantom pour toutes les div type édition,
+# translation, etc., de telle sorte que toutes ces sections principales
+# contiennent au moins une div (ainsi on pourra plus facilement calculer la
+# taille d'une div, etc.)
+
+# TODO Dans la repr interne, Il faudrait éviter de hardcoder les noms des div
+# (édition, translation, etc.), plus encore si on n'a pas besoin de savoir ce
+# qu'elles contiennent. Parce que c'est chiant dans le code qui les parse, et
+# parce qu'on doit prendre en charge d'autres types de div pour également
+# bestow. il vaudrait. Mieux avoir seulement div comme élément.
+
+# TODO Permettre les div imbriquées, et vérifier que les résultats est le bon.
+# Autoriser tous types de div, pas seulement text part.
+
 import re, sys
 from dharma import tree, common, languages
 

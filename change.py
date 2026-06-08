@@ -35,6 +35,9 @@ but writers still do block each other, which is why we use just one and
 serialize writes.
 """
 
+# TODO Still to address: we don't deal properly with multiple files that bear
+# the same name.
+
 import os, sys, time, select, errno, logging, fcntl, argparse
 from dharma import common, texts, biblio, catalog, people, languages
 from dharma import glyphs, prosody, repos

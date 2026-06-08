@@ -6,6 +6,13 @@ from dharma import common, tree, texts
 
 # TODO highlight clusters that differ from the source (or the contrary)
 
+# TODO Allow quoting part of the input with "..." to force an exact substring
+# match. Still keep using the same similarity measure. When there are several
+# quoted passages, allow overlaps viz. "foo"f"fo" match "foo". Or not? require
+# the matched strings to occur in the same order? In fact having a second field
+# for filtering seems better. This should be linked to the catalog search
+# features, but we must first integrate the parallels db with the main db.
+
 SCHEMA = """
 begin;
 create table if not exists metadata(
