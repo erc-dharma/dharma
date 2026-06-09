@@ -156,10 +156,7 @@ search form below can be used for filtering results. For help on the query synta
     % for item in items
         <li>
             <input type="checkbox" id="lang-{{item['ident']}}" name="lang" value="{{item['ident']}}"
-	    % if not item['ident']
-	    disabled
-	    % endif
-	    >
+                {{ 'checked' if item['ident'] in filters.get('lang', []) else '' }}>
             <label for="lang-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -170,17 +167,14 @@ search form below can be used for filtering results. For help on the query synta
 % endif
 
 % set items = facets.get("script")
-% if items
+% if items:
 <fieldset class="facet-group">
     <legend>Scripts</legend>
     <ul class="facet-list">
-    % for item in items
+    % for item in items:
         <li>
-	    <input type="checkbox" id="script-{{item['ident']}}" name="script" value="{{item['ident']}}"
-	    % if not item['ident']
-	    disabled
-	    % endif
-	    >
+            <input type="checkbox" id="script-{{item['ident']}}" name="script" value="{{item['ident']}}"
+                {{ 'checked' if item['ident'] in filters.get('script', []) else '' }}>
             <label for="script-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -191,17 +185,14 @@ search form below can be used for filtering results. For help on the query synta
 % endif
 
 % set items = facets.get("repo")
-% if items
+% if items:
 <fieldset class="facet-group">
     <legend>Repositories</legend>
     <ul class="facet-list">
-    % for item in items
+    % for item in items:
         <li>
             <input type="checkbox" id="repo-{{item['ident']}}" name="repo" value="{{item['ident']}}"
-	    % if not item['ident']
-	    disabled
-	    % endif
-	    >
+                {{ 'checked' if item['ident'] in filters.get('repo', []) else '' }}>
             <label for="repo-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -212,17 +203,14 @@ search form below can be used for filtering results. For help on the query synta
 % endif
 
 % set items = facets.get("editor")
-% if items
+% if items:
 <fieldset class="facet-group">
     <legend>Editors</legend>
     <ul class="facet-list">
-    % for item in items
+    % for item in items:
         <li>
             <input type="checkbox" id="editor-{{item['ident']}}" name="editor" value="{{item['ident']}}"
-	    % if not item['ident']
-	    disabled
-	    % endif
-	    >
+                {{ 'checked' if item['ident'] in filters.get('editor', []) else '' }}>
             <label for="editor-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -232,6 +220,6 @@ search form below can be used for filtering results. For help on the query synta
 </fieldset>
 % endif
 
-</form>
+</form> ## id="facet-form"
 
 % endblock
