@@ -773,3 +773,12 @@ fieldset {
   background-color: #f8d7da;
   padding-left: 0.5rem;
   padding-right: 0.5rem; }
+
+/******************************* Facets ***************************************/
+#sidebar .facet-list {
+  list-style-type: none;
+  /* Supprime les puces */
+  padding-left: 0;
+  /* Retire le retrait à gauche natif des listes */
+  margin: 0;
+  /* Supprime les marges par défaut */ }

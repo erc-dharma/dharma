@@ -146,42 +146,70 @@ search form below can be used for filtering results. For help on the query synta
 
 % set items = facets.get("lang")
 % if items
-<p><b>Top languages</b></p>
-<ul>
-% for item in items
-<li>{{item['name']}} ({{item['count']}})</li>
-% endfor
-</ul>
+<fieldset class="facet-group">
+    <legend>Languages</legend>
+    <ul class="facet-list">
+    % for item in items
+        <li>
+            <input type="checkbox" id="lang-{{item['ident']}}" name="lang" value="{{item['ident']}}">
+            <label for="lang-{{item['ident']}}">
+                {{item['name']}} <span class="facet-count">({{item['count']}})</span>
+            </label>
+        </li>
+    % endfor
+    </ul>
+</fieldset>
 % endif
 
 % set items = facets.get("script")
 % if items
-<p><b>Top scripts</b></p>
-<ul>
-% for item in items
-<li>{{item['name']}} ({{item['count']}})</li>
-% endfor
-</ul>
+<fieldset class="facet-group">
+    <legend>Scripts</legend>
+    <ul class="facet-list">
+    % for item in items
+        <li>
+            <input type="checkbox" id="script-{{item['ident']}}" name="script" value="{{item['ident']}}">
+            <label for="script-{{item['ident']}}">
+                {{item['name']}} <span class="facet-count">({{item['count']}})</span>
+            </label>
+        </li>
+    % endfor
+    </ul>
+</fieldset>
 % endif
 
 % set items = facets.get("repo")
 % if items
-<p><b>Top repositories</b></p>
-<ul>
-% for item in items
-<li>{{item['name']}} ({{item['count']}})</li>
-% endfor
-</ul>
+<fieldset class="facet-group">
+    <legend>Repositories</legend>
+    <ul class="facet-list">
+    % for item in items
+        <li>
+            <input type="checkbox" id="repo-{{item['ident']}}" name="repo" value="{{item['ident']}}">
+            <label for="repo-{{item['ident']}}">
+                {{item['name']}} <span class="facet-count">({{item['count']}})</span>
+            </label>
+        </li>
+    % endfor
+    </ul>
+</fieldset>
 % endif
 
 % set items = facets.get("editor")
 % if items
-<p><b>Top editors</b></p>
-<ul>
-% for item in items
-<li>{{item['name']}} ({{item['count']}})</li>
-% endfor
-</ul>
+<fieldset class="facet-group">
+    <legend>Editors</legend>
+    <ul class="facet-list">
+    % for item in items
+        <li>
+            <input type="checkbox" id="editor-{{item['ident']}}" name="editor" value="{{item['ident']}}">
+            <label for="editor-{{item['ident']}}">
+                {{item['name']}} <span class="facet-count">({{item['count']}})</span>
+            </label>
+        </li>
+    % endfor
+    </ul>
+</fieldset>
 % endif
 
 % endblock
