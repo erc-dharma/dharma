@@ -629,9 +629,13 @@ function replaceDOMContents(html, container) {
 	// Extract the main body from the response and inject it into the page
 	const parser = new DOMParser();
 	const newDoc = parser.parseFromString(html, 'text/html');
-	const newMain = newDoc.getElementById('search-body');
-	if (newMain) {
-		container.innerHTML = newMain.innerHTML;
+	const newBody = newDoc.getElementById('search-body');
+	if (newBody) {
+		container.innerHTML = newBody.innerHTML;
 	}
 	container.style.opacity = '1';
+	const mainElement = document.querySelector('main');
+	if (mainElement) {
+		mainElement.scrollTop = 0;
+	}
 }
