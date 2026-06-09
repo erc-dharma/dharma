@@ -91,7 +91,7 @@
                 <moduleRef key="gaiji"
                     except="char charDecl charName charPop glyph glyphName localName localProp mapping unicodeName unicodeProp unihanProp value"/>
                 <moduleRef key="linking"
-                    except="alt altGrp anchor join joinGrp link linkGroup standOff timeline when"/>
+                    except="alt altGrp join joinGrp link linkGroup standOff timeline when"/>
                 <moduleRef key="msdescription"
                     except="accMat acquisition additions adminInfo catchwords custEvent finalRubric heraldry locus locusGrp musicNotation recordHist rubric secFol stamp watermark"/>
                 <moduleRef key="namesdates"

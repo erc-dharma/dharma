@@ -13777,7 +13777,71 @@ contexts.</p>
     <p> 要素<gi>ab</gi>は，符号化する人が望むあらゆる単位レベルで，適切な 要素が規定されていない場合に，自由に使用することが出来る． </p>
   </remarks><listRef>
     <ref target="https://www.tei-c.org/release/doc/tei-p5-doc/en/html/SA.html#SASE">16.3. Blocks, Segments, and Anchors</ref>
-  </listRef></elementSpec><elementSpec rend="change" module="linking" ident="seg"><gloss versionDate="2005-01-14" xml:lang="en">arbitrary segment</gloss><gloss versionDate="2007-12-20" xml:lang="ko">임의의 분절</gloss><gloss versionDate="2007-05-02" xml:lang="zh-TW">隨機分割</gloss><gloss versionDate="2007-06-12" xml:lang="fr">segment quelconque</gloss><gloss versionDate="2007-05-04" xml:lang="es">segmento arbitrario</gloss><gloss versionDate="2007-01-21" xml:lang="it">segmento arbitrario</gloss><gloss versionDate="2017-06-19" xml:lang="de">arbiträres Segment</gloss><desc versionDate="2008-01-31" xml:lang="en">represents any segmentation of text below the <soCalled>chunk</soCalled> level.</desc><desc versionDate="2007-12-20" xml:lang="ko">(다른 분절 요소를 포함하여) 텍스트의 임의의 구-층위 단위를 포함한다.</desc><desc versionDate="2007-05-02" xml:lang="zh-TW">包含文件中任何隨機字詞層次的單元 (包括其他分割元素)。</desc><desc versionDate="2008-04-05" xml:lang="ja">任意の句レベルのテキスト単位を示す(要素segを含む)．</desc><desc versionDate="2009-10-06" xml:lang="fr">contient une unité de texte quelconque de niveau <soCalled>segment</soCalled>.</desc><desc versionDate="2007-05-04" xml:lang="es">contiene cualquier unidad textual a nivel sintagmático (inclusive otros elementos de tipo seg.)</desc><desc versionDate="2007-01-21" xml:lang="it">contiene una qualsiasi unità testuale a livello sintagmatico (ivi compresi altri elementi del tipo seg)</desc><desc versionDate="2017-06-19" xml:lang="de">beschreibt Segmente eines Texts unterhalb des <soCalled>Chunk-Level</soCalled>.</desc><classes><memberOf key="att.global"/><memberOf key="model.segLike"/><memberOf key="att.segLike"/><memberOf key="att.typed"/><memberOf key="att.written"/><memberOf key="att.notated"/></classes><content><macroRef key="macro.paraContent"/></content><constraintSpec scheme="schematron" ident="att-type-subtype">
+  </listRef></elementSpec><elementSpec module="linking" ident="anchor">
+  <gloss versionDate="2005-01-14" xml:lang="en">anchor point</gloss>
+  <gloss versionDate="2007-12-20" xml:lang="ko">앵커 지점</gloss>
+  <gloss versionDate="2007-05-02" xml:lang="zh-TW">錨點</gloss>
+  <gloss versionDate="2007-06-12" xml:lang="fr">point d'ancrage</gloss>
+  <gloss versionDate="2007-05-04" xml:lang="es">punto de anclaje</gloss>
+  <gloss versionDate="2007-01-21" xml:lang="it">punto di ancoraggio</gloss>
+  <gloss versionDate="2017-06-19" xml:lang="de">Ankerpunkt</gloss>
+  <gloss versionDate="2018-12-28" xml:lang="ja">アンカーポイント</gloss>
+  <desc versionDate="2005-01-14" xml:lang="en">attaches an identifier to a point within a text, whether or not it corresponds with a textual element.</desc>
+  <desc versionDate="2007-12-20" xml:lang="ko">텍스트적 요소와의 일치여부와 상관없이 텍스트 내의 특정 지점에 확인소를 부착한다.</desc>
+  <desc versionDate="2007-05-02" xml:lang="zh-TW">在文件中某一位置附上識別符碼，無論該位置是否符合一個文字性元素。</desc>
+  <desc versionDate="2008-04-05" xml:lang="ja">テキスト要素であるかどうかに関係なく，テキスト中で，参照先になるIDを 示す．</desc>
+  <desc versionDate="2009-10-06" xml:lang="fr">attache un identifiant à un point du texte, que ce point corresponde ou non à un élément textuel.</desc>
+  <desc versionDate="2007-05-04" xml:lang="es">enlanza un indentificador con una posición al interno del texto, independientemente del hecho que esta sea o no a un elemento textual.</desc>
+  <desc versionDate="2007-01-21" xml:lang="it">aggancia un indentificatore a una posizione all'interno del testo indipendentemente dal fatto che questa corrisponda o meno a un elemento testuale</desc>
+  <desc versionDate="2017-06-19" xml:lang="de">fügt an einer Stelle im Text eine Kennung ein, unabhängig von der Textstruktur.</desc>
+  <classes>
+    <memberOf key="att.global"/>
+    <memberOf key="model.milestoneLike"/>
+    <memberOf key="att.typed"/>
+  </classes>
+  <content><empty/></content>
+  <exemplum xml:lang="en">
+    <egXML xmlns="http://www.tei-c.org/ns/Examples" source="#NONE">
+      <s>The anchor is he<anchor xml:id="A234"/>re somewhere.</s>
+      <s>Help me find it.<ptr target="#A234"/>
+         </s>
+    </egXML>
+  </exemplum>
+  <exemplum versionDate="2008-04-06" xml:lang="fr" source="#NONE">
+    <egXML xmlns="http://www.tei-c.org/ns/Examples">
+      <s>L'ancre est i<anchor xml:id="fr_A234"/>ci quelque part.</s>
+      <s>Aidez-moi à la trouver.<ptr target="#fr_A234"/>
+         </s>
+    </egXML>
+  </exemplum>
+  <exemplum xml:lang="zh-TW">
+    <egXML xmlns="http://www.tei-c.org/ns/Examples" source="#NONE">
+      <s>此錨點指向這<anchor xml:id="zh-tw_A234"/>裡</s>
+      <s>請搜尋此處<ptr target="#zh-tw_A234"/>
+         </s>
+    </egXML>
+  </exemplum>
+  <remarks versionDate="2005-01-14" xml:lang="en">
+    <p>On this element, the global <att>xml:id</att> attribute must be supplied to specify an identifier for the point at which this element occurs within a document. The value used may be chosen freely provided that it is unique within the document and is a syntactically valid name. There is no requirement for values containing numbers to be in sequence.</p>
+  </remarks>
+  <remarks xml:lang="fr" versionDate="2009-10-05">
+    <p>Il faut donner à cet élément un attribut global <att>xml:id</att> afin de spécifier un identifiant pour le point où l'élément intervient dans un document TEI. La valeur utilisée peut être choisie librement, pourvu qu'elle soit unique dans le document TEI et que le nom soit syntaxiquement valide. Les valeurs contenant des nombres ne doivent pas nécessairement former une séquence.</p>
+  </remarks>
+  <remarks xml:lang="ja" versionDate="2008-04-05">
+    <p> 当該要素において，グローバル属性<att>xml:id</att>の値としてIDを付 与する必要がある．この値は，該当する文書中でユニークであり，かつ統語 上妥当な名前であれば，自由に決めてよい．必ずしも連続する番号を振る必 要はない． </p>
+  </remarks>
+  <remarks versionDate="2017-06-19" xml:lang="de">
+    <p>In diesem Element muss das globale <att>xml:id</att>-Attribut gesetzt werden, um eine Kennung für
+      genau diese Stelle innerhalb des Dokuments angeben zu können. Der Wert kann frei gewählt werden,
+      solange er innerhalb des Dokuments eindeutig ist und es sich um einen syntaktisch validen Namen
+      handelt. Werden innerhalb des <att>xml:id</att>-Attributs Zahlen verwendet, müssen die Werte nicht
+      sequenziell verwendet werden.</p>
+  </remarks>
+  <listRef>
+    <ref target="https://www.tei-c.org/release/doc/tei-p5-doc/en/html/TS.html#TSSAPA">8.4.2. Synchronization and Overlap</ref>
+    <ref target="https://www.tei-c.org/release/doc/tei-p5-doc/en/html/SA.html#SACS">16.5. Correspondence and Alignment</ref>
+  </listRef>
+</elementSpec><elementSpec rend="change" module="linking" ident="seg"><gloss versionDate="2005-01-14" xml:lang="en">arbitrary segment</gloss><gloss versionDate="2007-12-20" xml:lang="ko">임의의 분절</gloss><gloss versionDate="2007-05-02" xml:lang="zh-TW">隨機分割</gloss><gloss versionDate="2007-06-12" xml:lang="fr">segment quelconque</gloss><gloss versionDate="2007-05-04" xml:lang="es">segmento arbitrario</gloss><gloss versionDate="2007-01-21" xml:lang="it">segmento arbitrario</gloss><gloss versionDate="2017-06-19" xml:lang="de">arbiträres Segment</gloss><desc versionDate="2008-01-31" xml:lang="en">represents any segmentation of text below the <soCalled>chunk</soCalled> level.</desc><desc versionDate="2007-12-20" xml:lang="ko">(다른 분절 요소를 포함하여) 텍스트의 임의의 구-층위 단위를 포함한다.</desc><desc versionDate="2007-05-02" xml:lang="zh-TW">包含文件中任何隨機字詞層次的單元 (包括其他分割元素)。</desc><desc versionDate="2008-04-05" xml:lang="ja">任意の句レベルのテキスト単位を示す(要素segを含む)．</desc><desc versionDate="2009-10-06" xml:lang="fr">contient une unité de texte quelconque de niveau <soCalled>segment</soCalled>.</desc><desc versionDate="2007-05-04" xml:lang="es">contiene cualquier unidad textual a nivel sintagmático (inclusive otros elementos de tipo seg.)</desc><desc versionDate="2007-01-21" xml:lang="it">contiene una qualsiasi unità testuale a livello sintagmatico (ivi compresi altri elementi del tipo seg)</desc><desc versionDate="2017-06-19" xml:lang="de">beschreibt Segmente eines Texts unterhalb des <soCalled>Chunk-Level</soCalled>.</desc><classes><memberOf key="att.global"/><memberOf key="model.segLike"/><memberOf key="att.segLike"/><memberOf key="att.typed"/><memberOf key="att.written"/><memberOf key="att.notated"/></classes><content><macroRef key="macro.paraContent"/></content><constraintSpec scheme="schematron" ident="att-type-subtype">
                         <constraint><sch:rule context="tei:seg"><sch:report test="@subtype and not(@type='component')">@subtype requires
                                     @type='component' to be used</sch:report><sch:report test="@cert='low' and not(ancestor::tei:div[@type='translation'])">seg[@cert='low'] can be used only in
                                     div[@type='translation']</sch:report><sch:report test="@rend='pun' and not(ancestor::tei:div[@type='translation'])">seg[@rend='pun'] only avaailable in
