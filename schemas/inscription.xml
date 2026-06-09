@@ -6050,7 +6050,6 @@
                 <elementSpec ident="provenance" mode="delete"/>
                 <elementSpec ident="speaker" mode="delete"/>
                 <elementSpec ident="msItem" mode="delete"/>
-                <elementSpec ident="rs" mode="delete"/>
                 <elementSpec ident="language" mode="delete"/>
                 <elementSpec ident="author" mode="delete"/>
                 <elementSpec ident="decoDesc" mode="delete"/>
