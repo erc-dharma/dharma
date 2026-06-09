@@ -59,6 +59,7 @@ templates_globals = {
 	"format_url": common.format_url,
 	"numberize": common.numberize,
 	"len": len,
+	"any": any,
 }
 @app.context_processor
 def inject_global_vars():

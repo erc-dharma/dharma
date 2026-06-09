@@ -52,7 +52,7 @@ search form below can be used for filtering results. For help on the query synta
 	total.
 	% endif
 	</p>
-% elif query
+% elif query or any(facets.values())
 	<p>No matching documents.</p>
 % else
 	<p>No documents in database.</p>
