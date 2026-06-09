@@ -579,3 +579,53 @@ window.addEventListener("load", function () {
 	initDisplayOptions()
 	initInternalLinks()
 })
+
+document.addEventListener('DOMContentLoaded', function() {
+	// Bind the event listener to the specific facets form
+	const facetsForm = document.getElementById('facets-form');
+	if (!facetsForm) return;
+	// Listen for state changes on any checkbox within the facets form
+	facetsForm.addEventListener('change', function(event) {
+		if (event.target.type === 'checkbox') {
+			updateSearchResults(facetsForm);
+		}
+	});
+});
+
+function updateSearchResults(form) {
+	// Parse current URL parameters to preserve text query and sorting
+	const urlParams = new URLSearchParams(window.location.search);
+	// Clear existing facet filters before applying the new selection
+	const facetCategories = ['lang', 'script', 'editor', 'repo'];
+	facetCategories.forEach(cat => urlParams.delete(cat));
+	// Reset pagination to the first page when filters change
+	urlParams.delete('p');
+	// Append the currently checked boxes from the form
+	const formData = new FormData(form);
+	for (const [key, value] of formData.entries()) {
+		urlParams.append(key, value);
+	}
+	const newUrl = window.location.pathname + '?' + urlParams.toString();
+	window.history.replaceState(null, '', newUrl);
+	const mainContainer = document.querySelector('main');
+	mainContainer.style.opacity = '0.5';
+	fetch(newUrl)
+		.then(response => response.text())
+		.then(html => replaceDOMContents(html, mainContainer))
+		.catch(err => {
+			console.error('Search update failed:', err);
+			mainContainer.style.opacity = '1';
+		});
+}
+
+function replaceDOMContents(html, container) {
+	// Parse the raw HTML string into a queryable Document Object Model
+	const parser = new DOMParser();
+	const newDoc = parser.parseFromString(html, 'text/html');
+	const newMain = newDoc.querySelector('main');
+	// Inject the newly fetched main element contents into the current DOM
+	if (newMain) {
+		container.innerHTML = newMain.innerHTML;
+	}
+	container.style.opacity = '1';
+}

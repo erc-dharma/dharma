@@ -1,5 +1,4 @@
 // Search server infrastructure and database connectivity.
-
 package main
 
 import (
@@ -246,8 +245,8 @@ func restartSelf() {
 // Serve a standard search query and output results as JSON.
 func handleSearch(w http.ResponseWriter, r *http.Request) {
 	setupHeaders(w)
-	q, off, lim, sortBy, fields, pretty := parseRequest(r)
-	processRequest(w, q, off, lim, sortBy, fields, pretty)
+	q, off, lim, sortBy, fields, pretty, filters := parseRequest(r)
+	processRequest(w, q, off, lim, sortBy, fields, pretty, filters)
 }
 
 // Fetch a single target document directly by its exact identifier.
@@ -258,7 +257,7 @@ func handleMatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing 'ident' parameter", http.StatusBadRequest)
 		return
 	}
-	q, _, _, _, fields, pretty := parseRequest(r)
+	q, _, _, _, fields, pretty, _ := parseRequest(r)
 	processMatch(w, ident, q, fields, pretty)
 }
 
@@ -300,8 +299,8 @@ func setupHeaders(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-// Parse input query parameters from the HTTP request context.
-func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
+// Parse input query parameters including dynamic facet arrays from the request.
+func parseRequest(r *http.Request) (string, int, int, string, []string, bool, map[string][]string) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 	lim, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -314,7 +313,31 @@ func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
 	}
 	fields := parseFields(r.URL.Query().Get("fields"))
 	pretty := parsePretty(r.URL.Query().Get("pretty"))
-	return q, off, lim, sortBy, fields, pretty
+	filters := parseFilters(r)
+	return q, off, lim, sortBy, fields, pretty, filters
+}
+
+// Extract selected facet arrays from the URL to drive the evaluation engine.
+func parseFilters(r *http.Request) map[string][]string {
+	filters := make(map[string][]string)
+	categories := []string{"lang", "script", "editor", "repo"}
+	for _, cat := range categories {
+		if vals, ok := r.URL.Query()[cat]; ok {
+			filters[cat] = filterEmptyStrings(vals)
+		}
+	}
+	return filters
+}
+
+// Remove empty parameters from the HTTP array to prevent false filter hits.
+func filterEmptyStrings(vals []string) []string {
+	var clean []string
+	for _, v := range vals {
+		if trim := strings.TrimSpace(v); trim != "" {
+			clean = append(clean, trim)
+		}
+	}
+	return clean
 }
 
 // Split the requested fields into a string slice.
@@ -347,7 +370,7 @@ func newFacetCollector() *FacetCollector {
 }
 
 // Handle the core search request logic and manage SQL transactions.
-func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string, pretty bool) {
+func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string, pretty bool, filters map[string][]string) {
 	tx, err := db.Begin()
 	if err != nil {
 		http.Error(w, "DB error", 500)
@@ -359,12 +382,12 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 		http.Error(w, "Sync error", 500)
 		return
 	}
-	performSearch(w, tx, q, off, lim, sortBy, fields, pretty)
+	performSearch(w, tx, q, off, lim, sortBy, fields, pretty, filters)
 }
 
-// Execute the search and compile results with facets and pagination.
-func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool) {
-	allDocs, facets := filterDocs(q)
+// Execute the search and compile results evaluating dynamic facet parameters.
+func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool, filters map[string][]string) {
+	allDocs, facets := filterDocs(q, filters)
 	if sortBy != "title" {
 		sortDocs(allDocs, sortBy)
 	}

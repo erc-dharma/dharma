@@ -775,6 +775,9 @@ fieldset {
   padding-right: 0.5rem; }
 
 /******************************* Facets ***************************************/
+.facet-group ul {
+  display: block; }
+
 #sidebar .facet-list {
   list-style-type: none;
   /* Supprime les puces */

@@ -768,25 +768,28 @@ SEARCH_CONFIG = {
 	}
 }
 
-def query_search_service(query_str, offset=0, limit=20, sort="title"):
-	# Query the backend search service and process occurrences
+def query_search_service(query_str, offset=0, limit=20, sort="title", filters=None):
+	# Query the backend search service and process occurrences including dynamic facets
 	norm_query = unicodedata.normalize('NFC', query_str)
 	ast = query.parse_query(norm_query)
 	q_json = common.to_json(ast.serialize())
 	params = {"q": q_json, "offset": offset, "limit": limit, "sort": sort}
+	# Merge active facet filters into the request parameters to instruct the Go server
+	if filters:
+		for key, values in filters.items():
+			params[key] = values
 	resp = requests.get(GO_SERVER_URL, params=params)
 	resp.raise_for_status()
-	logging.info(resp.url)
 	data = resp.json()
 	processed_matches = process_matches(data.get("matches", []))
-	ret = {
+	# Extract the computed facets from the Go response to pass them to the template
+	return {
 		"query": query_str,
 		"match_count": data.get("count", 0),
 		"matches": processed_matches,
 		"sort": data.get("sort", sort),
-		"facets": data.get("facets")
+		"facets": data.get("facets", {})
 	}
-	return ret
 
 def query_match_document(ident, query_str="") \
 	-> tuple[None, None] | tuple[tree.Tree, tree.Tree]:

@@ -112,44 +112,75 @@ func parseQuery(qStr string) QueryNode {
 	return q
 }
 
-// Processes the query and returns matched documents alongside aggregated facets.
-func filterDocs(qStr string) ([]Document, *FacetsResponse) {
+// Processes the query and filters documents cross-evaluating facet constraints.
+func filterDocs(qStr string, filters map[string][]string) ([]Document, *FacetsResponse) {
 	mu.RLock()
 	snap := corpus
 	mu.RUnlock()
 	col := newFacetCollector()
-	if qStr == "" {
-		return processAllDocs(snap, col)
+	var q QueryNode
+	if qStr != "" {
+		q = parseQuery(qStr)
 	}
-	q := parseQuery(qStr)
 	var docs []Document
 	for _, doc := range snap {
-		if matchQuery(doc, q) {
-			docs = append(docs, doc)
-			collectDocFacets(col, doc)
+		if qStr == "" || matchQuery(doc, q) {
+			evaluateDocFacets(&docs, col, doc, filters)
 		}
 	}
 	return docs, buildFacetsResponse(col)
 }
 
-// Handles the empty query scenario quickly to avoid any syntax overhead.
-func processAllDocs(snap []Document, col *FacetCollector) ([]Document, *FacetsResponse) {
-	docs := make([]Document, len(snap))
-	copy(docs, snap)
-	for _, doc := range docs {
-		collectDocFacets(col, doc)
+// Evaluates a single document against active filters and aggregates statistics.
+// Computes disjunctive intersections to support multi-select facet rendering natively.
+func evaluateDocFacets(docs *[]Document, col *FacetCollector, d Document, f map[string][]string) {
+	mRepo := matchSingleFacet(d.RepoID, f["repo"])
+	mLang := matchListFacet(d.Lang, f["lang"])
+	mScript := matchListFacet(d.Script, f["script"])
+	mEditor := matchListFacet(d.Editor, f["editor"])
+	if mRepo && mLang && mScript && mEditor {
+		*docs = append(*docs, d)
 	}
-	return docs, buildFacetsResponse(col)
-}
-
-// Extracts basic facet data from a single document to increment global counts.
-func collectDocFacets(col *FacetCollector, d Document) {
-	if d.RepoID != "" {
+	if mLang && mScript && mEditor && d.RepoID != "" {
 		updateFacet(col.Repo, d.RepoID, d.RepoName)
 	}
-	collectListFacets(col.Editor, d.Editor)
-	collectListFacets(col.Lang, d.Lang)
-	collectListFacets(col.Script, d.Script)
+	if mRepo && mScript && mEditor {
+		collectListFacets(col.Lang, d.Lang)
+	}
+	if mRepo && mLang && mEditor {
+		collectListFacets(col.Script, d.Script)
+	}
+	if mRepo && mLang && mScript {
+		collectListFacets(col.Editor, d.Editor)
+	}
+}
+
+// Validates a single ID string against a list of active constraint parameters.
+func matchSingleFacet(docVal string, filters []string) bool {
+	if len(filters) == 0 {
+		return true
+	}
+	for _, f := range filters {
+		if docVal == f {
+			return true
+		}
+	}
+	return false
+}
+
+// Validates an ID-Name slice against active constraints applying logical OR.
+func matchListFacet(list []string, filters []string) bool {
+	if len(filters) == 0 {
+		return true
+	}
+	for i := 0; i < len(list); i += 2 {
+		for _, f := range filters {
+			if list[i] == f {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Iterates through an ID-Name flat list to parse both properties identically.

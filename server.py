@@ -611,25 +611,46 @@ def show_catalog():
 	if page < 1:
 		page = 1
 	offset = (page - 1) * SEARCH_PER_PAGE
+
+	# Extract dynamic facet filters from the URL (handles multiple values per key)
+	filters = {}
+	for cat in ["lang", "script", "editor", "repo"]:
+		vals = flask.request.args.getlist(cat)
+		if vals:
+			# Remove empty strings to prevent false hits
+			filters[cat] = [v.strip() for v in vals if v.strip()]
+
 	try:
-		# Attempt to fetch search results from the backend service
-		context = search.query_search_service(query, offset, SEARCH_PER_PAGE, sort)
+		# Attempt to fetch search results from the backend service, passing filters
+		context = search.query_search_service(query, offset, SEARCH_PER_PAGE, sort, filters=filters)
 	except InvalidQuery as e:
 		# Catch syntax errors in the query and return the search page with the error message
-		return flask.render_template("search.tpl", error=str(e), query=query, sort=sort, matches=[], match_count=0)
+		return flask.render_template("search.tpl", error=str(e), query=query, sort=sort, matches=[], match_count=0, filters=filters)
 	except Exception as e:
 		# Catch any other unexpected errors during the search process
-		return flask.render_template("search.tpl", error=f"Search error: {e}", query=query, sort=sort, matches=[], match_count=0)
+		return flask.render_template("search.tpl", error=f"Search error: {e}", query=query, sort=sort, matches=[], match_count=0, filters=filters)
+
 	# Process each match to generate contextual snippets highlighting the query terms
 	matches = [snip.process(match, query=query) for match in context["matches"]]
 	context["matches"] = matches
 	count = context.get("match_count", 0)
+
 	# Calculate pagination bounds to display the correct range of results
 	pages_nr = (count + SEARCH_PER_PAGE - 1) // SEARCH_PER_PAGE
 	first_entry = 0 if (page - 1) * SEARCH_PER_PAGE + 1 > count else (page - 1) * SEARCH_PER_PAGE + 1
 	last_entry = count if page * SEARCH_PER_PAGE > count else page * SEARCH_PER_PAGE
-	# Update context with pagination and query variables before rendering the template
-	context.update({"page": page, "pages_nr": pages_nr, "per_page": SEARCH_PER_PAGE, "first_entry": first_entry, "last_entry": last_entry, "q": query, "sort": sort})
+
+	# Update context with pagination, query variables, and filters before rendering the template
+	context.update({
+		"page": page,
+		"pages_nr": pages_nr,
+		"per_page": SEARCH_PER_PAGE,
+		"first_entry": first_entry,
+		"last_entry": last_entry,
+		"q": query,
+		"sort": sort,
+		"filters": filters
+	})
 	return flask.render_template("search.tpl", **context)
 
 def render_markdown(f: texts.File):

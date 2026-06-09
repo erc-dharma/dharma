@@ -875,6 +875,9 @@ fieldset {
 
 /******************************* Facets ***************************************/
 
+.facet-group ul {
+	display: block;
+}
 #sidebar .facet-list {
 	list-style-type: none; /* Supprime les puces */
 	padding-left: 0;       /* Retire le retrait à gauche natif des listes */

@@ -144,6 +144,8 @@ search form below can be used for filtering results. For help on the query synta
 
 % block sidebar
 
+<form id="facets-form">
+
 % set items = facets.get("lang")
 % if items
 <fieldset class="facet-group">
@@ -211,5 +213,7 @@ search form below can be used for filtering results. For help on the query synta
     </ul>
 </fieldset>
 % endif
+
+</form>
 
 % endblock
