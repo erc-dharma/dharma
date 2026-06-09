@@ -412,6 +412,10 @@ def _render_match(self, node):
 	self.dispatch_children(node)
 	self.join()
 
+@_handler("citation")
+def _render_citation(self, node):
+	pass
+
 @_handler("*")
 def _render_tag(self, node):
 	assert isinstance(node, tree.Tag)

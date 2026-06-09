@@ -141,3 +141,47 @@ search form below can be used for filtering results. For help on the query synta
 % endif
 
 % endblock
+
+% block sidebar
+
+% set items = facets.get("lang")
+% if items
+<p><b>Top languages</b></p>
+<ul>
+% for item in items
+<li>{{item['name']}} ({{item['count']}})</li>
+% endfor
+</ul>
+% endif
+
+% set items = facets.get("script")
+% if items
+<p><b>Top scripts</b></p>
+<ul>
+% for item in items
+<li>{{item['name']}} ({{item['count']}})</li>
+% endfor
+</ul>
+% endif
+
+% set items = facets.get("repo")
+% if items
+<p><b>Top repositories</b></p>
+<ul>
+% for item in items
+<li>{{item['name']}} ({{item['count']}})</li>
+% endfor
+</ul>
+% endif
+
+% set items = facets.get("editor")
+% if items
+<p><b>Top editors</b></p>
+<ul>
+% for item in items
+<li>{{item['name']}} ({{item['count']}})</li>
+% endfor
+</ul>
+% endif
+
+% endblock

@@ -1,6 +1,7 @@
 # TODO Add a "status" search field to catalog to filter by error status.
 
 import sys
+import logging
 import unicodedata
 import requests
 from dharma import common, tree, query
@@ -775,14 +776,17 @@ def query_search_service(query_str, offset=0, limit=20, sort="title"):
 	params = {"q": q_json, "offset": offset, "limit": limit, "sort": sort}
 	resp = requests.get(GO_SERVER_URL, params=params)
 	resp.raise_for_status()
+	logging.info(resp.url)
 	data = resp.json()
 	processed_matches = process_matches(data.get("matches", []))
-	return {
+	ret = {
 		"query": query_str,
 		"match_count": data.get("count", 0),
 		"matches": processed_matches,
-		"sort": data.get("sort", sort)
+		"sort": data.get("sort", sort),
+		"facets": data.get("facets")
 	}
+	return ret
 
 def query_match_document(ident, query_str="") \
 	-> tuple[None, None] | tuple[tree.Tree, tree.Tree]:

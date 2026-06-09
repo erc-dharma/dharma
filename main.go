@@ -23,6 +23,7 @@ const (
 	MarkerEnd   = "\uE001"
 )
 
+// CacheConfig enables in-memory transformation caching for fields to speed up search.
 var CacheConfig = map[string]bool{
 	"logical":      true,
 	"ident":        true,
@@ -39,6 +40,16 @@ var CacheConfig = map[string]bool{
 	"script":       true,
 }
 
+// FacetLimits defines the maximum number of items per facet category.
+// It groups the long tail into an 'Other' fallback category to avoid UI clutter.
+var FacetLimits = map[string]int{
+	"lang":   10,
+	"script": 10,
+	"editor": 15,
+	"repo":   20,
+}
+
+// TransformCache stores normalized string states to prevent redundant processing.
 type TransformCache struct {
 	normal     string
 	normalized string
@@ -46,6 +57,7 @@ type TransformCache struct {
 	onceNorm   sync.Once
 }
 
+// DocCache holds pointers to transformation caches for a single document.
 type DocCache struct {
 	Logical      *TransformCache
 	Ident        *TransformCache
@@ -58,11 +70,11 @@ type DocCache struct {
 	Title        []*TransformCache
 	Author       []*TransformCache
 	Editor       []*TransformCache
-	// Modifié pour refléter une liste simple
-	Lang   []*TransformCache
-	Script []*TransformCache
+	Lang         []*TransformCache
+	Script       []*TransformCache
 }
 
+// Document represents the internal state of a text loaded from the database.
 type Document struct {
 	Ident        string
 	Logical      string
@@ -75,12 +87,12 @@ type Document struct {
 	Bibliography string
 	Author       []string
 	Editor       []string
-	// Modifié pour refléter une liste simple
-	Lang   []string
-	Script []string
-	Cache  *DocCache
+	Lang         []string
+	Script       []string
+	Cache        *DocCache
 }
 
+// SearchResult exposes the highlighted text fields for the JSON response payload.
 type SearchResult struct {
 	Ident        string   `json:"ident"`
 	Logical      string   `json:"logical"`
@@ -93,22 +105,47 @@ type SearchResult struct {
 	Bibliography string   `json:"bibliography"`
 	Author       []string `json:"author"`
 	Editor       []string `json:"editor"`
-	// Modifié pour refléter une liste simple
-	Lang     []string `json:"lang"`
-	Script   []string `json:"script"`
-	Source   string   `json:"source"`
-	Original string   `json:"original,omitempty"`
+	Lang         []string `json:"lang"`
+	Script       []string `json:"script"`
+	Source       string   `json:"source"`
+	Original     string   `json:"original,omitempty"`
 }
 
+// FacetResult represents a single aggregated facet entry with its occurrences.
+type FacetResult struct {
+	Ident string `json:"ident"`
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+// FacetsResponse groups the facet arrays to be serialized in the JSON payload.
+type FacetsResponse struct {
+	Lang   []FacetResult `json:"lang"`
+	Script []FacetResult `json:"script"`
+	Editor []FacetResult `json:"editor"`
+	Repo   []FacetResult `json:"repo"`
+}
+
+// FacetCollector acts as an internal accumulator during the corpus traversal.
+type FacetCollector struct {
+	Lang   map[string]*FacetResult
+	Script map[string]*FacetResult
+	Editor map[string]*FacetResult
+	Repo   map[string]*FacetResult
+}
+
+// SearchResponse wraps the full result set, including metadata, facets and matches.
 type SearchResponse struct {
 	Count   int         `json:"count"`
 	Offset  int         `json:"offset"`
 	Limit   int         `json:"limit"`
 	Sort    string      `json:"sort"`
 	Query   string      `json:"query"`
+	Facets  interface{} `json:"facets,omitempty"`
 	Matches interface{} `json:"matches"`
 }
 
+// QueryNode represents a single branch or leaf in the parsed AST.
 type QueryNode struct {
 	Op    string      `json:"op"`
 	Args  []QueryNode `json:"args,omitempty"`
@@ -120,6 +157,7 @@ type QueryNode struct {
 	Y     int         `json:"y,omitempty"`
 }
 
+// QueryTerm defines a flattened evaluation criteria extracted from the AST.
 type QueryTerm struct {
 	Field string
 	Value string
@@ -133,6 +171,7 @@ var (
 	db              *sql.DB
 )
 
+// Start the core DHARMA text engine.
 func main() {
 	log.Printf("DHARMA Search Server starting (PID: %d)...", os.Getpid())
 	dbPath, err := getDBPath()
@@ -145,6 +184,7 @@ func main() {
 	startServer()
 }
 
+// Resolve the absolute path to the SQLite catalog file.
 func getDBPath() (string, error) {
 	ex, err := os.Executable()
 	if err != nil {
@@ -153,6 +193,7 @@ func getDBPath() (string, error) {
 	return filepath.Join(filepath.Dir(ex), "dbs", "texts.sqlite"), nil
 }
 
+// Open the database in read-only mode and verify connectivity.
 func initDB(path string) error {
 	var err error
 	db, err = sql.Open("sqlite3", path+"?mode=ro")
@@ -162,6 +203,7 @@ func initDB(path string) error {
 	return db.Ping()
 }
 
+// Bind HTTP routes and begin listening for requests.
 func startServer() {
 	server := &http.Server{Addr: ":8026"}
 	go func() {
@@ -175,6 +217,7 @@ func startServer() {
 	manageLifecycle(server)
 }
 
+// Block main thread until receiving an upgrade signal.
 func manageLifecycle(server *http.Server) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGUSR2)
@@ -189,6 +232,7 @@ func manageLifecycle(server *http.Server) {
 	restartSelf()
 }
 
+// Execute the new binary in place of the current process.
 func restartSelf() {
 	bin, err := os.Executable()
 	if err != nil {
@@ -199,12 +243,14 @@ func restartSelf() {
 	}
 }
 
+// Serve a standard search query and output results as JSON.
 func handleSearch(w http.ResponseWriter, r *http.Request) {
 	setupHeaders(w)
 	q, off, lim, sortBy, fields, pretty := parseRequest(r)
 	processRequest(w, q, off, lim, sortBy, fields, pretty)
 }
 
+// Fetch a single target document directly by its exact identifier.
 func handleMatch(w http.ResponseWriter, r *http.Request) {
 	setupHeaders(w)
 	ident := strings.TrimSpace(r.URL.Query().Get("ident"))
@@ -216,6 +262,7 @@ func handleMatch(w http.ResponseWriter, r *http.Request) {
 	processMatch(w, ident, q, fields, pretty)
 }
 
+// Retrieve a single document and enrich it with source properties.
 func processMatch(w http.ResponseWriter, ident, q string, fields []string, pretty bool) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -236,9 +283,10 @@ func processMatch(w http.ResponseWriter, ident, q string, fields []string, prett
 	fetchOriginalTEI(tx, ident, &res)
 	results := []SearchResult{res}
 	enrichMatches(tx, results, []Document{*targetDoc}, fields)
-	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty)
+	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty, nil)
 }
 
+// Inject original unparsed XML payload into the response structure.
 func fetchOriginalTEI(tx *sql.Tx, ident string, res *SearchResult) {
 	err := tx.QueryRow("select data from files where name = ?", ident).Scan(&res.Original)
 	if err != nil {
@@ -246,11 +294,13 @@ func fetchOriginalTEI(tx *sql.Tx, ident string, res *SearchResult) {
 	}
 }
 
+// Assign required headers to allow cross-origin requests.
 func setupHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 }
 
+// Parse input query parameters from the HTTP request context.
 func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
@@ -267,6 +317,7 @@ func parseRequest(r *http.Request) (string, int, int, string, []string, bool) {
 	return q, off, lim, sortBy, fields, pretty
 }
 
+// Split the requested fields into a string slice.
 func parseFields(fParam string) []string {
 	var fields []string
 	if fParam != "" {
@@ -279,12 +330,23 @@ func parseFields(fParam string) []string {
 	return fields
 }
 
+// Ascertain whether JSON output requires human-readable indentation.
 func parsePretty(pParam string) bool {
 	p := strings.ToLower(pParam)
 	return p == "true" || p == "1" || p == "yes"
 }
 
-// handle the core search request logic and manage transactions
+// Initialize collector instances to prevent panics during aggregation.
+func newFacetCollector() *FacetCollector {
+	return &FacetCollector{
+		Lang:   make(map[string]*FacetResult),
+		Script: make(map[string]*FacetResult),
+		Editor: make(map[string]*FacetResult),
+		Repo:   make(map[string]*FacetResult),
+	}
+}
+
+// Handle the core search request logic and manage SQL transactions.
 func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string, pretty bool) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -293,7 +355,6 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 	}
 	defer tx.Rollback()
 	if err := syncCorpus(tx); err != nil {
-		// we print the exact error to the terminal to ease debugging
 		log.Printf("sync error details: %v", err)
 		http.Error(w, "Sync error", 500)
 		return
@@ -301,8 +362,9 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 	performSearch(w, tx, q, off, lim, sortBy, fields, pretty)
 }
 
+// Execute the search and compile results with facets and pagination.
 func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool) {
-	allDocs := filterDocs(q)
+	allDocs, facets := filterDocs(q)
 	if sortBy != "title" {
 		sortDocs(allDocs, sortBy)
 	}
@@ -310,9 +372,10 @@ func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, so
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, q)
 	enrichMatches(tx, results, pageDocs, fields)
-	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty)
+	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty, facets)
 }
 
+// Compare db state flag to decide if corpus should be refreshed in memory.
 func syncCorpus(tx *sql.Tx) error {
 	var ver int
 	if err := tx.QueryRow("pragma data_version").Scan(&ver); err != nil {
@@ -327,6 +390,7 @@ func syncCorpus(tx *sql.Tx) error {
 	return reloadCorpus(tx, ver)
 }
 
+// Rebuild the in-memory array by parsing texts from the SQLite catalog.
 func reloadCorpus(tx *sql.Tx, ver int) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -343,6 +407,7 @@ func reloadCorpus(tx *sql.Tx, ver int) error {
 	return nil
 }
 
+// Read standard and newly added fields using lowercase sql statements.
 func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 	count, err := getCount(tx)
 	if err != nil {
@@ -359,12 +424,14 @@ func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 	return scanRows(rows, count)
 }
 
+// Extract the total row count to allocate slices precisely.
 func getCount(tx *sql.Tx) (int, error) {
 	var count int
 	err := tx.QueryRow("select count(*) from documents_search").Scan(&count)
 	return count, err
 }
 
+// Iterate over query rows and map them to standard structs.
 func scanRows(rows *sql.Rows, count int) ([]Document, error) {
 	docs := make([]Document, 0, count)
 	for rows.Next() {
@@ -377,16 +444,18 @@ func scanRows(rows *sql.Rows, count int) ([]Document, error) {
 	return docs, rows.Err()
 }
 
+// Deserialize rows safely by handling sql.NullString for empty columns.
 func scanOne(rows *sql.Rows) (Document, error) {
-	var ident, logStr, titleJson, sum, rid, rname, hand, trans, biblio, authJson, edJson, langJson, scrJson string
-	err := rows.Scan(&ident, &logStr, &titleJson, &sum, &rid, &rname, &hand, &trans, &biblio, &authJson, &edJson, &langJson, &scrJson)
+	var ident, logStr, titleJson, sum, rid, rname, hand, authJson, edJson, langJson, scrJson string
+	var transNull, biblioNull sql.NullString
+	err := rows.Scan(&ident, &logStr, &titleJson, &sum, &rid, &rname, &hand, &transNull, &biblioNull, &authJson, &edJson, &langJson, &scrJson)
 	if err != nil {
 		return Document{}, err
 	}
 	doc := Document{
 		Ident: ident, Logical: logStr, Title: parseList(titleJson),
 		Summary: sum, RepoID: rid, RepoName: rname, Hand: hand,
-		Translation: trans, Bibliography: biblio,
+		Translation: transNull.String, Bibliography: biblioNull.String,
 		Author: parseList(authJson), Editor: parseList(edJson),
 		Lang: parseList(langJson), Script: parseList(scrJson),
 	}
@@ -394,6 +463,7 @@ func scanOne(rows *sql.Rows) (Document, error) {
 	return doc, nil
 }
 
+// Initialize structural caches to speed up text pattern matching routines.
 func buildDocCache(d *Document) *DocCache {
 	c := &DocCache{}
 	if CacheConfig["logical"] {
@@ -438,6 +508,7 @@ func buildDocCache(d *Document) *DocCache {
 	return c
 }
 
+// Pre-allocate transformation cache pointers for array attributes.
 func buildListCache(size int) []*TransformCache {
 	list := make([]*TransformCache, size)
 	for i := range list {
@@ -446,6 +517,7 @@ func buildListCache(size int) []*TransformCache {
 	return list
 }
 
+// Interpret raw JSON arrays into generic string slices.
 func parseList(jsonStr string) []string {
 	var list []string
 	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
@@ -454,6 +526,7 @@ func parseList(jsonStr string) []string {
 	return list
 }
 
+// Load complex source attributes for filtered results on demand.
 func enrichMatches(tx *sql.Tx, matches []SearchResult, docs []Document, fields []string) {
 	if !shouldFetchSource(fields) {
 		return
@@ -471,6 +544,7 @@ func enrichMatches(tx *sql.Tx, matches []SearchResult, docs []Document, fields [
 	}
 }
 
+// Determine if the full XML source code needs fetching.
 func shouldFetchSource(fields []string) bool {
 	if len(fields) == 0 {
 		return true
@@ -483,14 +557,16 @@ func shouldFetchSource(fields []string) bool {
 	return false
 }
 
-func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool) {
+// Package final structs to write JSON payload efficiently.
+func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool, facets interface{}) {
 	var finalMatches interface{} = matches
 	if len(fields) > 0 {
 		finalMatches = filterFields(matches, fields)
 	}
 	resp := SearchResponse{
 		Count: count, Offset: off, Limit: lim,
-		Sort: sortBy, Query: query, Matches: finalMatches,
+		Sort: sortBy, Query: query,
+		Facets: facets, Matches: finalMatches,
 	}
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
@@ -500,6 +576,7 @@ func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fie
 	enc.Encode(resp)
 }
 
+// Prune output properties according to request constraints.
 func filterFields(matches []SearchResult, fields []string) []map[string]interface{} {
 	filtered := make([]map[string]interface{}, len(matches))
 	for i, m := range matches {
@@ -512,7 +589,7 @@ func filterFields(matches []SearchResult, fields []string) []map[string]interfac
 	return filtered
 }
 
-// Assign core string attributes dynamically to the result map
+// Copy primary string fields dynamically to the untyped map.
 func assignBasicField(mMap map[string]interface{}, m SearchResult, f string) {
 	switch f {
 	case "ident":
@@ -536,6 +613,7 @@ func assignBasicField(mMap map[string]interface{}, m SearchResult, f string) {
 	}
 }
 
+// Copy secondary attribute arrays dynamically to the untyped map.
 func assignExtraField(mMap map[string]interface{}, m SearchResult, f string) {
 	switch f {
 	case "author":
