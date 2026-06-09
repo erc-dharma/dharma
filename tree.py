@@ -775,6 +775,7 @@ class Tree(Branch):
 		ret = Tree()
 		for node in self:
 			ret.append(node.copy())
+		ret.notes = self.notes.copy()
 		return ret
 
 	def replace_with(self, other):
