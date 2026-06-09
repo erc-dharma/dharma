@@ -879,7 +879,18 @@ def _parse_surplus(p, node):
 	p.append_surround("{")
 	p.dispatch_children(node)
 	p.append_surround("}")
+	span = p.pop()
+	p.push(tree.Tag("views"))
+	# Physical
+	p.push("physical")
+	p.append(span)
 	p.join()
+	# Nothing for logical
+	# Full
+	p.push("full")
+	p.append(span.copy())
+	p.join()
+	p.join("views")
 
 # > editorial
 

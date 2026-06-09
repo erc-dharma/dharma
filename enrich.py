@@ -1344,6 +1344,8 @@ def _expand_views(root: tree.Branch, keep_view=None):
 		# Note that we don't expect "views" elements to nest.
 		for view in views:
 			target = node.first(view)
+			if target is None:
+				continue
 			assert isinstance(target, tree.Tag)
 			if view == keep:
 				_expand_views(target, keep_view)
