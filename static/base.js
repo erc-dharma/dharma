@@ -625,17 +625,36 @@ function updateSearchResults(form) {
 	loadSearchUrl(window.location.pathname + '?' + urlParams.toString());
 }
 
+// Re-attach event listeners and formatting to dynamically loaded elements
+// Replacing innerHTML removes previous nodes, so we must bind events to the new ones
+function rebindDynamicContent(container) {
+	for (let node of container.querySelectorAll("[data-tip]")) {
+		node.addEventListener("mouseover", addTooltip)
+		node.addEventListener("mouseout", removeTooltip)
+	}
+	for (let node of container.querySelectorAll(".link")) {
+		node.addEventListener("click", handleInternalLinkClick)
+	}
+	for (let node of container.querySelectorAll("time")) {
+		localizeDate(node)
+	}
+}
+
+// Replace the main body and restore interactivity for the new elements
+// We added a call to rebindDynamicContent to fix the broken tooltips issue
 function replaceDOMContents(html, container) {
 	// Extract the main body from the response and inject it into the page
-	const parser = new DOMParser();
-	const newDoc = parser.parseFromString(html, 'text/html');
-	const newBody = newDoc.getElementById('search-body');
+	const parser = new DOMParser()
+	const newDoc = parser.parseFromString(html, "text/html")
+	const newBody = newDoc.getElementById("search-body")
 	if (newBody) {
-		container.innerHTML = newBody.innerHTML;
+		container.innerHTML = newBody.innerHTML
 	}
-	container.style.opacity = '1';
-	const mainElement = document.querySelector('main');
+	container.style.opacity = "1"
+	const mainElement = document.querySelector("main")
 	if (mainElement) {
-		mainElement.scrollTop = 0;
+		mainElement.scrollTop = 0
 	}
+	// Execute re-initialization to ensure dynamic components work after AJAX load
+	rebindDynamicContent(container)
 }
