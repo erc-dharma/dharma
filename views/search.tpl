@@ -153,7 +153,11 @@ search form below can be used for filtering results. For help on the query synta
     <ul class="facet-list">
     % for item in items
         <li>
-            <input type="checkbox" id="lang-{{item['ident']}}" name="lang" value="{{item['ident']}}">
+            <input type="checkbox" id="lang-{{item['ident']}}" name="lang" value="{{item['ident']}}"
+	    % if not item['ident']
+	    disabled
+	    % endif
+	    >
             <label for="lang-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -170,7 +174,11 @@ search form below can be used for filtering results. For help on the query synta
     <ul class="facet-list">
     % for item in items
         <li>
-            <input type="checkbox" id="script-{{item['ident']}}" name="script" value="{{item['ident']}}">
+	    <input type="checkbox" id="script-{{item['ident']}}" name="script" value="{{item['ident']}}"
+	    % if not item['ident']
+	    disabled
+	    % endif
+	    >
             <label for="script-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -187,7 +195,11 @@ search form below can be used for filtering results. For help on the query synta
     <ul class="facet-list">
     % for item in items
         <li>
-            <input type="checkbox" id="repo-{{item['ident']}}" name="repo" value="{{item['ident']}}">
+            <input type="checkbox" id="repo-{{item['ident']}}" name="repo" value="{{item['ident']}}"
+	    % if not item['ident']
+	    disabled
+	    % endif
+	    >
             <label for="repo-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -204,7 +216,11 @@ search form below can be used for filtering results. For help on the query synta
     <ul class="facet-list">
     % for item in items
         <li>
-            <input type="checkbox" id="editor-{{item['ident']}}" name="editor" value="{{item['ident']}}">
+            <input type="checkbox" id="editor-{{item['ident']}}" name="editor" value="{{item['ident']}}"
+	    % if not item['ident']
+	    disabled
+	    % endif
+	    >
             <label for="editor-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
