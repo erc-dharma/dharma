@@ -14,9 +14,9 @@ search form below can be used for filtering results. For help on the query synta
    <li>
    <label for="text-input">Find:</label>
    % if query:
-   <input name="q" id="text-input" value="{{query | escape}}" autocapitalize="off" autocorrect="off" autofocus/>
+   <input name="q" id="text-input" value="{{query | escape}}" autocapitalize="off" autocorrect="off" autofocus>
    % else:
-   <input name="q" id="text-input" autocapitalize="off" autocorrect="off" autofocus/>
+   <input name="q" id="text-input" autocapitalize="off" autocorrect="off" autofocus>
    % endif
    </li>
    <li>
@@ -36,6 +36,8 @@ search form below can be used for filtering results. For help on the query synta
    </li>
 </ul>
 </form>
+
+<div id="search-body">
 
 % if error
 <div class="error">
@@ -124,19 +126,19 @@ search form below can be used for filtering results. For help on the query synta
 
 <div class="pagination">
 % if page > 1:
-   <a href="{{url_for('show_catalog', q=query, p=page - 1, sort=sort)}}">← Previous</a>
+   <a class="pagination-link" href="{{ url_for('show_catalog', q=query, p=page - 1, sort=sort, **filters) }}">← Previous</a>
 % else:
    ← Previous
 % endif
    |
 % if page < pages_nr:
-   <a href="{{url_for('show_catalog', q=query, p=page + 1, sort=sort)}}">Next →</a>
+   <a class="pagination-link" href="{{ url_for('show_catalog', q=query, p=page + 1, sort=sort, **filters) }}">Next →</a>
 % else:
    Next →
 % endif
-</div><!-- class="pagination"-->
+</div> ## class="pagination"
 
-</div>
+</div> ## id="search-body"
 
 % endif
 

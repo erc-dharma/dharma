@@ -581,49 +581,55 @@ window.addEventListener("load", function () {
 })
 
 document.addEventListener('DOMContentLoaded', function() {
-	// Bind the event listener to the specific facets form
 	const facetsForm = document.getElementById('facets-form');
-	if (!facetsForm) return;
-	// Listen for state changes on any checkbox within the facets form
-	facetsForm.addEventListener('change', function(event) {
-		if (event.target.type === 'checkbox') {
-			updateSearchResults(facetsForm);
+	if (facetsForm) {
+		facetsForm.addEventListener('change', function(event) {
+			if (event.target.type === 'checkbox') {
+				updateSearchResults(facetsForm);
+			}
+		});
+	}
+	// Intercept pagination clicks globally using event delegation
+	document.addEventListener('click', function(event) {
+		if (event.target.classList.contains('pagination-link')) {
+			event.preventDefault();
+			loadSearchUrl(event.target.href);
 		}
 	});
 });
 
-function updateSearchResults(form) {
-	// Parse current URL parameters to preserve text query and sorting
-	const urlParams = new URLSearchParams(window.location.search);
-	// Clear existing facet filters before applying the new selection
-	const facetCategories = ['lang', 'script', 'editor', 'repo'];
-	facetCategories.forEach(cat => urlParams.delete(cat));
-	// Reset pagination to the first page when filters change
-	urlParams.delete('p');
-	// Append the currently checked boxes from the form
-	const formData = new FormData(form);
-	for (const [key, value] of formData.entries()) {
-		urlParams.append(key, value);
-	}
-	const newUrl = window.location.pathname + '?' + urlParams.toString();
-	window.history.replaceState(null, '', newUrl);
-	const mainContainer = document.querySelector('main');
+function loadSearchUrl(url) {
+	// Update browser state and trigger the asynchronous DOM replacement
+	window.history.replaceState(null, '', url);
+	const mainContainer = document.getElementById('search-body');
 	mainContainer.style.opacity = '0.5';
-	fetch(newUrl)
+	fetch(url)
 		.then(response => response.text())
 		.then(html => replaceDOMContents(html, mainContainer))
 		.catch(err => {
-			console.error('Search update failed:', err);
+			console.error('Search request failed:', err);
 			mainContainer.style.opacity = '1';
 		});
 }
 
+function updateSearchResults(form) {
+	// Gather checked facets and build the complete query string
+	const urlParams = new URLSearchParams(window.location.search);
+	const facetCategories = ['lang', 'script', 'editor', 'repo'];
+	facetCategories.forEach(cat => urlParams.delete(cat));
+	urlParams.delete('p');
+	const formData = new FormData(form);
+	for (const [key, value] of formData.entries()) {
+		urlParams.append(key, value);
+	}
+	loadSearchUrl(window.location.pathname + '?' + urlParams.toString());
+}
+
 function replaceDOMContents(html, container) {
-	// Parse the raw HTML string into a queryable Document Object Model
+	// Extract the main body from the response and inject it into the page
 	const parser = new DOMParser();
 	const newDoc = parser.parseFromString(html, 'text/html');
-	const newMain = newDoc.querySelector('main');
-	// Inject the newly fetched main element contents into the current DOM
+	const newMain = newDoc.getElementById('search-body');
 	if (newMain) {
 		container.innerHTML = newMain.innerHTML;
 	}
