@@ -945,7 +945,7 @@ def main():
 	doc = tree.parse_string(sys.stdin.read())
 	doc = ingest.process_tree(doc)
 	enrich.process(doc)
-	translation = doc.first("/document/bibliography")
+	translation = doc.first("/document/edition/logical")
 	assert translation
 	print(extract_text(translation))
 

@@ -156,7 +156,11 @@ search form below can be used for filtering results. For help on the query synta
     % for item in items
         <li>
             <input type="checkbox" id="lang-{{item['ident']}}" name="lang" value="{{item['ident']}}"
-                {{ 'checked' if item['ident'] in filters.get('lang', []) else '' }}>
+                {{ 'checked' if item['ident'] in filters.get('lang', []) else '' }}
+		% if not item['ident']
+		disabled
+		% endif
+		>
             <label for="lang-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -174,7 +178,11 @@ search form below can be used for filtering results. For help on the query synta
     % for item in items:
         <li>
             <input type="checkbox" id="script-{{item['ident']}}" name="script" value="{{item['ident']}}"
-                {{ 'checked' if item['ident'] in filters.get('script', []) else '' }}>
+                {{ 'checked' if item['ident'] in filters.get('script', []) else '' }}
+		% if not item['ident']
+		disabled
+		% endif
+		>
             <label for="script-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -192,7 +200,11 @@ search form below can be used for filtering results. For help on the query synta
     % for item in items:
         <li>
             <input type="checkbox" id="repo-{{item['ident']}}" name="repo" value="{{item['ident']}}"
-                {{ 'checked' if item['ident'] in filters.get('repo', []) else '' }}>
+                {{ 'checked' if item['ident'] in filters.get('repo', []) else '' }}
+		% if not item['ident']
+		disabled
+		% endif
+		>
             <label for="repo-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
@@ -210,7 +222,11 @@ search form below can be used for filtering results. For help on the query synta
     % for item in items:
         <li>
             <input type="checkbox" id="editor-{{item['ident']}}" name="editor" value="{{item['ident']}}"
-                {{ 'checked' if item['ident'] in filters.get('editor', []) else '' }}>
+                {{ 'checked' if item['ident'] in filters.get('editor', []) else '' }}
+		% if not item['ident']
+		disabled
+		% endif
+		>
             <label for="editor-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
