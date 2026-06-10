@@ -14,6 +14,10 @@ $menu-hover: #8788b0;
 $menu-height: 3rem;
 $menu-height-mobile: 4rem; /* Modified for touch devices */
 
+$button-background: #615f83;
+$button-foreground: white;
+$button-hover: $menu-hover;
+
 $border-radius: 0.3em;
 
 @mixin monospace {
@@ -202,6 +206,10 @@ abbr {
 .hidden {
 	display: none;
 }
+/* Class to hide an element while rigorously preserving its physical space in the layout */
+.invisible {
+	visibility: hidden;
+}
 
 .smallcaps {
 	font-variant: small-caps;
@@ -256,7 +264,8 @@ div.pagination {
 	padding: 1em 0;
 }
 
-/* Forms */
+/************************************ Forms ***********************************/
+
 form ul {
 	display: flex;
 	flex-wrap: wrap;
@@ -265,6 +274,64 @@ form ul {
 	padding: 0;
 	column-gap: 0.3em;
 	row-gap: 0.5em;
+}
+
+/* Search bar styling */
+.search-wrapper {
+	display: flex; /* Changed from inline-flex to enable horizontal centering with margin auto */
+	margin: 1em auto; /* Centers the bar horizontally within its parent form container */
+	max-width: max-content; /* Restricts width on desktop to remain compact based on the input size */
+	align-items: stretch;
+	border: 1px solid var(--card-border);
+	border-radius: $border-radius;
+	background-color: white;
+	overflow: hidden; /* Clips the inner buttons to match the rounded corners of the container */
+}
+.search-wrapper input {
+	border: none;
+	outline: none;
+	padding: 0.4em 0.6em;
+	background: transparent;
+	width: 15em; /* Ensures the input has a reasonable default width */
+	flex-grow: 1; /* Allows the text input field to expand fluidly on mobile viewports */
+}
+.search-wrapper button {
+	border: none;
+	cursor: pointer;
+	padding: 0.4em 0.8em;
+}
+#clear-search-btn {
+	color: gray;
+	background: transparent;
+}
+#clear-search-btn:hover {
+	color: black;
+}
+#submit-search-btn {
+	background-color: $button-background;
+	color: $button-foreground;
+}
+#submit-search-btn:hover {
+	background-color: $button-hover;
+}
+
+/* Layout for the search results count and the sort form */
+.search-controls {
+	display: flex;
+	justify-content: space-between; /* Pushes the left and right elements apart */
+	align-items: center; /* Centers them vertically on the same line */
+	flex-wrap: wrap; /* Allows stacking if the screen becomes too narrow */
+	gap: 1em; /* Adds spacing between elements when they wrap */
+	margin-block: 1em;
+}
+
+/* Remove default margins so the text aligns perfectly with the select box */
+.search-stats p, .search-stats .error {
+	margin: 0;
+}
+
+.search-sort form {
+	margin: 0;
 }
 
 /************************************** Menu **********************************/
@@ -425,9 +492,15 @@ main {
         font-size: 1.1rem;    /* Slightly adjusted for harmony */
     }
 
-	/* Disable the grid layout on mobile to allow natural block stacking */
+	/* Use flexbox on mobile to allow the active container to stretch vertically */
 	#contents, #contents.no-sidebar {
-		display: block;
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* Allow the main content area to fill the remaining vertical space */
+	main {
+		flex-grow: 1;
 	}
 
 	/* Override the dynamic width injected by the JavaScript code */
@@ -435,12 +508,19 @@ main {
 		width: auto !important;
 	}
 
+	/* Stretch the search bar to occupy the full horizontal width on mobile screens */
+	.search-wrapper {
+		width: 100%;
+		max-width: 100%;
+	}
+
 	/* Show the mobile filter button and style it to match the general theme */
 	.mobile-only {
 		display: block;
 		margin: 1em 0;
 		padding: 0.5em 1em;
-		background-color: var(--card-heading-background);
+		background-color: $button-background;
+		color: $button-foreground;
 		border: 1px solid var(--card-border);
 		border-radius: $border-radius;
 		cursor: pointer;
@@ -449,10 +529,16 @@ main {
 		font-weight: bold;
 	}
 
-	/* Display the sidebar as a block element when the toggle class is active */
+	/* Force the search controls to stack vertically on mobile displays */
+	.search-controls {
+		flex-direction: column;
+		align-items: flex-start; /* Aligns both the text and the select box to the left */
+	}
+
+	/* Display the sidebar and stretch it to the bottom of the viewport */
 	#sidebar.mobile-visible {
 		display: block;
-		margin-bottom: 1em;
+		flex-grow: 1;
 		border-radius: $border-radius;
 	}
 

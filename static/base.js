@@ -579,25 +579,36 @@ window.addEventListener("load", function () {
 	initDisplayOptions()
 	initInternalLinks()
 	initMobileFilter()
+	initClearSearch()
 })
 
 document.addEventListener('DOMContentLoaded', function() {
-	const facetsForm = document.getElementById('facets-form');
+	const facetsForm = document.getElementById('facets-form')
 	if (facetsForm) {
 		facetsForm.addEventListener('change', function(event) {
 			if (event.target.type === 'checkbox') {
-				updateSearchResults(facetsForm);
+				updateSearchResults(facetsForm)
 			}
-		});
+		})
 	}
 	// Intercept pagination clicks globally using event delegation
 	document.addEventListener('click', function(event) {
 		if (event.target.classList.contains('pagination-link')) {
-			event.preventDefault();
-			loadSearchUrl(event.target.href);
+			event.preventDefault()
+			loadSearchUrl(event.target.href)
 		}
-	});
-});
+	})
+	// Intercept sort select changes globally using event delegation
+	document.addEventListener('change', function(event) {
+		if (event.target.id === 'sort-select') {
+			const urlParams = new URLSearchParams(window.location.search)
+			urlParams.set('sort', event.target.value)
+			// Remove the page parameter to return to the first page when sorting changes
+			urlParams.delete('p')
+			loadSearchUrl(window.location.pathname + '?' + urlParams.toString())
+		}
+	})
+})
 
 function loadSearchUrl(url) {
 	// Update browser state and trigger the asynchronous DOM replacement
@@ -677,5 +688,36 @@ function initMobileFilter() {
 		event.preventDefault()
 		sidebar.classList.remove("mobile-visible")
 		main.classList.remove("mobile-hidden")
+	})
+}
+
+// Initialize the clear button in the search form.
+// This controls the visibility of the clear button based on the input value.
+// It allows users to easily clear their query and automatically refocuses the input field.
+// We use the invisible class instead of hidden to strictly preserve the button's layout space.
+function initClearSearch() {
+	let clearBtn = document.querySelector("#clear-search-btn")
+	let searchInput = document.querySelector("#text-input")
+	if (!clearBtn || !searchInput) return
+	// Define a helper function to evaluate the input length and toggle the button visibility.
+	// This abstracts the display logic so it can be reused on load and during user input.
+	let toggleClearBtn = function() {
+		if (searchInput.value.length > 0) {
+			clearBtn.classList.remove("invisible")
+		} else {
+			clearBtn.classList.add("invisible")
+		}
+	}
+	// Evaluate the initial state when the document loads to handle pre-filled inputs.
+	toggleClearBtn()
+	// Bind the helper function to the input event to reflect changes dynamically while typing.
+	searchInput.addEventListener("input", toggleClearBtn)
+	// Bind the click event to clear the text field and reset the button visibility.
+	clearBtn.addEventListener("click", function(event) {
+		event.preventDefault()
+		searchInput.value = ""
+		// Trigger the visibility toggle manually after clearing the text.
+		toggleClearBtn()
+		searchInput.focus()
 	})
 }

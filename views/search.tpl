@@ -10,31 +10,19 @@ Texts
 search form below can be used for filtering results. For help on the query syntax, see <a href="/search-help">here</a>.
 
 <form action="{{url_for('show_catalog')}}" method="get">
-<ul>
-   <li>
-   <label for="text-input">Find:</label>
-   % if query:
-   <input name="q" id="text-input" value="{{query | escape}}" autocapitalize="off" autocorrect="off" autofocus>
-   % else:
-   <input name="q" id="text-input" autocapitalize="off" autocorrect="off" autofocus>
-   % endif
-   </li>
-   <li>
-<label for="sort-select">Sort by:</label>
-<select name="sort" id="sort-select">
-% for k, v in (("title", "Title"), ("ident", "Identifier")):
-   % if k == sort:
-      <option value="{{k}}" selected>{{v}}</option>
-   % else:
-      <option value="{{k}}">{{v}}</option>
-   % endif
-% endfor
-</select>
-   </li>
-   <li>
-<input type="submit" value="Search">
-   </li>
-</ul>
+   <div class="search-wrapper">
+      % if query:
+      <input name="q" id="text-input" value="{{query | escape}}" autocapitalize="off" autocorrect="off" autofocus>
+      % else:
+      <input name="q" id="text-input" autocapitalize="off" autocorrect="off" autofocus>
+      % endif
+      <button type="button" id="clear-search-btn" title="Clear">
+         <i class="fa-solid fa-xmark"></i>
+      </button>
+      <button type="submit" id="submit-search-btn" title="Search">
+         <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+   </div>
 </form>
 
 <button id="mobile-filter-btn" class="mobile-only">
@@ -47,19 +35,51 @@ search form below can be used for filtering results. For help on the query synta
 <div class="error">
 {{error}}
 </div>
-% elif matches
-	<p>Documents
-	{{first_entry}}{{"\N{en dash}"}}{{last_entry}} of {{match_count}}
-	% if query:
-	matching.
-	% else:
-	total.
-	% endif
-	</p>
-% elif query or any(facets.values())
-	<p>No matching documents.</p>
+% endif
+
+<div id="search-body">
+
+% if error
+<div class="error">
+{{error}}
+</div>
+% endif
+
+% if error
 % else
-	<p>No documents in database.</p>
+<div class="search-controls">
+	<div class="search-stats">
+	% if matches
+		<p>Documents
+		{{first_entry}}{{"\N{en dash}"}}{{last_entry}} of {{match_count}}
+		% if query:
+		matching.
+		% else:
+		total.
+		% endif
+		</p>
+	% elif query or facets and any(facets.values())
+		<p>No matching documents.</p>
+	% else
+		<p>No documents in database.</p>
+	% endif
+	</div>
+
+	<div class="search-sort">
+		<form>
+		<label for="sort-select">Sort by:</label>
+		<select name="sort" id="sort-select">
+		% for k, v in (("title", "Title"), ("ident", "Identifier")):
+		   % if k == sort:
+		      <option value="{{k}}" selected>{{v}}</option>
+		   % else:
+		      <option value="{{k}}">{{v}}</option>
+		   % endif
+		% endfor
+		</select>
+		</form>
+	</div>
+</div>
 % endif
 
 % if matches
@@ -149,6 +169,8 @@ search form below can be used for filtering results. For help on the query synta
 % endblock
 
 % block sidebar
+
+% if facets
 
 <form id="facets-form">
 
@@ -241,5 +263,7 @@ search form below can be used for filtering results. For help on the query synta
 % endif
 
 </form> ## id="facet-form"
+
+% endif
 
 % endblock
