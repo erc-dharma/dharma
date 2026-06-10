@@ -7,7 +7,7 @@
   --card-heading-background: #e3e3ed;
   --card-border: #c2c2d3; }
 
-/* Modifié pour le tactile */
+/* Modified for touch devices */
 .monospace {
   font-family: 'Noto mono', monospace;
   font-size: 95%; }
@@ -324,31 +324,74 @@ main {
     background: #4a4866;
     border-bottom-left-radius: 0.3em;
     border-bottom-right-radius: 0.3em; } }
-/* Ajustements Mobile (Menu) */
+/* Hide elements that are only meant for mobile interfaces by default */
+.mobile-only {
+  display: none; }
+
+/* Mobile adjustments (Menu & Layout) */
 @media (max-width: 1100px) {
   #menu-bar {
     height: 4rem; }
 
   #menu-bar #menu-toggle {
     padding: 0.8rem;
-    /* Légèrement réduit */ }
+    /* Slightly reduced */ }
 
   #menu {
     margin-top: 4rem;
     padding-top: 0.5rem;
-    /* Réduit */
+    /* Reduced */
     padding-bottom: 0.5rem;
-    /* Réduit */ }
+    /* Reduced */ }
 
   #menu li {
     padding: 0.2rem 1rem;
-    /* Réduit la marge verticale entre les éléments */ }
+    /* Reduced vertical margin between elements */ }
 
   #menu a {
     padding: 0.6rem 1rem;
-    /* Plus compact tout en restant facile à cliquer */
+    /* More compact while remaining easy to click */
     font-size: 1.1rem;
-    /* Légèrement ajusté pour l'harmonie */ } }
+    /* Slightly adjusted for harmony */ }
+
+  /* Disable the grid layout on mobile to allow natural block stacking */
+  #contents, #contents.no-sidebar {
+    display: block; }
+
+  /* Override the dynamic width injected by the JavaScript code */
+  #sidebar {
+    width: auto !important; }
+
+  /* Show the mobile filter button and style it to match the general theme */
+  .mobile-only {
+    display: block;
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    background-color: var(--card-heading-background);
+    border: 1px solid var(--card-border);
+    border-radius: 0.3em;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-weight: bold; }
+
+  /* Display the sidebar as a block element when the toggle class is active */
+  #sidebar.mobile-visible {
+    display: block;
+    margin-bottom: 1em;
+    border-radius: 0.3em; }
+
+  /* Hide the main content area when the mobile filter menu is open */
+  main.mobile-hidden {
+    display: none; }
+
+  /* Add some spacing below the close button in the sidebar and align its icon to the right */
+  #mobile-close-filter-btn {
+    margin-bottom: 1em; }
+    #mobile-close-filter-btn i {
+      float: right;
+      padding-top: 0.2em;
+      /* Adjust alignment to center vertically if necessary */ } }
 @media print {
   header, #sidebar {
     display: none; }
@@ -780,8 +823,8 @@ fieldset {
 
 #sidebar .facet-list {
   list-style-type: none;
-  /* Supprime les puces */
+  /* Remove bullet points */
   padding-left: 0;
-  /* Retire le retrait à gauche natif des listes */
+  /* Remove default native list padding-left */
   margin: 0;
-  /* Supprime les marges par défaut */ }
+  /* Remove default margins */ }

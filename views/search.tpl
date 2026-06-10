@@ -37,6 +37,10 @@ search form below can be used for filtering results. For help on the query synta
 </ul>
 </form>
 
+<button id="mobile-filter-btn" class="mobile-only">
+	<i class="fa-solid fa-filter"></i> Filter
+</button>
+
 <div id="search-body">
 
 % if error

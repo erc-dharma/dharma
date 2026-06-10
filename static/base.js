@@ -578,6 +578,7 @@ window.addEventListener("load", function () {
 	initFlashing()
 	initDisplayOptions()
 	initInternalLinks()
+	initMobileFilter()
 })
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -657,4 +658,24 @@ function replaceDOMContents(html, container) {
 	}
 	// Execute re-initialization to ensure dynamic components work after AJAX load
 	rebindDynamicContent(container)
+}
+
+// Initialize the toggle logic for the mobile filter menu
+// It binds events to both the open and close buttons to swap the visibility of main and sidebar
+function initMobileFilter() {
+	let filterBtn = document.querySelector("#mobile-filter-btn")
+	let closeBtn = document.querySelector("#mobile-close-filter-btn")
+	let sidebar = document.querySelector("#sidebar")
+	let main = document.querySelector("main")
+	if (!filterBtn || !sidebar || !main || !closeBtn) return
+	filterBtn.addEventListener("click", function (event) {
+		event.preventDefault()
+		sidebar.classList.add("mobile-visible")
+		main.classList.add("mobile-hidden")
+	})
+	closeBtn.addEventListener("click", function (event) {
+		event.preventDefault()
+		sidebar.classList.remove("mobile-visible")
+		main.classList.remove("mobile-hidden")
+	})
 }

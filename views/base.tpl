@@ -88,6 +88,9 @@
    </div>
 </header>
 <div id="sidebar">
+   <button id="mobile-close-filter-btn" class="mobile-only">
+      <i class="fa-solid fa-xmark"></i> Close filters
+   </button>
    <div id="toc">
       <div id="toc-heading" class="toc-heading hidden">Contents</div>
       <nav id="toc-contents"></nav>
