@@ -473,7 +473,7 @@ main {
   /* Add some spacing below the close button in the sidebar and align its icon to the right */
   #mobile-close-filter-btn {
     margin-bottom: 1em; }
-    #mobile-close-filter-btn i {
+    #mobile-close-filter-btn i.fa-xmark {
       float: right;
       padding-top: 0.2em;
       /* Adjust alignment to center vertically if necessary */ } }
