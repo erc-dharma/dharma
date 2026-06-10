@@ -576,32 +576,6 @@ main {
 	}
 }
 
-/* Catalog, old version */
-.catalog-list div.catalog-card:first-child, .catalog-list div.catalog-card:last-child {
-	border-radius: $border-radius;
-}
-.catalog-list div.catalog-card:nth-child(odd) {
-	background-color: #eff0f1;
-}
-.catalog-list div.catalog-card:nth-child(even) {
-	background-color: #d9dadb;
-}
-.catalog-card p {
-	text-align: left;
-}
-.catalog-card p:first-child {
-	margin-block-start: 0;
-}
-.catalog-card p:last-child {
-	margin-block-end: 0;
-}
-.catalog-card {
-	padding: 1em 0.7em;
-}
-.catalog-card-heading {
-	font-size: 110%;
-}
-
 /************************************* Tooltips *******************************/
 
 .tipped:hover {
