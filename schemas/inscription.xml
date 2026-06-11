@@ -541,7 +541,7 @@
                                     <desc> written horizontally from right to left, with characters
                                         in their regular orientation </desc>
                                 </valItem>
-                                <valItem ident="rl-flipper">
+                                <valItem ident="rl-flipped">
                                     <desc> written horizontally from right to left, with characters
                                         mirrored around their vertical axis as in true boustrophedon
                                     </desc>
@@ -2125,7 +2125,7 @@
                                     <desc> written horizontally from right to left, with characters
                                         in their regular orientation </desc>
                                 </valItem>
-                                <valItem ident="rl-flipper">
+                                <valItem ident="rl-flipped">
                                     <desc> written horizontally from right to left, with characters
                                         mirrored around their vertical axis as in true boustrophedon
                                     </desc>
@@ -3540,7 +3540,7 @@
                                     <desc> written horizontally from right to left, with characters
                                         in their regular orientation </desc>
                                 </valItem>
-                                <valItem ident="rl-flipper">
+                                <valItem ident="rl-flipped">
                                     <desc> written horizontally from right to left, with characters
                                         mirrored around their vertical axis as in true boustrophedon
                                     </desc>

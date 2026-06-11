@@ -9835,7 +9835,7 @@ Elements</ref>
                                     <desc> written horizontally from right to left, with characters
                                         in their regular orientation </desc>
                                 </valItem>
-                                <valItem ident="rl-flipper">
+                                <valItem ident="rl-flipped">
                                     <desc> written horizontally from right to left, with characters
                                         mirrored around their vertical axis as in true boustrophedon
                                     </desc>
@@ -12495,7 +12495,7 @@ TEI namespace <code>http://www.tei-c.org/ns/1.0</code> on it, using
                                     <desc> written horizontally from right to left, with characters
                                         in their regular orientation </desc>
                                 </valItem>
-                                <valItem ident="rl-flipper">
+                                <valItem ident="rl-flipped">
                                     <desc> written horizontally from right to left, with characters
                                         mirrored around their vertical axis as in true boustrophedon
                                     </desc>
@@ -12821,7 +12821,7 @@ appropriate for which circumstance.</p>
                                     <desc> written horizontally from right to left, with characters
                                         in their regular orientation </desc>
                                 </valItem>
-                                <valItem ident="rl-flipper">
+                                <valItem ident="rl-flipped">
                                     <desc> written horizontally from right to left, with characters
                                         mirrored around their vertical axis as in true boustrophedon
                                     </desc>
