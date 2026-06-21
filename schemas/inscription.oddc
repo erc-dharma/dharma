@@ -15952,6 +15952,7 @@ généralement dans des textes oraux</desc>
                             <valItem ident="kaw"><desc>Kawi</desc></valItem>
                             <valItem ident="khm"><desc>Khmer</desc></valItem>
                             <valItem ident="kxm"><desc>Khmer, Northern</desc></valItem>
+                            <valItem ident="languageb"><desc>Language B of Sriwijaya</desc></valItem>
                             <valItem ident="lat"><desc>Latin</desc></valItem>
                             <valItem ident="mal"><desc>Malayalam</desc></valItem>
                             <valItem ident="mya"><desc>Burmese</desc></valItem>
@@ -15991,6 +15992,8 @@ généralement dans des textes oraux</desc>
                             <valItem ident="kaw-Latn"><desc>Kawi</desc></valItem>
                             <valItem ident="khm-Latn"><desc>Khmer</desc></valItem>
                             <valItem ident="kxm-Latn"><desc>Khmer, Northern</desc></valItem>
+                            <valItem ident="languageb-Latn"><desc>Language B of Sriwijaya</desc></valItem>
+                            <valItem ident="lat-Latn"><desc>Latin</desc></valItem>
                             <valItem ident="mar-Latn"><desc>Marathi</desc></valItem>
                             <valItem ident="mya-Latn"><desc>Burmese</desc></valItem>
                             <valItem ident="nld-Latn"><desc>Dutch</desc></valItem>
