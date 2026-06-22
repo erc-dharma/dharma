@@ -9,9 +9,9 @@ generated_views = $(patsubst %.md,%.tpl,$(wildcard views/*.md))
 generated_parsers = $(patsubst %.g,%.py,$(wildcard *.g))
 generated = $(generated_tei) $(generated_views) $(generated_parsers)
 generated += static/base.css
-generated += normalize.go
+generated += search/normalize.go
 
-binary = search
+binary = dharma-search
 
 all: $(generated) $(binary)
 
@@ -123,13 +123,13 @@ missing-git-names:
 
 .PHONY: update-repos update-db update-texts deploy-schemas missing-git-names
 
-go_sources = $(sort $(wildcard *.go) normalize.go)
+go_sources = $(sort $(wildcard search/*.go) search/normalize.go)
 
-normalize.go: _normalize.re.go
+search/normalize.go: search/_normalize.re.go
 	re2go -W -Werror --input-encoding utf8 -o $@ $^
 
 $(binary): $(go_sources)
-	go build
+	go build -o dharma-search search
 
 %.py: %.g
 	python3 -m pegen -q $^ -o $@

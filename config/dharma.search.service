@@ -4,7 +4,7 @@
 User=michael
 Group=michael
 WorkingDirectory=/home/michael/dharma
-ExecStart=/home/michael/dharma/search
+ExecStart=/home/michael/dharma/dharma-search
 Restart=on-failure
 
 [Install]
