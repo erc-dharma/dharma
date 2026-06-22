@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
@@ -18,6 +19,95 @@ var titleCollator *collate.Collator
 
 func init() {
 	titleCollator = collate.New(language.Make("en-u-ka-shifted"))
+}
+
+// We use 254 and 255 because these bytes are strictly illegal in UTF-8
+// and will never collide with the results of the transform() function.
+const (
+	GlobQuest byte = 254
+	GlobStar  byte = 255
+)
+
+// compileGlobPattern transforms the query into a byte array.
+// It normalizes literal parts while injecting Wildcard constants.
+func compileGlobPattern(term, mode string) []byte {
+	var pattern []byte
+	var literal strings.Builder
+	for _, r := range term {
+		if r == '*' || r == '?' {
+			if literal.Len() > 0 {
+				pattern = append(pattern, transform(literal.String(), mode)...)
+				literal.Reset()
+			}
+			if r == '*' {
+				pattern = append(pattern, GlobStar)
+			} else {
+				pattern = append(pattern, GlobQuest)
+			}
+		} else {
+			literal.WriteRune(r)
+		}
+	}
+	if literal.Len() > 0 {
+		pattern = append(pattern, transform(literal.String(), mode)...)
+	}
+	return pattern
+}
+
+// advanceNx calculates the next index based on rune size.
+func advanceNx(name string, nx int) int {
+	if nx < len(name) {
+		_, size := utf8.DecodeRuneInString(name[nx:])
+		return nx + size
+	}
+	return nx + 1
+}
+
+// matchGlobAt applies the basic glob algorithm at a specific starting point.
+// It properly advances by an entire code point to respect UTF-8 and encoding.
+func matchGlobAt(pattern []byte, name string, startNx int) (int, bool) {
+	px, nx, nextPx, nextNx := 0, startNx, -1, -1
+	for px < len(pattern) {
+		switch pattern[px] {
+		case GlobQuest:
+			if nx < len(name) {
+				px, nx = px+1, advanceNx(name, nx)
+				continue
+			}
+		case GlobStar:
+			nextPx, nextNx = px, advanceNx(name, nx)
+			px++
+			continue
+		default: // ordinary character
+			if nx < len(name) && name[nx] == pattern[px] {
+				px, nx = px+1, nx+1
+				continue
+			}
+		}
+		if 0 <= nextNx && nextNx <= len(name) { // Mismatch. Restart at the last Star.
+			px, nx = nextPx, nextNx
+			nextNx = advanceNx(name, nx)
+			continue
+		}
+		return -1, false
+	}
+	return nx, true
+}
+
+// findFirstGlobMatch slides the glob algorithm to find the first occurrence.
+func findFirstGlobMatch(pattern []byte, name string, start int) (int, int, bool) {
+	for i := start; i <= len(name); {
+		if end, ok := matchGlobAt(pattern, name, i); ok {
+			return i, end, true
+		}
+		if i < len(name) {
+			_, size := utf8.DecodeRuneInString(name[i:])
+			i += size
+		} else {
+			break
+		}
+	}
+	return 0, 0, false
 }
 
 // Retrieve cached normalizations to avoid repeated processing of string bytes.
@@ -491,6 +581,7 @@ func evalOr(d Document, args []QueryNode) bool {
 }
 
 // Normalizes incoming strings to execute character comparisons identically.
+// Delegates to the Glob algorithm if wildcard characters are detected.
 func containsMatcher(cache *TransformCache, text, term, mode, field string) bool {
 	if mode == "" {
 		if field == "logical" {
@@ -500,8 +591,12 @@ func containsMatcher(cache *TransformCache, text, term, mode, field string) bool
 		}
 	}
 	transText := cache.get(text, mode)
-	transTerm := transform(term, mode)
-	return strings.Contains(transText, transTerm)
+	if !strings.ContainsAny(term, "*?") {
+		return strings.Contains(transText, transform(term, mode))
+	}
+	pattern := compileGlobPattern(term, mode)
+	_, _, ok := findFirstGlobMatch(pattern, transText, 0)
+	return ok
 }
 
 // Route structural queries to corresponding column interpretation branches.
@@ -778,6 +873,7 @@ func processListTermsParity(targets []string, sources []string, caches []*Transf
 type StringMapper func(string) (string, []int)
 
 // Correlate normalized bytes converting coordinates identifying origins globally.
+// Identifies start and end indices for highlighting via Glob if necessary.
 func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2]int {
 	if mode == "" {
 		if field == "logical" {
@@ -786,15 +882,34 @@ func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2
 			mode = "normal"
 		}
 	}
-	transText := cache.get(text, mode)
-	transTerm := transform(term, mode)
-	if !strings.Contains(transText, transTerm) {
-		return nil
+	mapper := func(s string) (string, []int) { return transformWithBounds(s, mode) }
+	if !strings.ContainsAny(term, "*?") {
+		tText, tTerm := cache.get(text, mode), transform(term, mode)
+		if !strings.Contains(tText, tTerm) {
+			return nil
+		}
+		return findOccurrencesWithMapping(text, term, mapper)
 	}
-	mapper := func(s string) (string, []int) {
-		return transformWithBounds(s, mode)
+	return findGlobOccurrences(mapper, text, term, mode)
+}
+
+// findGlobOccurrences loops through glob matches to extract boundaries.
+func findGlobOccurrences(mapper StringMapper, text, term, mode string) [][2]int {
+	transText, bounds := mapper(text)
+	pattern := compileGlobPattern(term, mode)
+	var matches [][2]int
+	start := 0
+	for {
+		mStart, mEnd, ok := findFirstGlobMatch(pattern, transText, start)
+		if !ok {
+			break
+		}
+		if mEnd > mStart { // Ignore zero-length matches for highlighting.
+			matches = append(matches, [2]int{bounds[2*mStart], bounds[2*(mEnd-1)+1]})
+		}
+		start = mStart + 1
 	}
-	return findOccurrencesWithMapping(text, term, mapper)
+	return matches
 }
 
 // Map translated indices calculating genuine length constraints robustly.
@@ -927,6 +1042,7 @@ func buildMatchIter(cache *TransformCache, text string, q QueryNode) MatchIter {
 }
 
 // Constructs functional iterations testing basic strings robustly elegantly seamlessly.
+// Creates a functional iteration compatible with Glob evaluation.
 func buildTermIter(cache *TransformCache, text, term, mode, field string) MatchIter {
 	if mode == "" {
 		mode = "normal"
@@ -934,15 +1050,36 @@ func buildTermIter(cache *TransformCache, text, term, mode, field string) MatchI
 			mode = "normalized"
 		}
 	}
-	tText := cache.get(text, mode)
-	tTerm := transform(term, mode)
-	if !strings.Contains(tText, tTerm) {
-		return func() (int, int, bool) { return 0, 0, false }
+	m := func(s string) (string, []int) { return transformWithBounds(s, mode) }
+	if !strings.ContainsAny(term, "*?") {
+		tText, tTerm := cache.get(text, mode), transform(term, mode)
+		if !strings.Contains(tText, tTerm) {
+			return func() (int, int, bool) { return 0, 0, false }
+		}
+		tText, bounds := m(text)
+		tTerm, _ = m(term)
+		return makeTermIterClosure(tText, tTerm, bounds, len(tTerm), 0)
 	}
-	mapper := func(s string) (string, []int) { return transformWithBounds(s, mode) }
+	return makeGlobIterClosure(m, text, term, mode)
+}
+
+// makeGlobIterClosure constructs an iterator for wildcard sequence matching.
+func makeGlobIterClosure(mapper StringMapper, text, term, mode string) MatchIter {
 	tText, bounds := mapper(text)
-	tTerm, _ = mapper(term)
-	return makeTermIterClosure(tText, tTerm, bounds, len(tTerm), 0)
+	pattern := compileGlobPattern(term, mode)
+	start := 0
+	return func() (int, int, bool) {
+		for {
+			mStart, mEnd, ok := findFirstGlobMatch(pattern, tText, start)
+			if !ok {
+				return 0, 0, false
+			}
+			start = mStart + 1
+			if mEnd > mStart {
+				return bounds[2*mStart], bounds[2*(mEnd-1)+1], true
+			}
+		}
+	}
 }
 
 // Retains state evaluating index strings chronologically reliably accurately dependably.
