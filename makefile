@@ -129,7 +129,7 @@ search/normalize.go: search/_normalize.re.go
 	re2go -W -Werror --input-encoding utf8 -o $@ $^
 
 $(binary): $(go_sources)
-	go build -o dharma-search search
+	go build -o dharma-search ./search
 
 %.py: %.g
 	python3 -m pegen -q $^ -o $@
