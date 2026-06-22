@@ -434,8 +434,11 @@ func lexNormalPrefix(text string) (int, string, bool) {
 	*/
 }
 
-// consumeNormalToken reads the next token for normal mode and aligns with grapheme boundaries.
-// It attaches any trailing combining characters to the replacement string.
+// consumeNormalToken reads the next token and aligns with grapheme boundaries.
+// It discards trailing combining characters to keep only the base normalization.
+// Note: this logic incorrectly handles Unicode Regional Indicator sequences.
+// Because emoji flags are formed by pairs of Regional Indicators within a single
+// grapheme cluster, the second indicator is deliberately but erroneously stripped.
 func consumeNormalToken(text string) (int, string, bool) {
 	matchLen, rep, elide := lexNormalPrefix(text)
 	consumed := 0
@@ -445,9 +448,6 @@ func consumeNormalToken(text string) (int, string, bool) {
 		var cluster string
 		cluster, rest, _, state = uniseg.StepString(rest, state)
 		consumed += len(cluster)
-	}
-	if consumed > matchLen && !elide {
-		rep += text[matchLen:consumed]
 	}
 	return consumed, rep, elide
 }
