@@ -145,33 +145,33 @@ trang := java -jar jars/trang.jar
 
 %.rng: %.oddc
 	python3 xslt.py tei/odds/odd2relax.xsl $^ > $@
-	# curl -F fileToConvert=@$^ https://teigarage.tei-c.org/ege-webservice/Conversions/ODD%3Atext%3Axml/ODDC%3Atext%3Axml/relaxng%3Aapplication%3Axml-relaxng > $@
+	@# curl -F fileToConvert=@$^ https://teigarage.tei-c.org/ege-webservice/Conversions/ODD%3Atext%3Axml/ODDC%3Atext%3Axml/relaxng%3Aapplication%3Axml-relaxng > $@
 
 schematron_dir = schematron/trunk/schematron/code
 
 %.sch: %.oddc
-	# See readme.txt in schematron dir for details on the build process.
-	# First extract schematron rules
-	# curl -F fileToConvert=@$^ https://teigarage.tei-c.org/ege-webservice/Conversions/ODD%3Atext%3Axml/ODDC%3Atext%3Axml/isosch%3Atext%3Axml > $@.stage0
+	@# See readme.txt in schematron dir for details on the build process.
+	@# First extract schematron rules
+	@# curl -F fileToConvert=@$^ https://teigarage.tei-c.org/ege-webservice/Conversions/ODD%3Atext%3Axml/ODDC%3Atext%3Axml/isosch%3Atext%3Axml > $@.stage0
 	python3 xslt.py tei/odds/extract-isosch.xsl $^ > $@.stage0
-	# Compile the XSLT script
-	# We can ignore the stage1 transformation with iso_dsdl_include.xsl.
-	# In the following, -versionmsg:off is to suppress the warning
-	# "Running an XSLT 1 stylesheet with an XSLT 2 processor"
-	# java -jar jars/saxon9.jar -versionmsg:off -s:$@.stage0schematron/iso_abstract_expand.xsl -xsl:schematron/iso_abstract_expand.xsl -o:$@.stage2
+	@# Compile the XSLT script
+	@# We can ignore the stage1 transformation with iso_dsdl_include.xsl.
+	@# In the following, -versionmsg:off is to suppress the warning
+	@# "Running an XSLT 1 stylesheet with an XSLT 2 processor"
+	@# java -jar jars/saxon9.jar -versionmsg:off -s:$@.stage0schematron/iso_abstract_expand.xsl -xsl:schematron/iso_abstract_expand.xsl -o:$@.stage2
 	python3 xslt.py $(schematron_dir)/iso_abstract_expand.xsl $@.stage0 > $@.stage2
 	rm $@.stage0
-	# java -jar jars/saxon9.jar -versionmsg:off -s:$@.stage2 -xsl:schematron/iso_svrl_for_xslt2.xsl -o:$@
+	@# java -jar jars/saxon9.jar -versionmsg:off -s:$@.stage2 -xsl:schematron/iso_svrl_for_xslt2.xsl -o:$@
 	python3 xslt.py $(schematron_dir)/iso_svrl_for_xslt2.xsl $@.stage2 > $@
 	rm $@.stage2
-	# For validating with sch, do java -jar jars/saxon9.jar -xsl:schemas/inscription.sch -s:texts/DHARMA_INSVengiCalukya00015.xml
-	# And look at the nodes //svrl:successful-report
+	@# For validating with sch, do java -jar jars/saxon9.jar -xsl:schemas/inscription.sch -s:texts/DHARMA_INSVengiCalukya00015.xml
+	@# And look at the nodes //svrl:successful-report
 
 %.html: %.oddc
-	# curl -F fileToConvert=@$^ https://teigarage.tei-c.org/ege-webservice/Conversions/ODDC%3Atext%3Axml/oddhtml%3Aapplication%3Axhtml%2Bxml > $@
+	@# curl -F fileToConvert=@$^ https://teigarage.tei-c.org/ege-webservice/Conversions/ODDC%3Atext%3Axml/oddhtml%3Aapplication%3Axhtml%2Bxml > $@
 	python3 xslt.py tei/odds/odd2html.xsl $^ > $@
 
 # Expansion of ODD files is necessary for all other transforms
 %.oddc: %.xml
-	# curl -F fileToConvert=@$^ https://teigarage.tei-c.org/ege-webservice/Conversions/ODD%3Atext%3Axml/ODDC%3Atext%3Axml > $@
+	@# curl -F fileToConvert=@$^ https://teigarage.tei-c.org/ege-webservice/Conversions/ODD%3Atext%3Axml/ODDC%3Atext%3Axml > $@
 	python3 xslt.py tei/odds/odd2odd.xsl $^ > $@
