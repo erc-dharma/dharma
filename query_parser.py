@@ -11,11 +11,9 @@ from pegen.parser import memoize, memoize_left_rec, logger, Parser
 
 
 class Node:
-
 	pass
 
 class And(Node):
-
 	def __init__(self, *children):
 		self.children = list(children)
 
@@ -40,7 +38,6 @@ class And(Node):
 		}
 
 class Or(Node):
-
 	def __init__(self, *children):
 		self.children = list(children)
 
@@ -65,7 +62,6 @@ class Or(Node):
 		}
 
 class Not(Node):
-
 	def __init__(self, child=None):
 		self.child = child
 
@@ -82,68 +78,7 @@ class Not(Node):
 	def serialize(self):
 		return {"op": "not", "arg": self.child.serialize()}
 
-class Seq(Node):
-
-	def __init__(self, left, right, x=0, y=-1):
-		self.left = left
-		self.right = right
-		self.x = x
-		self.y = y
-
-	def __repr__(self):
-		return f"(seq [{self.x}-{self.y}] {self.left!r} {self.right!r})"
-
-	def _complete_fields(self, name, mode=None):
-		# Validate that sequence operands are strictly textual leaves or nested sequences
-		for child in (self.left, self.right):
-			if not isinstance(child, (Field, Seq, Near)):
-				raise ValueError("SEQ operands must be simple strings")
-			if isinstance(child, Field) and child.name is not None:
-				raise ValueError("SEQ operands cannot have explicit fields")
-		self.left = self.left._complete_fields(name, mode)
-		self.right = self.right._complete_fields(name, mode)
-		return self
-
-	def serialize(self):
-		return {
-			"op": "seq",
-			"x": self.x,
-			"y": self.y,
-			"args": [self.left.serialize(), self.right.serialize()],
-		}
-
-class Near(Node):
-
-	def __init__(self, left, right, x=0, y=-1):
-		self.left = left
-		self.right = right
-		self.x = x
-		self.y = y
-
-	def __repr__(self):
-		return f"(near [{self.x}-{self.y}] {self.left!r} {self.right!r})"
-
-	def _complete_fields(self, name, mode=None):
-		# Validate that near operands conform to adjacency constraints
-		for child in (self.left, self.right):
-			if not isinstance(child, (Field, Seq, Near)):
-				raise ValueError("NEAR operands must be simple strings")
-			if isinstance(child, Field) and child.name is not None:
-				raise ValueError("NEAR operands cannot have explicit fields")
-		self.left = self.left._complete_fields(name, mode)
-		self.right = self.right._complete_fields(name, mode)
-		return self
-
-	def serialize(self):
-		return {
-			"op": "near",
-			"x": self.x,
-			"y": self.y,
-			"args": [self.left.serialize(), self.right.serialize()],
-		}
-
 class Field(Node):
-
 	def __init__(self, name, child=None, mode=None):
 		self.name = name
 		self.mode = mode
@@ -154,7 +89,6 @@ class Field(Node):
 		return f"{self.name or '<null>'}{mode_str}:{self.child!r}"
 
 	def _resolve_name_mode(self, name, mode):
-		# Extracted helper to keep functions short and modular
 		final_name = self.name if self.name is not None else name
 		final_mode = self.mode or mode
 		if final_name:
@@ -165,7 +99,6 @@ class Field(Node):
 		return final_name, final_mode
 
 	def _expand_virtual(self, name, mode):
-		# Extracted virtual field conditional checks to stay under length limits
 		if name == "repo":
 			return Or(Field("repo_id", self.child, mode), Field("repo_name", self.child, mode))
 		if name == "author":
@@ -179,7 +112,6 @@ class Field(Node):
 		return None
 
 	def _complete_fields(self, name, mode=None):
-		# Process name and mode using resolution and expansion helper functions
 		final_name, final_mode = self._resolve_name_mode(name, mode)
 		virtual_node = self._expand_virtual(final_name, final_mode)
 		if virtual_node:
@@ -203,7 +135,6 @@ class Field(Node):
 		return self
 
 	def serialize(self):
-		# Serialize field node nesting sub-query if child is a logical node object
 		res = {
 			"op": "field",
 			"field": self.name,
@@ -217,44 +148,28 @@ class Field(Node):
 		return res
 
 class _Null(Node):
-
 	def __repr__(self):
 		return "<null>"
-
 	def _complete_fields(self, name, mode=None):
 		return self
-
 	def serialize(self):
 		return {"op": "null"}
 
 Null = _Null()
 
-def parse_distance(s):
-	# Extract and parse a numeric distance from a string or node
-	try:
-		if hasattr(s, "string"): s = s.string
-		clean_s = str(s).replace("/", "").strip()
-		return (0, int(clean_s))
-	except (ValueError, TypeError):
-		return (0, -1)
-
 def mkbinop(klass, l, r):
-	# Instantiate or append to a binary operation node
 	if isinstance(l, klass):
 		l.children.append(r)
 		return l
 	return klass(l, r)
 
 def mkand(*elems):
-	# Generate an AND logical node
 	return mkbinop(And, *elems)
 
 def mkor(*elems):
-	# Generate an OR logical node
 	return mkbinop(Or, *elems)
 
 def mkmerge(*elems):
-	# Merge multiple logical elements correctly
 	match len(elems):
 		case 0:
 			return Null
@@ -264,7 +179,6 @@ def mkmerge(*elems):
 			return mkand(*elems)
 		case _:
 			return And(*elems)
-
 
 # Keywords and soft keywords are listed at the end of the parser definition.
 class GeneratedParser(Parser):
@@ -387,7 +301,7 @@ class GeneratedParser(Parser):
 
     @memoize
     def NotExpr(self) -> Optional[Any]:
-        # NotExpr: 'NOT' NotExpr | NearExpr
+        # NotExpr: 'NOT' NotExpr | FieldExpr
         mark = self._mark()
         if (
             (self.expect('NOT'))
@@ -397,89 +311,9 @@ class GeneratedParser(Parser):
             return Not ( r );
         self._reset(mark)
         if (
-            (NearExpr := self.NearExpr())
-        ):
-            return NearExpr;
-        self._reset(mark)
-        return None;
-
-    @memoize_left_rec
-    def NearExpr(self) -> Optional[Any]:
-        # NearExpr: NearExpr NearOp SeqExpr | SeqExpr
-        mark = self._mark()
-        if (
-            (r := self.NearExpr())
-            and
-            (op := self.NearOp())
-            and
-            (s := self.SeqExpr())
-        ):
-            return Near ( r , s , op [0] , op [1] );
-        self._reset(mark)
-        if (
-            (SeqExpr := self.SeqExpr())
-        ):
-            return SeqExpr;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def NearOp(self) -> Optional[Any]:
-        # NearOp: 'NEAR' "/" NUMBER | 'NEAR'
-        mark = self._mark()
-        if (
-            (self.expect('NEAR'))
-            and
-            (self.expect("/"))
-            and
-            (dist := self.number())
-        ):
-            return parse_distance ( dist . string );
-        self._reset(mark)
-        if (
-            (self.expect('NEAR'))
-        ):
-            return ( 0 , - 1 );
-        self._reset(mark)
-        return None;
-
-    @memoize_left_rec
-    def SeqExpr(self) -> Optional[Any]:
-        # SeqExpr: SeqExpr SeqOp FieldExpr | FieldExpr
-        mark = self._mark()
-        if (
-            (r := self.SeqExpr())
-            and
-            (op := self.SeqOp())
-            and
-            (s := self.FieldExpr())
-        ):
-            return Seq ( r , s , op [0] , op [1] );
-        self._reset(mark)
-        if (
             (FieldExpr := self.FieldExpr())
         ):
             return FieldExpr;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def SeqOp(self) -> Optional[Any]:
-        # SeqOp: 'SEQ' "/" NUMBER | 'SEQ'
-        mark = self._mark()
-        if (
-            (self.expect('SEQ'))
-            and
-            (self.expect("/"))
-            and
-            (dist := self.number())
-        ):
-            return parse_distance ( dist . string );
-        self._reset(mark)
-        if (
-            (self.expect('SEQ'))
-        ):
-            return ( 0 , - 1 );
         self._reset(mark)
         return None;
 
@@ -561,7 +395,7 @@ class GeneratedParser(Parser):
         self._reset(mark)
         return None;
 
-    KEYWORDS = ('AND', 'NEAR', 'NOT', 'OR', 'SEQ')
+    KEYWORDS = ('AND', 'NOT', 'OR')
     SOFT_KEYWORDS = ()
 
 

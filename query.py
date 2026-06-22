@@ -42,7 +42,7 @@ REVERSE_MAPPING = {
 }
 
 # Add slash character to split operators correctly
-char_token = "():=[]/"
+char_token = "():=[]"
 
 def make_token(s, t):
 	# Assign OP type to delimiters, NUMBER to digits, and NAME to text
@@ -110,9 +110,6 @@ def check_field_validity(node, valid_fields):
 			check_field_validity(child, valid_fields)
 	elif hasattr(node, "child") and node.child:
 		check_field_validity(node.child, valid_fields)
-	elif hasattr(node, "left") and node.left:
-		check_field_validity(node.left, valid_fields)
-		check_field_validity(node.right, valid_fields)
 
 def parse_query(expr, valid_fields=VALID_FIELDS):
 	# Tokenize and parse the query string into a syntax tree
