@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <?xml-model href="http://www.tei-c.org/release/xml/tei/odd/p5odds.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
 <?xml-model href="http://www.tei-c.org/release/xml/tei/odd/p5odds.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
-<!-- Start license statement: do not remove 
-    
+<!-- Start license statement: do not remove
+
 EpiDoc Schema
 Copyright (c) 2008-2014 by all contributors listed in <titleStmt>, below.
 
@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Information about the EpiDoc community can be obtained via 
+Information about the EpiDoc community can be obtained via
 http://epidoc.sf.net.
 
 End license statement: do not remove -->
@@ -187,7 +187,7 @@ End license statement: do not remove -->
         <body>
             <p>EpiDoc TEI Customization starts with modules tei, core, textstructure and header</p>
             <schemaSpec ident="tei-epidoc" docLang="en" prefix="tei_" start="TEI teiCorpus" xml:lang="en"
-                source="https://www.tei-c.org/Vault/P5/4.6.0/xml/tei/odd/p5subset.xml">
+                source="https://www.tei-c.org/Vault/P5/current/xml/tei/odd/p5subset.xml">
 
                 <!--       MODULES USED BY THE EPIDOC SCHEMA       -->
                 <moduleRef key="core"/>
@@ -219,7 +219,7 @@ End license statement: do not remove -->
                     entryFree etym gram gramGrp hom hyph iType lbl mood number oRef orth pRef
                     per pos pron re sense stress subc superEntry syll tns usg xr"/>
 
-                <!--        CHANGED ELEMENT SPECS        --> 
+                <!--        CHANGED ELEMENT SPECS        -->
                 <elementSpec ident="add" module="core" mode="change">
                     <attList>
                         <!-- constraining values of add/@place -->

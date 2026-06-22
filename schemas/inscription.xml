@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0"
-    xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns:rng="http://relaxng.org/ns/structure/1.0"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xml:lang="en" xml:base="foo">
+<TEI xmlns="http://www.tei-c.org/ns/1.0"
+     xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+     xmlns:rng="http://relaxng.org/ns/structure/1.0"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+     xml:lang="en"
+     xml:base="foo">
     <teiHeader>
         <fileDesc>
             <titleStmt>
@@ -74,8 +77,8 @@
         <body>
             <p>DHARMA TEI Customization written by Daniel Balogh and Arlo Griffiths based on&#13;
                 Epidoc&#13; schema. </p>
-            <schemaSpec ident="dharma" docLang="en" start="TEI" xml:lang="en"
-                source="https://www.tei-c.org/Vault/P5/3.6.0/xml/tei/odd/p5subset.xml">
+            <schemaSpec ident="dharma" docLang="en" prefix="tei_" start="TEI" xml:lang="en"
+                        source="https://www.tei-c.org/Vault/P5/current/xml/tei/odd/p5subset.xml">
 
                 <moduleRef key="core"
                     except="addrLine address analytic biblScope biblStruct binaryObject cb distinct divGen emph gb headItem headLabel measureGrp media meeting mentioned postBox postCode relatedItem said soCalled sp street teiCorpus"/>

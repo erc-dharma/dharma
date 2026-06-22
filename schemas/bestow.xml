@@ -25,7 +25,7 @@
         <body>
             <p>TEI Customization  based on DHARMA practices.</p>
             <schemaSpec ident="dharma" docLang="en" prefix="tei_" start="TEI" xml:lang="en"
-                source="https://www.tei-c.org/Vault/P5/3.6.0/xml/tei/odd/p5subset.xml">
+                source="https://www.tei-c.org/Vault/P5/current/xml/tei/odd/p5subset.xml">
                 <!--source="https://svn.code.sf.net/p/epidoc/code/trunk/schema/tei-epidoc.xml"
 
                 -->
