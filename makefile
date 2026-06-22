@@ -75,19 +75,21 @@ follow:
 
 .PHONY: start stop status follow
 
-update-repos:
-	@for d in repos/*; do \
-		echo "% $$(basename $$d)"; \
-		git -C $$d pull -q; \
-		sleep 5; \
-	done
-
 # Only keep the latest commit of each repo under ./repos
 shallow-repos:
 	@for d in repos/*; do \
 	echo "% $$(basename $$d)"; \
 		git -C $$d pull -q --depth 1; \
 		git -C $$d gc --prune=all; \
+		sleep 5; \
+	done
+
+.PHONY: shallow-repos
+
+update-repos:
+	@for d in repos/*; do \
+		echo "% $$(basename $$d)"; \
+		git -C $$d pull -q; \
 		sleep 5; \
 	done
 
