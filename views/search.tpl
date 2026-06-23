@@ -7,7 +7,9 @@ Search
 % block body
 
 <p>This interface allows you to look for texts in the DHARMA collection. The
-search form below can be used for filtering results. For help on the query syntax, see <a href="/search-help">here</a>.
+search form below can be used for filtering results. For help on the query syntax, see <a href="/search-help">here</a>.</p>
+
+<p>The database was last updated {{last_updated | format_date}}.</p>
 
 <form action="{{url_for('show_catalog')}}" method="get">
    <div class="search-wrapper">

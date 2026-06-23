@@ -128,13 +128,14 @@ type FacetCollector struct {
 
 // SearchResponse wraps the full result set, including metadata, facets and matches.
 type SearchResponse struct {
-	Count   int         `json:"count"`
-	Offset  int         `json:"offset"`
-	Limit   int         `json:"limit"`
-	Sort    string      `json:"sort"`
-	Query   string      `json:"query"`
-	Facets  interface{} `json:"facets,omitempty"`
-	Matches interface{} `json:"matches"`
+	Count       int         `json:"count"`
+	Offset      int         `json:"offset"`
+	Limit       int         `json:"limit"`
+	Sort        string      `json:"sort"`
+	Query       string      `json:"query"`
+	LastUpdated string      `json:"last_updated,omitempty"`
+	Facets      interface{} `json:"facets,omitempty"`
+	Matches     interface{} `json:"matches"`
 }
 
 // QueryNode represents a single branch or leaf in the parsed AST.
@@ -291,7 +292,8 @@ func processMatch(w http.ResponseWriter, ident, q string, fields []string, prett
 	fetchOriginalTEI(tx, ident, &res)
 	results := []SearchResult{res}
 	enrichMatches(tx, results, []Document{*targetDoc}, fields)
-	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty, nil)
+	lastUp := fetchLastUpdated(tx)
+	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty, nil, lastUp)
 }
 
 // Inject original unparsed XML payload into the response structure.
@@ -300,6 +302,16 @@ func fetchOriginalTEI(tx *sql.Tx, ident string, res *SearchResult) {
 	if err != nil {
 		log.Printf("Error fetching original TEI: %v", err)
 	}
+}
+
+// fetchLastUpdated queries the metadata table to retrieve the latest database modification timestamp.
+func fetchLastUpdated(tx *sql.Tx) string {
+	var val string
+	err := tx.QueryRow("select value from metadata where key = 'last_updated'").Scan(&val)
+	if err != nil {
+		return ""
+	}
+	return val
 }
 
 // Assign required headers to allow cross-origin requests.
@@ -404,7 +416,8 @@ func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, so
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, q)
 	enrichMatches(tx, results, pageDocs, fields)
-	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty, facets)
+	lastUp := fetchLastUpdated(tx)
+	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty, facets, lastUp)
 }
 
 // Compare db state flag to decide if corpus should be refreshed in memory.
@@ -590,14 +603,14 @@ func shouldFetchSource(fields []string) bool {
 }
 
 // Package final structs to write JSON payload efficiently.
-func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool, facets interface{}) {
+func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool, facets interface{}, lastUp string) {
 	var finalMatches interface{} = matches
 	if len(fields) > 0 {
 		finalMatches = filterFields(matches, fields)
 	}
 	resp := SearchResponse{
 		Count: count, Offset: off, Limit: lim,
-		Sort: sortBy, Query: query,
+		Sort: sortBy, Query: query, LastUpdated: lastUp,
 		Facets: facets, Matches: finalMatches,
 	}
 	enc := json.NewEncoder(w)

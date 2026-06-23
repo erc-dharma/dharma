@@ -733,7 +733,8 @@ def query_search_service(query_str, offset=0, limit=20, sort="title", filters=No
 		"match_count": data.get("count", 0),
 		"matches": processed_matches,
 		"sort": data.get("sort", sort),
-		"facets": data.get("facets", {})
+		"facets": data.get("facets", {}),
+		"last_updated": data.get("last_updated", 0)
 	}
 
 def query_match_document(ident, query_str="") \
