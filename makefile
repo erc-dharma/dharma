@@ -25,7 +25,7 @@ forever:
 	@$(MAKE) || true
 	@while inotifywait -qqre modify --exclude '.*sqlite.*' .; do \
 		$(MAKE) || true; \
-		pkill -USR2 -x search || true; \
+		pkill -USR2 -x dharma-search || true; \
 	done
 
 # Usage: make commit-all m="Commit message"
