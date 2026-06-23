@@ -1,0 +1,203 @@
+{
+  "_comment": "Configuration mapping virtual and physical search fields. Fields are sorted alphabetically. The empty string key defines global search behavior, expanding to all searchable elements. A default_mode is specified for each field to explicitly override implicit text normalization behaviors.",
+  "modes": [
+    "normal",
+    "normalized",
+    "exact"
+  ],
+  "fields": {
+    "": {
+      "type": "fieldset",
+      "expand_to": [
+        "author",
+        "bibliography",
+        "editor",
+        "hand",
+        "ident",
+        "lang",
+        "logical",
+        "repo",
+        "script",
+        "summary",
+        "title",
+        "translation"
+      ],
+      "default_mode": "normal"
+    },
+    "author": {
+      "type": "fieldset",
+      "expand_to": [
+        "author.ident",
+        "author.name"
+      ],
+      "db_column": "author",
+      "xpath": "/document/author",
+      "cache": true,
+      "default_mode": "normal"
+    },
+    "author.ident": {
+      "type": "string",
+      "db_column": "author",
+      "parity": 0,
+      "default_mode": "normal"
+    },
+    "author.name": {
+      "type": "string",
+      "db_column": "author",
+      "parity": 1,
+      "default_mode": "normal"
+    },
+    "bibliography": {
+      "type": "string",
+      "db_column": "bibliography",
+      "aliases": [
+        "bibl"
+      ],
+      "xpath": "/document/bibliography",
+      "highlight_xpath": "/document/edition/bibliography",
+      "cache": true,
+      "default_mode": "normal"
+    },
+    "editor": {
+      "type": "fieldset",
+      "expand_to": [
+        "editor.ident",
+        "editor.name"
+      ],
+      "db_column": "editor",
+      "xpath": "/document/editor",
+      "cache": true,
+      "facet_limit": 15,
+      "default_mode": "normal"
+    },
+    "editor.ident": {
+      "type": "string",
+      "db_column": "editor",
+      "parity": 0,
+      "default_mode": "normal"
+    },
+    "editor.name": {
+      "type": "string",
+      "db_column": "editor",
+      "parity": 1,
+      "default_mode": "normal"
+    },
+    "hand": {
+      "type": "string",
+      "db_column": "hand",
+      "xpath": "/document/hand",
+      "cache": true,
+      "default_mode": "normal"
+    },
+    "ident": {
+      "type": "string",
+      "db_column": "ident",
+      "xpath": "/document/identifier",
+      "cache": true,
+      "default_mode": "normal"
+    },
+    "lang": {
+      "type": "fieldset",
+      "expand_to": [
+        "lang.ident",
+        "lang.name"
+      ],
+      "db_column": "lang",
+      "xpath": "/document/languages/language",
+      "cache": true,
+      "facet_limit": 10,
+      "default_mode": "normal"
+    },
+    "lang.ident": {
+      "type": "string",
+      "db_column": "lang",
+      "parity": 0,
+      "default_mode": "normal"
+    },
+    "lang.name": {
+      "type": "string",
+      "db_column": "lang",
+      "parity": 1,
+      "default_mode": "normal"
+    },
+    "logical": {
+      "type": "string",
+      "db_column": "logical",
+      "xpath": "/document/edition/logical",
+      "cache": true,
+      "default_mode": "normalized"
+    },
+    "repo": {
+      "type": "fieldset",
+      "expand_to": [
+        "repo.ident",
+        "repo.name"
+      ],
+      "facet_limit": 20,
+      "default_mode": "normal"
+    },
+    "repo.ident": {
+      "type": "string",
+      "db_column": "repo_id",
+      "xpath": "/document/repository/identifier",
+      "cache": true,
+      "default_mode": "normal"
+    },
+    "repo.name": {
+      "type": "string",
+      "db_column": "repo_name",
+      "xpath": "/document/repository/name",
+      "cache": true,
+      "default_mode": "normal"
+    },
+    "script": {
+      "type": "fieldset",
+      "expand_to": [
+        "script.ident",
+        "script.name"
+      ],
+      "db_column": "script",
+      "xpath": "/document/scripts/script",
+      "cache": true,
+      "facet_limit": 10,
+      "default_mode": "normal"
+    },
+    "script.ident": {
+      "type": "string",
+      "db_column": "script",
+      "parity": 0,
+      "default_mode": "normal"
+    },
+    "script.name": {
+      "type": "string",
+      "db_column": "script",
+      "parity": 1,
+      "default_mode": "normal"
+    },
+    "summary": {
+      "type": "string",
+      "db_column": "summary",
+      "xpath": "/document/summary",
+      "cache": true,
+      "default_mode": "normal"
+    },
+    "title": {
+      "type": "list",
+      "db_column": "title",
+      "xpath": "/document/title",
+      "cache": true,
+      "default_mode": "normal"
+    },
+    "translation": {
+      "type": "string",
+      "db_column": "translation",
+      "aliases": [
+        "trans"
+      ],
+      "xpath": "/document/translation",
+      "highlight_xpath": "/document/edition/translation",
+      "cache": true,
+      "default_mode": "normal"
+    }
+  }
+}

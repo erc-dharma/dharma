@@ -293,11 +293,17 @@ func updateFacet(m map[string]*FacetResult, ident, name string) {
 
 // buildFacetsResponse converts the internal hash maps to arrays grouping the long tail parameters.
 func buildFacetsResponse(col *FacetCollector) *FacetsResponse {
+	getLimit := func(key string) int {
+		if meta, ok := SearchSchema.Fields[key]; ok {
+			return meta.FacetLimit
+		}
+		return 0
+	}
 	return &FacetsResponse{
-		Lang:   limitFacets(sortFacetMap(col.Lang), FacetLimits["lang"]),
-		Script: limitFacets(sortFacetMap(col.Script), FacetLimits["script"]),
-		Editor: limitFacets(sortFacetMap(col.Editor), FacetLimits["editor"]),
-		Repo:   limitFacets(sortFacetMap(col.Repo), FacetLimits["repo"]),
+		Lang:   limitFacets(sortFacetMap(col.Lang), getLimit("lang")),
+		Script: limitFacets(sortFacetMap(col.Script), getLimit("script")),
+		Editor: limitFacets(sortFacetMap(col.Editor), getLimit("editor")),
+		Repo:   limitFacets(sortFacetMap(col.Repo), getLimit("repo")),
 	}
 }
 
@@ -351,97 +357,131 @@ func matchQuery(doc Document, q QueryNode) bool {
 	return true
 }
 
-// matchScopedField resolves specific column demands requested by explicitly targeted prefixes.
+// matchScopedField resolves specific column demands by inspecting the JSON schema type.
+// It dynamically delegates the query to the appropriate evaluation branch.
 func matchScopedField(d Document, q QueryNode) bool {
-	field := strings.ReplaceAll(q.Field, ".", "_")
-	switch field {
-	case "ident", "logical", "summary", "repo_id", "repo_name", "hand", "repo", "translation", "bibliography":
-		return matchScopedSingle(d, q, field)
-	case "title":
-		return matchScopedList(d, q, field)
-	case "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name", "lang", "lang_ident", "lang_name", "script", "script_ident", "script_name":
-		return matchScopedPeople(d, q, field)
+	meta, exists := SearchSchema.Fields[q.Field]
+	if !exists {
+		return false
+	}
+	if meta.Type == "string" && isPeopleColumn(meta.DbColumn) {
+		return matchScopedPeople(d, q, meta.DbColumn, meta.Parity)
+	}
+	if meta.Type == "list" {
+		return matchScopedList(d, q, meta.DbColumn)
+	}
+	if meta.Type == "string" || meta.Type == "fieldset" {
+		return matchScopedSingle(d, q, meta.DbColumn)
 	}
 	return false
+}
+
+// isPeopleColumn checks if the database column represents a flat people array.
+func isPeopleColumn(dbColumn string) bool {
+	switch dbColumn {
+	case "author", "editor", "lang", "script":
+		return true
+	}
+	return false
+}
+
+// getPeopleList maps a schema definition back to the correct slice and cache references safely.
+func getPeopleList(d Document, dbCol string) ([]string, []*TransformCache) {
+	switch dbCol {
+	case "author":
+		return d.Author, d.Cache.Author
+	case "editor":
+		return d.Editor, d.Cache.Editor
+	case "lang":
+		return d.Lang, d.Cache.Lang
+	case "script":
+		return d.Script, d.Cache.Script
+	}
+	return nil, nil
+}
+
+// getStringField maps a simple database string column directly from the document.
+func getStringField(d Document, dbCol string) (string, *TransformCache) {
+	switch dbCol {
+	case "ident":
+		return d.Ident, d.Cache.Ident
+	case "logical":
+		return d.Logical, d.Cache.Logical
+	case "summary":
+		return d.Summary, d.Cache.Summary
+	case "repo_id":
+		return d.RepoID, d.Cache.RepoID
+	case "repo_name":
+		return d.RepoName, d.Cache.RepoName
+	case "hand":
+		return d.Hand, d.Cache.Hand
+	case "translation":
+		return d.Translation, d.Cache.Translation
+	case "bibliography":
+		return d.Bibliography, d.Cache.Bibliography
+	}
+	return "", nil
 }
 
 // matchScopedSingle isolates strict comparisons when user restricts query variables tightly.
-func matchScopedSingle(d Document, q QueryNode, field string) bool {
-	switch field {
-	case "ident":
-		return matchContextQuery([]string{d.Ident}, []*TransformCache{d.Cache.Ident}, *q.Arg, field)
-	case "logical":
-		return matchContextQuery([]string{d.Logical}, []*TransformCache{d.Cache.Logical}, *q.Arg, field)
-	case "summary":
-		return matchContextQuery([]string{d.Summary}, []*TransformCache{d.Cache.Summary}, *q.Arg, field)
-	case "repo_id":
-		return matchContextQuery([]string{d.RepoID}, []*TransformCache{d.Cache.RepoID}, *q.Arg, field)
-	case "repo_name":
-		return matchContextQuery([]string{d.RepoName}, []*TransformCache{d.Cache.RepoName}, *q.Arg, field)
-	case "hand":
-		return matchContextQuery([]string{d.Hand}, []*TransformCache{d.Cache.Hand}, *q.Arg, field)
-	case "translation":
-		return matchContextQuery([]string{d.Translation}, []*TransformCache{d.Cache.Translation}, *q.Arg, field)
-	case "bibliography":
-		return matchContextQuery([]string{d.Bibliography}, []*TransformCache{d.Cache.Bibliography}, *q.Arg, field)
-	case "repo":
-		return matchContextQuery([]string{d.RepoID, d.RepoName}, []*TransformCache{d.Cache.RepoID, d.Cache.RepoName}, *q.Arg, field)
+func matchScopedSingle(d Document, q QueryNode, dbColumn string) bool {
+	if dbColumn == "repo" {
+		return matchContextQuery([]string{d.RepoID, d.RepoName}, []*TransformCache{d.Cache.RepoID, d.Cache.RepoName}, *q.Arg, dbColumn)
 	}
-	return false
+	val, cache := getStringField(d, dbColumn)
+	return matchContextQuery([]string{val}, []*TransformCache{cache}, *q.Arg, dbColumn)
 }
 
 // matchScopedList scans every slice component against target terms sequentially until breaking.
-func matchScopedList(d Document, q QueryNode, field string) bool {
+func matchScopedList(d Document, q QueryNode, dbColumn string) bool {
+	if dbColumn != "title" {
+		return false
+	}
 	for i, item := range d.Title {
 		var c *TransformCache
 		if d.Cache.Title != nil && i < len(d.Cache.Title) {
 			c = d.Cache.Title[i]
 		}
-		if matchContextQuery([]string{item}, []*TransformCache{c}, *q.Arg, field) {
+		if matchContextQuery([]string{item}, []*TransformCache{c}, *q.Arg, dbColumn) {
 			return true
 		}
 	}
 	return false
 }
 
-// matchScopedPeople verifies people constraints while considering identifier offsets directly.
-func matchScopedPeople(d Document, q QueryNode, field string) bool {
-	list, caches := d.Author, d.Cache.Author
-	if strings.HasPrefix(field, "editor") {
-		list, caches = d.Editor, d.Cache.Editor
-	} else if strings.HasPrefix(field, "lang") {
-		list, caches = d.Lang, d.Cache.Lang
-	} else if strings.HasPrefix(field, "script") {
-		list, caches = d.Script, d.Cache.Script
-	}
+// matchScopedPeople verifies constraints while considering identifier parity directly from schema.
+func matchScopedPeople(d Document, q QueryNode, dbColumn string, parity int) bool {
+	list, caches := getPeopleList(d, dbColumn)
 	for i := 0; i < len(list); i += 2 {
 		if i+1 >= len(list) {
 			break
 		}
-		if matchOnePerson(list[i], list[i+1], caches, i, q, field) {
+		var idC, nameC *TransformCache
+		if caches != nil {
+			if i < len(caches) {
+				idC = caches[i]
+			}
+			if i+1 < len(caches) {
+				nameC = caches[i+1]
+			}
+		}
+		if parity == 0 {
+			if matchContextQuery([]string{list[i]}, []*TransformCache{idC}, *q.Arg, q.Field) {
+				return true
+			}
+			continue
+		}
+		if parity == 1 {
+			if matchContextQuery([]string{"", list[i+1]}, []*TransformCache{nil, nameC}, *q.Arg, q.Field) {
+				return true
+			}
+			continue
+		}
+		if matchContextQuery([]string{list[i], list[i+1]}, []*TransformCache{idC, nameC}, *q.Arg, q.Field) {
 			return true
 		}
 	}
 	return false
-}
-
-// matchOnePerson distinguishes identifier from written label to apply searches contextually.
-func matchOnePerson(idStr, nameStr string, caches []*TransformCache, i int, q QueryNode, field string) bool {
-	var idC, nameC *TransformCache
-	if caches != nil {
-		if i < len(caches) {
-			idC = caches[i]
-		}
-		if i+1 < len(caches) {
-			nameC = caches[i+1]
-		}
-	}
-	if strings.HasSuffix(field, "ident") {
-		return matchContextQuery([]string{idStr}, []*TransformCache{idC}, *q.Arg, field)
-	} else if strings.HasSuffix(field, "name") {
-		return matchContextQuery([]string{"", nameStr}, []*TransformCache{nil, nameC}, *q.Arg, field)
-	}
-	return matchContextQuery([]string{idStr, nameStr}, []*TransformCache{idC, nameC}, *q.Arg, field)
 }
 
 // matchContextQuery evaluates structural sub-tree commands respecting the underlying boolean layout.
@@ -560,70 +600,25 @@ func containsMatcher(cache *TransformCache, text, term, mode, field string) bool
 
 // matchField routes structural queries to corresponding column interpretation branches.
 func matchField(doc Document, field, val, mode string) bool {
-	field = strings.ReplaceAll(field, ".", "_")
-	switch field {
-	case "ident", "logical", "summary", "repo_id", "repo_name", "hand", "translation", "bibliography":
-		return matchStringField(doc, field, val, mode)
-	case "title", "author", "author_ident", "author_name", "editor", "editor_ident", "editor_name", "lang", "lang_ident", "lang_name", "script", "script_ident", "script_name":
-		return matchComplexField(doc, field, val, mode)
+	meta, exists := SearchSchema.Fields[field]
+	if !exists {
+		return docMatchesAll(doc, val, mode)
+	}
+	if meta.Type == "string" && !isPeopleColumn(meta.DbColumn) {
+		vStr, c := getStringField(doc, meta.DbColumn)
+		return containsMatcher(c, vStr, val, mode, meta.DbColumn)
+	}
+	if meta.Type == "list" && meta.DbColumn == "title" {
+		return listMatches(doc.Title, doc.Cache.Title, val, mode, meta.DbColumn)
+	}
+	if isPeopleColumn(meta.DbColumn) {
+		list, caches := getPeopleList(doc, meta.DbColumn)
+		if meta.Type == "string" {
+			return listMatchesParity(list, caches, val, mode, meta.DbColumn, meta.Parity)
+		}
+		return listMatches(list, caches, val, mode, meta.DbColumn)
 	}
 	return docMatchesAll(doc, val, mode)
-}
-
-// matchStringField checks for simple occurrences directly across textual attributes dynamically.
-func matchStringField(d Document, field, val, mode string) bool {
-	switch field {
-	case "ident":
-		return containsMatcher(d.Cache.Ident, d.Ident, val, mode, field)
-	case "logical":
-		return containsMatcher(d.Cache.Logical, d.Logical, val, mode, field)
-	case "summary":
-		return containsMatcher(d.Cache.Summary, d.Summary, val, mode, field)
-	case "repo_id":
-		return containsMatcher(d.Cache.RepoID, d.RepoID, val, mode, field)
-	case "repo_name":
-		return containsMatcher(d.Cache.RepoName, d.RepoName, val, mode, field)
-	case "hand":
-		return containsMatcher(d.Cache.Hand, d.Hand, val, mode, field)
-	case "translation":
-		return containsMatcher(d.Cache.Translation, d.Translation, val, mode, field)
-	case "bibliography":
-		return containsMatcher(d.Cache.Bibliography, d.Bibliography, val, mode, field)
-	}
-	return false
-}
-
-// matchComplexField routes nested parameter requests into iteration functions automatically.
-func matchComplexField(d Document, field, val, mode string) bool {
-	switch field {
-	case "title":
-		return listMatches(d.Title, d.Cache.Title, val, mode, field)
-	case "author":
-		return listMatches(d.Author, d.Cache.Author, val, mode, field)
-	case "author_ident":
-		return listMatchesParity(d.Author, d.Cache.Author, val, mode, field, 0)
-	case "author_name":
-		return listMatchesParity(d.Author, d.Cache.Author, val, mode, field, 1)
-	case "editor":
-		return listMatches(d.Editor, d.Cache.Editor, val, mode, field)
-	case "editor_ident":
-		return listMatchesParity(d.Editor, d.Cache.Editor, val, mode, field, 0)
-	case "editor_name":
-		return listMatchesParity(d.Editor, d.Cache.Editor, val, mode, field, 1)
-	case "lang":
-		return listMatches(d.Lang, d.Cache.Lang, val, mode, field)
-	case "lang_ident":
-		return listMatchesParity(d.Lang, d.Cache.Lang, val, mode, field, 0)
-	case "lang_name":
-		return listMatchesParity(d.Lang, d.Cache.Lang, val, mode, field, 1)
-	case "script":
-		return listMatches(d.Script, d.Cache.Script, val, mode, field)
-	case "script_ident":
-		return listMatchesParity(d.Script, d.Cache.Script, val, mode, field, 0)
-	case "script_name":
-		return listMatchesParity(d.Script, d.Cache.Script, val, mode, field, 1)
-	}
-	return false
 }
 
 // docMatchesAll evaluates global requests simultaneously seeking validation anywhere.
@@ -699,27 +694,21 @@ func matchDocument(doc Document, qStr string) SearchResult {
 
 // extractTerms navigates nested AST layers assembling comprehensive search filters.
 func extractTerms(q QueryNode) []QueryTerm {
-	return primitiveExtractTerms(q, "")
+	return primitiveExtractTerms(q)
 }
 
 // primitiveExtractTerms breaks logical statements into primitive strings recursively processing.
-func primitiveExtractTerms(q QueryNode, prefix string) []QueryTerm {
+func primitiveExtractTerms(q QueryNode) []QueryTerm {
 	if q.Op == "field" {
-		currentField := q.Field
-		if currentField == "" {
-			currentField = prefix
-		} else if prefix != "" {
-			currentField = prefix + "_" + currentField
-		}
 		if q.Arg != nil {
-			return primitiveExtractTerms(*q.Arg, currentField)
+			return primitiveExtractTerms(*q.Arg)
 		}
-		return []QueryTerm{{Field: currentField, Value: q.Value, Mode: q.Mode}}
+		return []QueryTerm{{Field: q.Field, Value: q.Value, Mode: q.Mode}}
 	}
 	var terms []QueryTerm
 	if q.Op == "and" || q.Op == "or" {
 		for _, arg := range q.Args {
-			terms = append(terms, primitiveExtractTerms(arg, prefix)...)
+			terms = append(terms, primitiveExtractTerms(arg)...)
 		}
 	}
 	return terms
@@ -759,11 +748,11 @@ func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	processFieldTerms(doc.Cache.Logical, &res.Logical, doc.Logical, termsForFields(terms, "logical"), "logical")
 	processFieldTerms(doc.Cache.Ident, &res.Ident, doc.Ident, termsForFields(terms, "ident"), "ident")
 	processFieldTerms(doc.Cache.Summary, &res.Summary, doc.Summary, termsForFields(terms, "summary"), "summary")
-	processFieldTerms(doc.Cache.RepoID, &res.RepoID, doc.RepoID, termsForFields(terms, "repo_id"), "repo_id")
+	processFieldTerms(doc.Cache.RepoID, &res.RepoID, doc.RepoID, termsForFields(terms, "repo_id", "repo_ident"), "repo_id")
 	processFieldTerms(doc.Cache.RepoName, &res.RepoName, doc.RepoName, termsForFields(terms, "repo_name"), "repo_name")
 	processFieldTerms(doc.Cache.Hand, &res.Hand, doc.Hand, termsForFields(terms, "hand"), "hand")
-	processFieldTerms(doc.Cache.Translation, &res.Translation, doc.Translation, termsForFields(terms, "translation"), "translation")
-	processFieldTerms(doc.Cache.Bibliography, &res.Bibliography, doc.Bibliography, termsForFields(terms, "bibliography"), "bibliography")
+	processFieldTerms(doc.Cache.Translation, &res.Translation, doc.Translation, termsForFields(terms, "translation", "trans"), "translation")
+	processFieldTerms(doc.Cache.Bibliography, &res.Bibliography, doc.Bibliography, termsForFields(terms, "bibliography", "bibl"), "bibliography")
 	processListTerms(res.Title, doc.Title, doc.Cache.Title, termsForFields(terms, "title"), "title")
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_ident"), "author_ident", 0)
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
@@ -863,7 +852,7 @@ func findGlobOccurrences(mapper StringMapper, text, term, mode string) [][2]int 
 		if !ok {
 			break
 		}
-		if mEnd > mStart { // Ignore zero-length matches for highlighting.
+		if mEnd > mStart {
 			matches = append(matches, [2]int{bounds[2*mStart], bounds[2*(mEnd-1)+1]})
 		}
 		start = mStart + 1

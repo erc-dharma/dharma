@@ -1,45 +1,24 @@
-import argparse, tokenize, traceback, difflib
+import argparse, tokenize, traceback, difflib, json
 from pegen.tokenizer import Tokenizer
 from dharma import common, tree, query_parser
+
+# Load the unified search schema to share configuration across the system
+with open(common.path_of("search.json"), "r") as f:
+	SEARCH_SCHEMA = json.load(f)
 
 class InvalidQuery(Exception):
 
 	pass
 
-VALID_FIELDS = {
-	"ident",
-	"repo", "repo.ident", "repo.name",
-	"title",
-	"editor", "editor.ident", "editor.name",
-	"author", "author.ident", "author.name",
-	"summary",
-	"hand",
-	"translation",
-	"bibliography",
-	"logical",
-	"lang", "lang.ident", "lang.name",
-	"script", "script.ident", "script.name"
-}
+def get_valid_fields():
+	# Extract all valid fields and their aliases from the JSON schema
+	fields = set(SEARCH_SCHEMA["fields"].keys())
+	for meta in SEARCH_SCHEMA["fields"].values():
+		if "aliases" in meta:
+			fields.update(meta["aliases"])
+	return fields
 
-# Map shorthand aliases to their canonical field names to allow brief queries
-FIELD_ALIASES = {
-	"trans": "translation",
-	"bibl": "bibliography"
-}
-
-# Maps internal database fields back to their dotted representation
-REVERSE_MAPPING = {
-	"repo_id": "repo.ident",
-	"repo_name": "repo.name",
-	"editor_ident": "editor.ident",
-	"editor_name": "editor.name",
-	"author_ident": "author.ident",
-	"author_name": "author.name",
-	"lang_ident": "lang.ident",
-	"lang_name": "lang.name",
-	"script_ident": "script.ident",
-	"script_name": "script.name"
-}
+VALID_FIELDS = get_valid_fields()
 
 # Add slash character to split operators correctly
 char_token = "():=[]"
@@ -94,17 +73,14 @@ def tokenize_query(s):
 		start=(1, 0), end=(1, 0), line="")
 
 def check_field_validity(node, valid_fields):
-	# Traverse the syntax tree recursively to ensure all fields exist and resolve aliases
+	# Traverse the syntax tree recursively to ensure all fields exist
 	# Raise an InvalidQuery with spelling suggestions if needed
 	if isinstance(node, query_parser.Field) and node.name:
-		if node.name in FIELD_ALIASES:
-			node.name = FIELD_ALIASES[node.name]
-		orig_name = REVERSE_MAPPING.get(node.name, node.name)
-		if orig_name not in valid_fields:
-			matches = difflib.get_close_matches(orig_name, list(valid_fields) + list(FIELD_ALIASES), n=1)
+		if node.name not in valid_fields:
+			matches = difflib.get_close_matches(node.name, list(valid_fields), n=1)
 			if matches:
-				raise InvalidQuery(f"Unknown search field: '{orig_name}'. Did you mean '{matches[0]}'?")
-			raise InvalidQuery(f"Unknown search field: '{orig_name}'")
+				raise InvalidQuery(f"Unknown search field: '{node.name}'. Did you mean '{matches[0]}'?")
+			raise InvalidQuery(f"Unknown search field: '{node.name}'")
 	if hasattr(node, "children"):
 		for child in node.children:
 			check_field_validity(child, valid_fields)
@@ -139,6 +115,5 @@ if __name__ == "__main__":
 		for tok in tokenize_query(args.query):
 			print(tok)
 	else:
-		import json
 		r = parse_query(args.query)
 		print(json.dumps(r.serialize(), ensure_ascii=False, indent=4))

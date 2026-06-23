@@ -9,11 +9,20 @@ from typing import Any, Optional
 
 from pegen.parser import memoize, memoize_left_rec, logger, Parser
 
+import json
+import copy
+from dharma import common
+
+# Load the search schema to resolve virtual fields during syntactic parsing
+with open(common.path_of("search.json"), "r") as f:
+	SEARCH_SCHEMA = json.load(f)
 
 class Node:
+
 	pass
 
 class And(Node):
+
 	def __init__(self, *children):
 		self.children = list(children)
 
@@ -38,6 +47,7 @@ class And(Node):
 		}
 
 class Or(Node):
+
 	def __init__(self, *children):
 		self.children = list(children)
 
@@ -62,6 +72,7 @@ class Or(Node):
 		}
 
 class Not(Node):
+
 	def __init__(self, child=None):
 		self.child = child
 
@@ -79,6 +90,7 @@ class Not(Node):
 		return {"op": "not", "arg": self.child.serialize()}
 
 class Field(Node):
+
 	def __init__(self, name, child=None, mode=None):
 		self.name = name
 		self.mode = mode
@@ -89,49 +101,41 @@ class Field(Node):
 		return f"{self.name or '<null>'}{mode_str}:{self.child!r}"
 
 	def _resolve_name_mode(self, name, mode):
+		# Extract field metadata to determine implicit text normalization behaviors
 		final_name = self.name if self.name is not None else name
 		final_mode = self.mode or mode
 		if final_name:
 			parts = final_name.split('.')
-			if len(parts) > 1 and parts[-1] in {"normal", "exact", "normalized"}:
+			if len(parts) > 1 and parts[-1] in SEARCH_SCHEMA.get("modes", []):
 				final_mode = parts.pop()
-			final_name = ".".join(parts)
+				final_name = ".".join(parts)
+			field_meta = SEARCH_SCHEMA["fields"].get(final_name, {})
+			if not final_mode:
+				final_mode = field_meta.get("default_mode", "normal")
 		return final_name, final_mode
 
 	def _expand_virtual(self, name, mode):
-		if name == "repo":
-			return Or(Field("repo_id", self.child, mode), Field("repo_name", self.child, mode))
-		if name == "author":
-			return Or(Field("author_ident", self.child, mode), Field("author_name", self.child, mode))
-		if name == "editor":
-			return Or(Field("editor_ident", self.child, mode), Field("editor_name", self.child, mode))
-		if name == "lang":
-			return Or(Field("lang_ident", self.child, mode), Field("lang_name", self.child, mode))
-		if name == "script":
-			return Or(Field("script_ident", self.child, mode), Field("script_name", self.child, mode))
+		# Convert virtual fieldsets into logical disjunctions using deep copies to avoid shared state mutations
+		meta = SEARCH_SCHEMA["fields"].get(name, {})
+		if meta.get("type") == "fieldset" and "expand_to" in meta:
+			children = [Field(sub, copy.deepcopy(self.child), mode) for sub in meta["expand_to"]]
+			return Or(*children)
 		return None
 
 	def _complete_fields(self, name, mode=None):
+		# Resolve aliases and expand virtual nodes structurally
 		final_name, final_mode = self._resolve_name_mode(name, mode)
+		for k, v in SEARCH_SCHEMA["fields"].items():
+			if final_name in v.get("aliases", []):
+				final_name = k
+				break
 		virtual_node = self._expand_virtual(final_name, final_mode)
 		if virtual_node:
 			return virtual_node._complete_fields("", None)
-		mapping = {
-			"repo.ident": "repo_id",
-			"repo.name": "repo_name",
-			"author.ident": "author_ident",
-			"author.name": "author_name",
-			"editor.ident": "editor_ident",
-			"editor.name": "editor_name",
-			"lang.ident": "lang_ident",
-			"lang.name": "lang_name",
-			"script.ident": "script_ident",
-			"script.name": "script_name"
-		}
-		self.name = mapping.get(final_name, final_name)
+		self.name = final_name
 		self.mode = final_mode
 		if not isinstance(self.child, str):
-			self.child = self.child._complete_fields("", final_mode)
+			self.child = self.child._complete_fields(self.name, final_mode)
 		return self
 
 	def serialize(self):
@@ -148,10 +152,13 @@ class Field(Node):
 		return res
 
 class _Null(Node):
+
 	def __repr__(self):
 		return "<null>"
+
 	def _complete_fields(self, name, mode=None):
 		return self
+
 	def serialize(self):
 		return {"op": "null"}
 

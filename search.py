@@ -1,21 +1,21 @@
-# TODO Add a "status" search field to catalog to filter by error status.
-
 import sys
 import logging
 import unicodedata
 import requests
+import json
 from dharma import common, tree, query
 import icu
 import re
 
-# Unicode Private Use Area characters for search markers
 MARKER_START = "\uE000"
 MARKER_END = "\uE001"
 GO_SERVER_URL = "http://localhost:8026/search"
-# Definitions based on internal.rnc (excluding 'head')
 BLOCK_TAGS = {"para", "verse", "quote", "dlist", "elist"}
-# Structural parents allowed for a snippet root
 VALID_PARENTS = {"div", "logical", "hand"}
+
+# Load schema to drive extraction and highlighting dynamically instead of hardcoded maps
+with open(common.path_of("search.json"), "r") as f:
+	SEARCH_SCHEMA = json.load(f)
 
 class InternalWalker:
 
@@ -700,73 +700,19 @@ def get_flat_people(xpath):
 		return res
 	return extractor
 
-SEARCH_CONFIG = {
-	"ident": {
-		"extractor": extract_one_text("/document/identifier"),
-		"type": "string",
-		"highlight": "/document/identifier"
-	},
-	"logical": {
-		"extractor": extract_one_text("/document/edition/logical"),
-		"type": "string",
-		"highlight": "/document/edition/logical"
-	},
-	"translation": {
-		"extractor": extract_one_text("/document/translation"),
-		"type": "string",
-		"highlight": "/document/edition/translation"
-	},
-	"bibliography": {
-		"extractor": extract_one_text("/document/bibliography"),
-		"type": "string",
-		"highlight": "/document/edition/bibliography"
-	},
-	"title": {
-		"extractor": extract_list_text("/document/title"),
-		"type": "list",
-		"highlight": "/document/title"
-	},
-	"summary": {
-		"extractor": extract_one_text("/document/summary"),
-		"type": "string",
-		"highlight": "/document/summary"
-	},
-	"repo_id": {
-		"extractor": extract_one_text("/document/repository/identifier"),
-		"type": "string",
-		"highlight": "/document/repository/identifier"
-	},
-	"repo_name": {
-		"extractor": extract_one_text("/document/repository/name"),
-		"type": "string",
-		"highlight": "/document/repository/name"
-	},
-	"hand": {
-		"extractor": extract_one_text("/document/hand"),
-		"type": "string",
-		"highlight": "/document/hand"
-	},
-	"author": {
-		"extractor": get_flat_people("/document/author"),
-		"type": "people",
-		"highlight": "/document/author"
-	},
-	"editor": {
-		"extractor": get_flat_people("/document/editor"),
-		"type": "people",
-		"highlight": "/document/editor"
-	},
-	"lang": {
-		"extractor": get_flat_people("/document/languages/language"),
-		"type": "people",
-		"highlight": "/document/languages/language"
-	},
-	"script": {
-		"extractor": get_flat_people("/document/scripts/script"),
-		"type": "people",
-		"highlight": "/document/scripts/script"
-	}
-}
+def _get_extractor(config):
+	# Instanciate the appropriate text extractor based on the field type defined in JSON
+	xpath = config.get("xpath")
+	if not xpath:
+		return lambda doc: ""
+	t = config.get("type")
+	if t == "fieldset" and "expand_to" in config:
+		return get_flat_people(xpath)
+	if t == "string":
+		return extract_one_text(xpath)
+	if t == "list":
+		return extract_list_text(xpath)
+	return lambda doc: ""
 
 def query_search_service(query_str, offset=0, limit=20, sort="title", filters=None):
 	# Query the backend search service and process occurrences including dynamic facets
@@ -774,7 +720,6 @@ def query_search_service(query_str, offset=0, limit=20, sort="title", filters=No
 	ast = query.parse_query(norm_query)
 	q_json = common.to_json(ast.serialize())
 	params = {"q": q_json, "offset": offset, "limit": limit, "sort": sort}
-	# Merge active facet filters into the request parameters to instruct the Go server
 	if filters:
 		for key, values in filters.items():
 			params[key] = values
@@ -782,7 +727,6 @@ def query_search_service(query_str, offset=0, limit=20, sort="title", filters=No
 	resp.raise_for_status()
 	data = resp.json()
 	processed_matches = process_matches(data.get("matches", []))
-	# Extract the computed facets from the Go response to pass them to the template
 	return {
 		"query": query_str,
 		"match_count": data.get("count", 0),
@@ -844,17 +788,22 @@ def process_single_match(item):
 		return None
 
 def highlight_document(doc, item_data):
-	# Traverse configured fields and apply coordinated highlighting
+	# Traverse configured fields and apply coordinated highlighting based on schema
 	counter = [0]
-	for field, config in SEARCH_CONFIG.items():
-		xpath = config.get("highlight")
-		if not xpath: continue
-		marked_data = item_data.get(field)
-		if not marked_data: continue
+	for field, config in SEARCH_SCHEMA["fields"].items():
+		xpath = config.get("highlight_xpath") or config.get("xpath")
+		if not xpath:
+			continue
+		db_column = config.get("db_column")
+		if not db_column:
+			continue
+		marked_data = item_data.get(db_column)
+		if not marked_data:
+			continue
 		nodes = list(doc.find(xpath))
 		if nodes:
 			_dispatch_highlight(nodes, marked_data, config, counter)
-		if field == "script":
+		if db_column == "script":
 			_highlight_language_scripts(doc, marked_data, counter)
 
 def _highlight_language_scripts(doc, marked_data, counter):
@@ -882,9 +831,10 @@ def _highlight_language_scripts(doc, marked_data, counter):
 
 def _dispatch_highlight(nodes, marked_data, config, counter):
 	# Route the highlighting procedure according to field topography
-	if config["type"] == "list" and isinstance(marked_data, list):
+	t = config.get("type")
+	if t == "list" and isinstance(marked_data, list):
 		apply_list_highlight(nodes, marked_data, counter)
-	elif config["type"] == "people" and isinstance(marked_data, list):
+	elif t == "fieldset" and isinstance(marked_data, list):
 		apply_people_highlight(nodes, marked_data, counter)
 	else:
 		apply_string_highlight(nodes, marked_data, counter)
@@ -915,11 +865,13 @@ def apply_string_highlight(nodes, marked_string, counter):
 		hl.highlight(nodes[0])
 
 def prepare_search_data(doc):
-	# Compile normalized structural fields for database insertion
+	# Compile normalized structural fields for database insertion iteratively from schema
 	data = {}
-	for field, config in SEARCH_CONFIG.items():
-		extractor = config["extractor"]
-		data[field] = extractor(doc)
+	for field, config in SEARCH_SCHEMA["fields"].items():
+		db_column = config.get("db_column")
+		if db_column and db_column not in data:
+			extractor = _get_extractor(config)
+			data[db_column] = extractor(doc)
 	data["source"] = doc.xml(add_xml_prefix=False)
 	return data
 

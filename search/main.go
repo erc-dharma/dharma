@@ -22,31 +22,24 @@ const (
 	MarkerEnd   = "\uE001"
 )
 
-// CacheConfig enables in-memory transformation caching for fields to speed up search.
-var CacheConfig = map[string]bool{
-	"logical":      true,
-	"ident":        true,
-	"title":        true,
-	"summary":      true,
-	"repo_id":      true,
-	"repo_name":    true,
-	"hand":         true,
-	"translation":  true,
-	"bibliography": true,
-	"author":       true,
-	"editor":       true,
-	"lang":         true,
-	"script":       true,
+// FieldMeta defines the configuration properties for a single search field.
+type FieldMeta struct {
+	Type        string   `json:"type"`
+	ExpandTo    []string `json:"expand_to,omitempty"`
+	DbColumn    string   `json:"db_column,omitempty"`
+	Parity      int      `json:"parity,omitempty"`
+	FacetLimit  int      `json:"facet_limit,omitempty"`
+	DefaultMode string   `json:"default_mode,omitempty"`
+	Cache       bool     `json:"cache,omitempty"`
 }
 
-// FacetLimits defines the maximum number of items per facet category.
-// It groups the long tail into an 'Other' fallback category to avoid UI clutter.
-var FacetLimits = map[string]int{
-	"lang":   10,
-	"script": 10,
-	"editor": 15,
-	"repo":   20,
+// SchemaConfig holds the unified definitions for the search engine loaded from JSON.
+type SchemaConfig struct {
+	Modes  []string             `json:"modes"`
+	Fields map[string]FieldMeta `json:"fields"`
 }
+
+var SearchSchema SchemaConfig
 
 // TransformCache stores normalized string states to prevent redundant processing.
 type TransformCache struct {
@@ -170,13 +163,29 @@ var (
 	db              *sql.DB
 )
 
+// loadSchema reads and parses the JSON configuration file into memory on startup.
+func loadSchema(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	return decoder.Decode(&SearchSchema)
+}
+
 // Start the core DHARMA text engine.
 func main() {
 	log.Printf("DHARMA Search Server starting (PID: %d)...", os.Getpid())
-	dbPath, err := getDBPath()
+	ex, err := os.Executable()
 	if err != nil {
 		log.Fatalf("Path error: %v", err)
 	}
+	schemaPath := filepath.Join(filepath.Dir(ex), "search.json")
+	if err := loadSchema(schemaPath); err != nil {
+		log.Fatalf("Schema error: %v", err)
+	}
+	dbPath := filepath.Join(filepath.Dir(ex), "dbs", "texts.sqlite")
 	if err := initDB(dbPath); err != nil {
 		log.Fatalf("DB error: %v", err)
 	}
@@ -486,46 +495,46 @@ func scanOne(rows *sql.Rows) (Document, error) {
 	return doc, nil
 }
 
-// Initialize structural caches to speed up text pattern matching routines.
+// Initialize structural caches dynamically guided by the loaded JSON schema.
 func buildDocCache(d *Document) *DocCache {
 	c := &DocCache{}
-	if CacheConfig["logical"] {
+	if meta, ok := SearchSchema.Fields["logical"]; ok && meta.Cache {
 		c.Logical = &TransformCache{}
 	}
-	if CacheConfig["ident"] {
+	if meta, ok := SearchSchema.Fields["ident"]; ok && meta.Cache {
 		c.Ident = &TransformCache{}
 	}
-	if CacheConfig["summary"] {
+	if meta, ok := SearchSchema.Fields["summary"]; ok && meta.Cache {
 		c.Summary = &TransformCache{}
 	}
-	if CacheConfig["repo_id"] {
+	if meta, ok := SearchSchema.Fields["repo.ident"]; ok && meta.Cache {
 		c.RepoID = &TransformCache{}
 	}
-	if CacheConfig["repo_name"] {
+	if meta, ok := SearchSchema.Fields["repo.name"]; ok && meta.Cache {
 		c.RepoName = &TransformCache{}
 	}
-	if CacheConfig["hand"] {
+	if meta, ok := SearchSchema.Fields["hand"]; ok && meta.Cache {
 		c.Hand = &TransformCache{}
 	}
-	if CacheConfig["translation"] {
+	if meta, ok := SearchSchema.Fields["translation"]; ok && meta.Cache {
 		c.Translation = &TransformCache{}
 	}
-	if CacheConfig["bibliography"] {
+	if meta, ok := SearchSchema.Fields["bibliography"]; ok && meta.Cache {
 		c.Bibliography = &TransformCache{}
 	}
-	if CacheConfig["title"] {
+	if meta, ok := SearchSchema.Fields["title"]; ok && meta.Cache {
 		c.Title = buildListCache(len(d.Title))
 	}
-	if CacheConfig["author"] {
+	if meta, ok := SearchSchema.Fields["author"]; ok && meta.Cache {
 		c.Author = buildListCache(len(d.Author))
 	}
-	if CacheConfig["editor"] {
+	if meta, ok := SearchSchema.Fields["editor"]; ok && meta.Cache {
 		c.Editor = buildListCache(len(d.Editor))
 	}
-	if CacheConfig["lang"] {
+	if meta, ok := SearchSchema.Fields["lang"]; ok && meta.Cache {
 		c.Lang = buildListCache(len(d.Lang))
 	}
-	if CacheConfig["script"] {
+	if meta, ok := SearchSchema.Fields["script"]; ok && meta.Cache {
 		c.Script = buildListCache(len(d.Script))
 	}
 	return c
