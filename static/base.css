@@ -840,6 +840,10 @@ fieldset {
   min-width: 1em; }
 
 /*************************************** Varia ********************************/
+img {
+  max-width: 100%;
+  height: auto; }
+
 .prosody {
   letter-spacing: 0.3em; }
 

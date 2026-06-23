@@ -942,6 +942,12 @@ fieldset {
 
 /*************************************** Varia ********************************/
 
+// Make sure images are not too large.
+img {
+	max-width: 100%;
+	height: auto;
+}
+
 .prosody {
 	letter-spacing: 0.3em;
 }
