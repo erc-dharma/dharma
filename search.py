@@ -725,6 +725,7 @@ def query_search_service(query_str, offset=0, limit=20, sort="title", filters=No
 			params[key] = values
 	resp = requests.get(GO_SERVER_URL, params=params)
 	resp.raise_for_status()
+	logging.debug(resp.url)
 	data = resp.json()
 	processed_matches = process_matches(data.get("matches", []))
 	return {
