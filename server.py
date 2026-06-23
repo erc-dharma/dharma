@@ -342,6 +342,7 @@ def search_parallels():
 		orig_text=orig_text,
 		total=total)
 
+# We keep this for legacy reasons (Manu uses it).
 @app.get("/display")
 @common.transaction("texts")
 def display_list():
@@ -599,11 +600,11 @@ def handle_github():
 	return ""
 
 # Legacy
-@app.get("/search")
-def redirect_to_texts():
-	return flask.redirect("/texts")
-
 @app.get("/texts")
+def redirect_to_search():
+	return flask.redirect("/search")
+
+@app.get("/search")
 def show_catalog():
 	# Retrieve query parameters with default values for pagination and sorting
 	query = flask.request.args.get("q", "").strip()

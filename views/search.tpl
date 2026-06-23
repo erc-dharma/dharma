@@ -1,7 +1,7 @@
 % extends "base.tpl"
 
 % block title
-Texts
+Search
 % endblock
 
 % block body

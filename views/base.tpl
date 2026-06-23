@@ -25,63 +25,50 @@
 <a id="dharma-logo" href="/"><img alt="DHARMA Logo" src="/dharma_bar_logo.svg"></a>
 <a id="menu-toggle"><i class="fa-solid fa-caret-down fa-fw"></i></a>
 <ul id="menu" class="hidden">
-   <li>
-      <a href="/repositories">
-      <i class="fa-brands fa-git-alt"></i> Repositories</a>
+   <li class="submenu">
+      <a href="#">About <i class="fa-solid fa-caret-down"></i></a>
+      <ul class="hidden">
+         <li><a href="/about">About this resource and the DHARMA project</a></li>
+         <li><a href="/documentation">Documentation</a></li>
+         <li><a href="/contributors">Contributors</a></li>
+         <li><a href="/repositories">Repositories</a></li>
+         <li><a href="/languages">Languages</a></li>
+         <li><a href="/scripts">Scripts</a></li>
+      </ul>
    </li>
+
    <li>
-      <a href="/texts">
-      <i class="fa-regular fa-file-lines"></i> Texts</a>
+      <a href="/search">Search</a>
    </li>
+
    <li class="submenu">
       <a href="#">Conventions <i class="fa-solid fa-caret-down"></i></a>
       <ul class="hidden">
          <li><a href="/editorial-conventions">Editorial Conventions</a></li>
          <li><a href="/prosody">Prosodic Patterns</a></li>
-	 <li><a href="/glyphs">Glyph Taxonomy</a></li>
+         <li><a href="/glyphs">Glyph Taxonomy</a></li>
       </ul>
    </li>
+
    <li class="submenu">
       <a href="#">Resources <i class="fa-solid fa-caret-down"></i></a>
       <ul class="hidden">
-         <li><a href="/bibliography">Bibliography</a></li>
-         <li><a href="/bestow">BESTOW</a></li>
+         <li><a href="/bestow">Benedictory and Exhortative Sanskrit Stanzas</a></li>
+         <li><a href="https://erc-dharma.github.io/arie">Annual Reports on Indian Epigraphy</a></li>
+         <li><a href="https://erc-dharma.github.io/tfb-ec-epigraphy/">Epigraphia Carnatica</a></li>
+         <li><a href="https://erc-dharma.github.io/output-roej/display-roej.html">Répertoire onomastique Java</a></li>
+         <li><a href="https://erc-dharma.github.io/tfa-sii-epigraphy/index-sii.html">South Indian Inscriptions</a></li>
          <li><a href="/development-of-tamil-fractions">Development of Tamil Fractions</a></li>
          <li><a href="/chola-fractional-calculations">Chola Fractional Calculations</a></li>
-         <li><a href="https://erc-dharma.github.io/arie">ARIE</a></li>
-         <li><a href="https://erc-dharma.github.io/tfb-ec-epigraphy/">Epigraphia Carnatica</a></li>
-         <li><a href="https://erc-dharma.github.io/output-roej/display-roej.html">Répertoire Onomastique Java</a></li>
-         <li><a href="https://erc-dharma.github.io/tfa-sii-epigraphy/index-sii.html">South-Indian Inscriptions</a></li>
-	 <li><a href="/documentation">Documentation</a></li>
       </ul>
    </li>
-   <li>
-      <a href="/parallels">
-      <i class="fa-solid fa-grip-lines-vertical"></i> Parallels</a>
-   </li>
+
    <li class="submenu">
       <a href="#">Internal <i class="fa-solid fa-caret-down"></i></a>
       <ul class="hidden">
-         <li>
-            <a href="{{url_for('show_texts_errors')}}">
-            <i class="fa-solid fa-bug"></i> Texts Errors</a>
-         </li>
-         <li>
-            <a href="{{url_for('display_biblio_errors')}}">
-            <i class="fa-solid fa-bug"></i> Bibliography Errors</a>
-         </li>
-         <li>
-            <a href="{{url_for('display_list')}}">Display List</a>
-         </li>
-         <li>
-            <a href="/languages">Languages</a>
-         </li>
-	 <li>
-            <a href="/scripts">Scripts</a>
-	 </li>
-	 <li>
-            <a href="/contributors">Contributors</a>
-	 </li>
+         <li><a href="/bibliography-errors">Bibliography errors</a></li>
+         <li><a href="/texts-errors">Texts errors</a></li>
+         <li><a href="/parallels">Parallels</a></li>
       </ul>
    </li>
 </ul>
