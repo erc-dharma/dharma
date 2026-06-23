@@ -1068,7 +1068,6 @@ def _fix_physical_inlines(t):
 
 def _to_physical(t):
 	# Expand views early to expose hidden milestones
-	_expand_views(t, "physical")
 	_unwrap_for_physical(t)
 	_fix_spaces(t)
 	_fix_physical_inlines(t)
@@ -1311,53 +1310,43 @@ def _move_up_from_para(node):
 	if len(right) > 0:
 		node.insert_after(right)
 
-def _expand_views(root: tree.Branch, keep_view=None):
+def _expand_views(t: tree.Tree):
 	"""Expands "views" element. They have the form:
+
 		<views>
 			<physical>X</physical>
 			<logical>Y</logical>
 			<full>Z</full>
 		</views>
+
 	And we end up with just X, Y or Z, depending on whether the node is a
 	descendant of //edition/physical, //edition/logical or //edition/full.
 	"views" nodes elsewhere in the document are treated as if they were
 	under //edition/full viz. we replace them with Z.
+
 	XXX note that the fact we expand it after the rest might prevent proper
-	positioning of milestones, etc. deal with this.
+	positioning of milestones, etc. Should deal with this.
 	"""
-	views = ("physical", "logical", "full")
-	keep_view = _determine_keep_view(root, keep_view, views)
-	# Iterate over a list of direct children to safely modify the tree while iterating.
-	for node in list(root):
-		if not isinstance(node, tree.Tag):
+	for view in ("physical", "logical", "full"):
+		root = t.first(f"/document/edition/{view}")
+		if not root:
 			continue
-		if node.name != "views":
-			_expand_views(node, keep_view)
-			continue
-		_process_views_node(node, keep_view, views)
+		_expand_views_inner(root, view)
 
-def _determine_keep_view(root: tree.Branch, keep_view: str | None, views: tuple) -> str:
-	# Resolve which view to keep, either from the parameter or the node's context.
-	if keep_view:
-		return keep_view
-	if isinstance(root, tree.Tag) and root.name in views:
-		return root.name
-	return "full"
-
-def _process_views_node(node: tree.Tag, keep_view: str, views: tuple):
-	# Process each target view and recursively expand nested views before unwrapping.
-	for view in views:
-		target = node.first(view)
-		if target is None:
+def _expand_views_inner(root, view):
+	for child in list(root):
+		if not isinstance(child, tree.Tag):
 			continue
-		assert isinstance(target, tree.Tag)
-		if view == keep_view:
-			# Safely process any nested views before we unwrap the current target.
-			_expand_views(target, keep_view)
-			target.unwrap()
+		if child.name == "views":
+			for grand_child in list(child):
+				if grand_child.name == view:
+					_expand_views_inner(grand_child, view)
+					grand_child.unwrap()
+				else:
+					grand_child.delete()
+			child.unwrap()
 		else:
-			target.delete()
-	node.unwrap()
+			_expand_views_inner(child, view)
 
 def _process_edition(t: tree.Tree, edition: tree.Tag):
 	full = edition.copy()
