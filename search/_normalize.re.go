@@ -223,16 +223,16 @@ func consumeToken(text string) (int, int, bool) {
 	return consumed, rep, elide
 }
 
-// lexFormB applies second-order phonological transformations on the binary representation.
-// It maps Form A sequences to a further reduced Form B logic.
-func lexFormB(formA string) (int, int) {
+// lexReduced applies phonological transformations on the binary representation.
+// It maps encoded sequences to a further reduced structural logic.
+func lexReduced(encoded string) (int, int) {
 	cursor, marker := 0, 0
 	_ = marker
 	/*!re2c
 	re2c:flags:8 = 0;
 	re2c:yyfill:enable = 0;
 	re2c:define:YYCTYPE = byte;
-	re2c:define:YYPEEK = "peekByte(formA, cursor)";
+	re2c:define:YYPEEK = "peekByte(encoded, cursor)";
 	re2c:define:YYSKIP = "cursor++";
 	re2c:define:YYBACKUP = "marker = cursor";
 	re2c:define:YYRESTORE = "cursor = marker";
@@ -316,30 +316,30 @@ func lexFormB(formA string) (int, int) {
 	Pschwa | Plongschwa { return cursor, Pschwa }
 	Pother { return cursor, Pother }
 	// Fallback to exactly one byte to avoid fatal panics.
-	[^] { return 1, int(formA[0]) }
+	[^] { return 1, int(encoded[0]) }
 	*/
 }
 
-// toFormA converts UTF-8 text to the internal Form A without allocating bounds.
+// encodeSequence converts UTF-8 text to the internal binary sequence without allocating bounds.
 // It is optimized for high-speed evaluation during the filtering phase.
-func toFormA(text string) string {
-	var formA strings.Builder
+func encodeSequence(text string) string {
+	var seq strings.Builder
 	for len(text) > 0 {
 		consumed, rep, elide := consumeToken(text)
 		if elide {
 			text = text[consumed:]
 			continue
 		}
-		formA.WriteByte(byte(rep))
+		seq.WriteByte(byte(rep))
 		text = text[consumed:]
 	}
-	return formA.String()
+	return seq.String()
 }
 
-// toFormAWithBounds converts text to Form A and returns an interleaved bounds array.
+// encodeSequenceWithBounds converts text to the internal sequence and returns an interleaved bounds array.
 // The array alternates original start and original end indices for each byte.
-func toFormAWithBounds(text string) (string, []int) {
-	var formA strings.Builder
+func encodeSequenceWithBounds(text string) (string, []int) {
+	var seq strings.Builder
 	var bounds []int
 	cursor := 0
 	for len(text) > 0 {
@@ -350,46 +350,46 @@ func toFormAWithBounds(text string) (string, []int) {
 			continue
 		}
 		endCursor := cursor + consumed
-		formA.WriteByte(byte(rep))
+		seq.WriteByte(byte(rep))
 		bounds = append(bounds, cursor, endCursor)
 		cursor = endCursor
 		text = text[consumed:]
 	}
-	return formA.String(), bounds
+	return seq.String(), bounds
 }
 
-// toFormB converts Form A to Form B without calculating positional bounds.
+// reduceSequence converts the encoded sequence to a reduced state without calculating positional bounds.
 // It applies phonological neutralizations strictly for content matching.
-func toFormB(formA string) string {
-	var formB strings.Builder
-	for len(formA) > 0 {
-		consumed, rep := lexFormB(formA)
+func reduceSequence(encoded string) string {
+	var reduced strings.Builder
+	for len(encoded) > 0 {
+		consumed, rep := lexReduced(encoded)
 		if rep == Pnul {
 			break
 		}
-		formB.WriteByte(byte(rep))
-		formA = formA[consumed:]
+		reduced.WriteByte(byte(rep))
+		encoded = encoded[consumed:]
 	}
-	return formB.String()
+	return reduced.String()
 }
 
-// toFormBWithBounds converts Form A to Form B and maintains sequence bounds.
-// It maps the reduced byte sequence back to its boundaries within Form A.
-func toFormBWithBounds(formA string) (string, []int) {
-	var formB strings.Builder
+// reduceSequenceWithBounds converts the encoded sequence and maintains sequence bounds.
+// It maps the reduced byte sequence back to its boundaries within the original encoded sequence.
+func reduceSequenceWithBounds(encoded string) (string, []int) {
+	var reduced strings.Builder
 	var bounds []int
 	cursor := 0
-	for len(formA) > 0 {
-		consumed, rep := lexFormB(formA)
+	for len(encoded) > 0 {
+		consumed, rep := lexReduced(encoded)
 		if rep == Pnul {
 			break
 		}
-		formB.WriteByte(byte(rep))
+		reduced.WriteByte(byte(rep))
 		bounds = append(bounds, cursor, cursor+consumed)
 		cursor += consumed
-		formA = formA[consumed:]
+		encoded = encoded[consumed:]
 	}
-	return formB.String(), bounds
+	return reduced.String(), bounds
 }
 
 const normalFirst = 0xE002
@@ -419,7 +419,7 @@ func lexNormalPrefix(text string) (int, string, bool) {
 	"œ" | "Œ" { return cursor, "oe", false }
 	"đ" | "Đ" { return cursor, "d", false }
 	"r̥" | "R̥" { return cursor, "ṛ", false }
-	"r̥̄" | "R̥̄" { return cursor, "ṝ", false }
+	"r̥̄" | "R̥̄" { return cursor, "ṹ", false }
 	"l̥" | "L̥"{ return cursor, "ḷ", false }
 	"l̥̄" | "L̥̄" { return cursor, "ḹ", false }
 	"ә" | "Ә" { return cursor, "ə", false }
@@ -493,30 +493,30 @@ func transformNormalWithBounds(text string) (string, []int) {
 	return folded.String(), bounds
 }
 
-// transformNormalized executes the complete Form B pipeline purely for content evaluation.
+// transformNormalized executes the complete formb pipeline purely for content evaluation.
 // It bypasses the generation of transitive index bounds to conserve memory.
 func transformNormalized(text string) string {
-	return toFormB(toFormA(text))
+	return reduceSequence(encodeSequence(text))
 }
 
 // transformNormalizedWithBounds tracks structural limits across the double normalization.
-// It recursively retrieves the initial offsets from Form A using the boundaries of Form B.
+// It recursively retrieves the initial offsets using the boundaries of the reduced sequence.
 func transformNormalizedWithBounds(text string) (string, []int) {
-	formA, boundsA := toFormAWithBounds(text)
-	formB, boundsB := toFormBWithBounds(formA)
+	seq, boundsA := encodeSequenceWithBounds(text)
+	reduced, boundsB := reduceSequenceWithBounds(seq)
 	var finalBounds []int
-	for i := 0; i < len(formB); i++ {
+	for i := 0; i < len(reduced); i++ {
 		startA := boundsB[2*i]
 		endA := boundsB[2*i+1] - 1
 		finalBounds = append(finalBounds, boundsA[2*startA], boundsA[2*endA+1])
 	}
-	return formB, finalBounds
+	return reduced, finalBounds
 }
 
 // transform acts as a fast text dispatcher ignoring positional metadata.
 // It is intended for boolean evaluation matrices.
 func transform(text string, mode string) string {
-	if mode == "normalized" {
+	if mode == "formb" {
 		return transformNormalized(text)
 	}
 	return transformNormal(text)
@@ -525,7 +525,7 @@ func transform(text string, mode string) string {
 // transformWithBounds computes structural offsets alongside textual mapping.
 // It is strictly reserved for the final highlight processing layer.
 func transformWithBounds(text string, mode string) (string, []int) {
-	if mode == "normalized" {
+	if mode == "formb" {
 		return transformNormalizedWithBounds(text)
 	}
 	return transformNormalWithBounds(text)

@@ -115,12 +115,12 @@ func (c *TransformCache) get(text, mode string) string {
 	if c == nil {
 		return transform(text, mode)
 	}
-	if mode == "normalized" {
-		c.onceNorm.Do(func() { c.normalized = transform(text, "normalized") })
-		return c.normalized
+	if mode == "formb" {
+		c.onceFormB.Do(func() { c.formB = transform(text, "formb") })
+		return c.formB
 	}
-	c.onceNormal.Do(func() { c.normal = transform(text, "normal") })
-	return c.normal
+	c.onceFormA.Do(func() { c.formA = transform(text, "forma") })
+	return c.formA
 }
 
 // findDocument traverses the whole in-memory catalogue to isolate one specific file.
@@ -584,9 +584,9 @@ func evalOr(d Document, args []QueryNode) bool {
 func containsMatcher(cache *TransformCache, text, term, mode, field string) bool {
 	if mode == "" {
 		if field == "logical" {
-			mode = "normalized"
+			mode = "formb"
 		} else {
-			mode = "normal"
+			mode = "forma"
 		}
 	}
 	transText := cache.get(text, mode)
@@ -825,9 +825,9 @@ type StringMapper func(string) (string, []int)
 func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2]int {
 	if mode == "" {
 		if field == "logical" {
-			mode = "normalized"
+			mode = "formb"
 		} else {
-			mode = "normal"
+			mode = "forma"
 		}
 	}
 	mapper := func(s string) (string, []int) { return transformWithBounds(s, mode) }

@@ -43,10 +43,10 @@ var SearchSchema SchemaConfig
 
 // TransformCache stores normalized string states to prevent redundant processing.
 type TransformCache struct {
-	normal     string
-	normalized string
-	onceNormal sync.Once
-	onceNorm   sync.Once
+	formA     string
+	formB     string
+	onceFormA sync.Once
+	onceFormB sync.Once
 }
 
 // DocCache holds pointers to transformation caches for a single document.

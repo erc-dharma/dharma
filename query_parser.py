@@ -111,7 +111,7 @@ class Field(Node):
 				final_name = ".".join(parts)
 			field_meta = SEARCH_SCHEMA["fields"].get(final_name, {})
 			if not final_mode:
-				final_mode = field_meta.get("default_mode", "normal")
+				final_mode = field_meta.get("default_mode", "forma")
 		return final_name, final_mode
 
 	def _expand_virtual(self, name, mode):
