@@ -110,6 +110,7 @@ class Validator:
 			return
 		val.status = ERROR
 		for node in errs:
+			assert isinstance(node, tree.Tag)
 			loc = node["location"]
 			loc = re.sub(r"/\*:([a-zA-Z]+)\[.+?\]\[([0-9]+)\]", r"/\1[\2]", loc)
 			test = node["test"]

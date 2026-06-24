@@ -1,4 +1,4 @@
-//go:generate re2go -W -Werror -8 -o normalize.go _normalize.re.go
+//go:build ignore
 
 package main
 
@@ -117,6 +117,9 @@ func makePrintable(s string) string {
 // It returns the byte length of the matched sequence, its replacement, and an elision flag.
 func lexPrefix(text string) (int, int, bool) {
 	cursor, marker := 0, 0
+	_ = cursor
+	_ = marker
+	_ = text
 	/*!re2c
 	re2c:flags:8 = 1;
 	re2c:yyfill:enable = 0;
@@ -206,6 +209,7 @@ func lexPrefix(text string) (int, int, bool) {
 		return cursor, Pother, false
 	}
 	*/
+	return 0, 0, false
 }
 
 // consumeToken reads the next token and aligns the cursor with grapheme boundaries.
@@ -227,7 +231,9 @@ func consumeToken(text string) (int, int, bool) {
 // It maps encoded sequences to a further reduced structural logic.
 func lexReduced(encoded string) (int, int) {
 	cursor, marker := 0, 0
+	_ = cursor
 	_ = marker
+	_ = encoded
 	/*!re2c
 	re2c:flags:8 = 0;
 	re2c:yyfill:enable = 0;
@@ -318,6 +324,7 @@ func lexReduced(encoded string) (int, int) {
 	// Fallback to exactly one byte to avoid fatal panics.
 	[^] { return 1, int(encoded[0]) }
 	*/
+	return 0, 0
 }
 
 // encodeSequence converts UTF-8 text to the internal binary sequence without allocating bounds.
@@ -393,7 +400,7 @@ func reduceSequenceWithBounds(encoded string) (string, []int) {
 }
 
 const normalFirst = 0xE002
-const Slongschwa = string(normalFirst + Plongschwa)
+const Slongschwa = string(rune(normalFirst + Plongschwa))
 
 var folder = cases.Fold()
 
@@ -401,6 +408,9 @@ var folder = cases.Fold()
 // It returns the byte length of the matched sequence, its replacement string, and an elision flag.
 func lexNormalPrefix(text string) (int, string, bool) {
 	cursor, marker := 0, 0
+	_ = cursor
+	_ = marker
+	_ = text
 	/*!re2c
 	re2c:flags:8 = 1;
 	re2c:yyfill:enable = 0;
@@ -432,6 +442,7 @@ func lexNormalPrefix(text string) (int, string, bool) {
 		return size, folder.String(string(r)), false
 	}
 	*/
+	return 0, "", false
 }
 
 // consumeNormalToken reads the next token and aligns with grapheme boundaries.

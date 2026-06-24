@@ -125,8 +125,8 @@ missing-git-names:
 
 go_sources = $(sort $(wildcard search/*.go) search/normalize.go)
 
-search/normalize.go: search/_normalize.re.go
-	re2go -W -Werror --input-encoding utf8 -o $@ $^
+search/normalize.go: search/normalize.re.go
+	re2go -W -Werror --input-encoding utf8 $^ | sed 's,//go:build ignore,,g' > $@
 
 $(binary): $(go_sources)
 	go build -o dharma-search ./search
