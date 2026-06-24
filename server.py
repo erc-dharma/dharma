@@ -70,6 +70,10 @@ def serve_fonts(path):
 	return flask.send_from_directory("static/fonts", path)
 
 @app.get("/errors")
+def redirect_to_texts_errors():
+	return flask.redirect("/texts-errors")
+
+@app.get("/texts-errors")
 @common.transaction("texts")
 def show_texts_errors():
 	db = common.db("texts")

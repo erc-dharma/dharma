@@ -1,7 +1,7 @@
 % extends "base.tpl"
 
 % block title
-Errors
+Texts Errors
 % endblock
 
 % block body
