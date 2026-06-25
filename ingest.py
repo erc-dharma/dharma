@@ -241,7 +241,6 @@ class _Parser(tree.Serializer):
 			ret.append(span)
 			return ret
 		siglum = self.sigla.get(short_title)
-		# XXX warn about duplicate entries
 		return biblio.format_entry(entry, location=location, siglum=siglum)
 
 	def bib_reference(self, short_title, rend="default", location=[], contents=[]):
@@ -890,7 +889,6 @@ def _parse_surplus(p, node):
 
 # For <note> elements anywhere but in the apparatus, where <note> has a peculiar
 # purpose.
-# XXX handle nested notes here, or fix them afterwards? fix them afterwards
 @_handler("note")
 def _parse_note(p, note):
 	out = p.push(tree.Tag("note"))

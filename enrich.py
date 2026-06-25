@@ -1102,6 +1102,12 @@ def _to_logical(t):
 	for node in t.find(".//span[@class='orig' and @standalone='false']"):
 		node.delete()
 
+def _fix_notes(t: tree.Tree):
+	"Nested notes are not allowed, so unwrap inner notes, if any."
+	for note in t.find("//note"):
+		for nested_note in note.find("descendant::note"):
+			nested_note.unwrap()
+
 def _number_notes(t: tree.Tree):
 	"""We number notes before we create the three displays, to make it
 	easier later on to figure out which notes are duplicates."""
@@ -1393,6 +1399,7 @@ def _fix_smart_quotes(node):
 def process(t: tree.Tree):
 	_fix_smart_quotes(t)
 	_fix_search(t)
+	_fix_notes(t)
 	languages.complete_internal(t)
 	# Structural stuff.
 	_fix_blocks_within_paras(t)
