@@ -1327,11 +1327,12 @@ def _expand_views(t: tree.Tree):
 	XXX note that the fact we expand it after the rest might prevent proper
 	positioning of milestones, etc. Should deal with this.
 	"""
-	for view in ("physical", "logical", "full"):
+	for view in ("physical", "logical"):
 		root = t.first(f"/document/edition/{view}")
 		if not root:
 			continue
 		_expand_views_inner(root, view)
+	_expand_views_inner(t.root, "full")
 
 def _expand_views_inner(root, view):
 	for child in list(root):
