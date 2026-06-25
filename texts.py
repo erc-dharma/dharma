@@ -54,6 +54,34 @@ class File:
 		file on the disk, but we don't attempt to examine the disk if
 		this is the case."""
 
+	@classmethod
+	def from_disk(cls, repo: str, path: str):
+		# Instantiates a File object from physical parameters.
+		return cls(repo=repo, path=path)
+
+	@classmethod
+	def from_db(cls, name: str):
+		# Fetch the file record directly from the database by its unique name
+		import json
+		db = common.db("texts")
+		row = db.execute("""
+			select files.name as name,
+				repo, path, mtime,
+				last_modified_commit, last_modified, data,
+				json_group_array(owners.git_name) as file_owners
+			from files join owners on files.name = owners.name
+			where files.name = ? group by owners.git_name""",
+			(name,)).fetchone()
+		if not row:
+			raise Exception(f"not found in db: {name!r}")
+		# Return a new File instance populated with the retrieved database fields
+		return cls(repo=row["repo"], path=row["path"], mtime=row["mtime"], last_modified=(row["last_modified_commit"], row["last_modified"]), data=row["data"], owners=json.loads(row["file_owners"]))
+
+	@classmethod
+	def from_string(cls, data: str, path: str = ":memory:"):
+		# Instantiates a File object from an in-memory string.
+		return cls(path=path, data=data)
+
 	def __repr__(self):
 		return f"File({self.repo!r}, {self.path!r})"
 

@@ -73,6 +73,16 @@ const (
 	Ph
 	Pschwa
 	Plongschwa
+	P0
+	P1
+	P2
+	P3
+	P4
+	P5
+	P6
+	P7
+	P8
+	P9
 	Pother
 )
 
@@ -90,6 +100,7 @@ var phonemeLookup = []string{
 	"y", "r", "l", "v",
 	"ś", "ṣ", "s", "h",
 	"ə", "ə̄",
+	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
 	"?",
 }
 
@@ -155,9 +166,9 @@ func lexPrefix(text string) (int, int, bool) {
 	"ṝ" | "Ṝ" | "r̥̄" | "R̥̄" { return cursor, Pṝ, false }
 	"ḷ" | "Ḷ" | "l̥" | "L̥"{ return cursor, Pḷ, false }
 	"ḹ" | "Ḹ" | "l̥̄" | "L̥̄" { return cursor, Pḹ, false }
-	"e" | "E" | "ĕ" | "Ĕ" { return cursor, Pe, false }
+	"e" | "E" | "ĕ" | "Ĕ" | "ē" | "Ē" { return cursor, Pe, false }
 	"ai" | "Ai" | "AI" | "aI" { return cursor, Pai, false }
-	"o" | "O" | "ŏ" | "Ŏ" { return cursor, Po, false }
+	"o" | "O" | "ŏ" | "Ŏ" | "ō" | "Ō" { return cursor, Po, false }
 	"au" | "Au" | "AU" | "aU" { return cursor, Pau, false }
 	// Anusvara and anunāsika, Cam anusvāra-candra, all treated as the anusvara.
 	"ṁ" | "Ṁ" | "ṃ" | "Ṃ" | "m̐" | "M̐" | "m̃" | "M̃" { return cursor, Pṃ, false }
@@ -201,6 +212,16 @@ func lexPrefix(text string) (int, int, bool) {
 	// SMALL LETTER SCHWA (incorrect one), in both the upper- and lowercase versions.
 	"ə" | "Ə" | "ә" | "Ә" { return cursor, Pschwa, false }
 	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, Plongschwa, false }
+	"0" { return cursor, P0, false }
+	"1" { return cursor, P1, false }
+	"2" { return cursor, P2, false }
+	"3" { return cursor, P3, false }
+	"4" { return cursor, P4, false }
+	"5" { return cursor, P5, false }
+	"6" { return cursor, P6, false }
+	"7" { return cursor, P7, false }
+	"8" { return cursor, P8, false }
+	"9" { return cursor, P9, false }
 	[^] {
 		r, _ := utf8.DecodeRuneInString(text[:cursor])
 		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
@@ -295,7 +316,17 @@ func lexReduced(encoded string) (int, int) {
 	Ph = "\x31";
 	Pschwa = "\x32";
 	Plongschwa = "\x33";
-	Pother = "\x34";
+	P0 = "\x34";
+	P1 = "\x35";
+	P2 = "\x36";
+	P3 = "\x37";
+	P4 = "\x38";
+	P5 = "\x39";
+	P6 = "\x3A";
+	P7 = "\x3B";
+	P8 = "\x3C";
+	P9 = "\x3D";
+	Pother = "\x3E";
 	// Ignore all diacritics (except for the distinctions ṛ/r ḷ/l).
 	// Treat aspirated and unaspirated as equivalent.
 	// Treat nasals as equivalent (this isn't great though).

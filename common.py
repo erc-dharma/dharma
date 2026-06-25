@@ -134,23 +134,9 @@ class Database:
 				values(?, ?)""", (file.name, git_name))
 
 	def load_file(self, name):
-		row = self.execute("""
-			select files.name as name,
-				repo, path, mtime,
-				last_modified_commit, last_modified, data,
-				json_group_array(owners.git_name) as file_owners
-			from files join owners on files.name = owners.name
-			where files.name = ? group by owners.git_name""",
-			(name,)).fetchone()
-		if not row:
-			raise Exception(f"not found in db: {name!r}")
-		from dharma import texts #XXX circular import
-		ret = texts.File(repo=row["repo"], path=row["path"],
-			mtime=row["mtime"],
-			last_modified=(row["last_modified_commit"], row["last_modified"]),
-			data=row["data"],
-			owners=json.loads(row["file_owners"]))
-		return ret
+		# Delegate file loading to the texts.File class method to avoid circular imports and duplication
+		from dharma import texts
+		return texts.File.from_db(name)
 
 class Cursor(apsw.Cursor):
 
