@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -157,9 +158,16 @@ type QueryTerm struct {
 	Mode  string
 }
 
+// DocMeta holds lightweight metadata for synchronization comparisons.
+type DocMeta struct {
+	Ident     string
+	UpdatedAt int64
+}
+
 var (
 	corpus          []Document
 	lastDataVersion int
+	lastReloadTime  int64
 	mu              sync.RWMutex
 	db              *sql.DB
 )
@@ -175,7 +183,7 @@ func loadSchema(path string) error {
 	return decoder.Decode(&SearchSchema)
 }
 
-// Start the core DHARMA text engine.
+// main starts the core DHARMA text engine.
 func main() {
 	log.Printf("DHARMA Search Server starting (PID: %d)...", os.Getpid())
 	ex, err := os.Executable()
@@ -193,7 +201,7 @@ func main() {
 	startServer()
 }
 
-// Resolve the absolute path to the SQLite catalog file.
+// getDBPath resolves the absolute path to the SQLite catalog file.
 func getDBPath() (string, error) {
 	ex, err := os.Executable()
 	if err != nil {
@@ -202,7 +210,7 @@ func getDBPath() (string, error) {
 	return filepath.Join(filepath.Dir(ex), "dbs", "texts.sqlite"), nil
 }
 
-// Open the database in read-only mode and verify connectivity.
+// initDB opens the database in read-only mode and verifies connectivity.
 func initDB(path string) error {
 	var err error
 	db, err = sql.Open("sqlite3", path+"?mode=ro")
@@ -212,7 +220,7 @@ func initDB(path string) error {
 	return db.Ping()
 }
 
-// Bind HTTP routes and begin listening for requests.
+// startServer binds HTTP routes and begins listening for requests.
 func startServer() {
 	server := &http.Server{Addr: ":8026"}
 	go func() {
@@ -226,7 +234,7 @@ func startServer() {
 	manageLifecycle(server)
 }
 
-// Block main thread until receiving an upgrade signal.
+// manageLifecycle blocks main thread until receiving an upgrade signal.
 func manageLifecycle(server *http.Server) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGUSR2)
@@ -241,7 +249,7 @@ func manageLifecycle(server *http.Server) {
 	restartSelf()
 }
 
-// Execute the new binary in place of the current process.
+// restartSelf executes the new binary in place of the current process.
 func restartSelf() {
 	bin, err := os.Executable()
 	if err != nil {
@@ -252,14 +260,14 @@ func restartSelf() {
 	}
 }
 
-// Serve a standard search query and output results as JSON.
+// handleSearch serves a standard search query and outputs results as JSON.
 func handleSearch(w http.ResponseWriter, r *http.Request) {
 	setupHeaders(w)
 	q, off, lim, sortBy, fields, pretty, filters := parseRequest(r)
 	processRequest(w, q, off, lim, sortBy, fields, pretty, filters)
 }
 
-// Fetch a single target document directly by its exact identifier.
+// handleMatch fetches a single target document directly by its exact identifier.
 func handleMatch(w http.ResponseWriter, r *http.Request) {
 	setupHeaders(w)
 	ident := strings.TrimSpace(r.URL.Query().Get("ident"))
@@ -271,7 +279,7 @@ func handleMatch(w http.ResponseWriter, r *http.Request) {
 	processMatch(w, ident, q, fields, pretty)
 }
 
-// Retrieve a single document and enrich it with source properties.
+// processMatch retrieves a single document and enriches it with source properties.
 func processMatch(w http.ResponseWriter, ident, q string, fields []string, pretty bool) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -296,7 +304,7 @@ func processMatch(w http.ResponseWriter, ident, q string, fields []string, prett
 	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty, nil, lastUp)
 }
 
-// Inject original unparsed XML payload into the response structure.
+// fetchOriginalTEI injects original unparsed XML payload into the response structure.
 func fetchOriginalTEI(tx *sql.Tx, ident string, res *SearchResult) {
 	err := tx.QueryRow("select data from files where name = ?", ident).Scan(&res.Original)
 	if err != nil {
@@ -314,13 +322,13 @@ func fetchLastUpdated(tx *sql.Tx) string {
 	return val
 }
 
-// Assign required headers to allow cross-origin requests.
+// setupHeaders assigns required headers to allow cross-origin requests.
 func setupHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 }
 
-// Parse input query parameters including dynamic facet arrays from the request.
+// parseRequest parses input query parameters including dynamic facet arrays from the request.
 func parseRequest(r *http.Request) (string, int, int, string, []string, bool, map[string][]string) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
@@ -338,7 +346,7 @@ func parseRequest(r *http.Request) (string, int, int, string, []string, bool, ma
 	return q, off, lim, sortBy, fields, pretty, filters
 }
 
-// Extract selected facet arrays from the URL to drive the evaluation engine.
+// parseFilters extracts selected facet arrays from the URL to drive the evaluation engine.
 func parseFilters(r *http.Request) map[string][]string {
 	filters := make(map[string][]string)
 	categories := []string{"lang", "script", "editor", "repo"}
@@ -350,7 +358,7 @@ func parseFilters(r *http.Request) map[string][]string {
 	return filters
 }
 
-// Remove empty parameters from the HTTP array to prevent false filter hits.
+// filterEmptyStrings removes empty parameters from the HTTP array to prevent false filter hits.
 func filterEmptyStrings(vals []string) []string {
 	var clean []string
 	for _, v := range vals {
@@ -361,7 +369,7 @@ func filterEmptyStrings(vals []string) []string {
 	return clean
 }
 
-// Split the requested fields into a string slice.
+// parseFields splits the requested fields into a string slice.
 func parseFields(fParam string) []string {
 	var fields []string
 	if fParam != "" {
@@ -374,13 +382,13 @@ func parseFields(fParam string) []string {
 	return fields
 }
 
-// Ascertain whether JSON output requires human-readable indentation.
+// parsePretty ascertains whether JSON output requires human-readable indentation.
 func parsePretty(pParam string) bool {
 	p := strings.ToLower(pParam)
 	return p == "true" || p == "1" || p == "yes"
 }
 
-// Initialize collector instances to prevent panics during aggregation.
+// newFacetCollector initializes collector instances to prevent panics during aggregation.
 func newFacetCollector() *FacetCollector {
 	return &FacetCollector{
 		Lang:   make(map[string]*FacetResult),
@@ -390,7 +398,7 @@ func newFacetCollector() *FacetCollector {
 	}
 }
 
-// Handle the core search request logic and manage SQL transactions.
+// processRequest handles the core search request logic and manages SQL transactions.
 func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string, fields []string, pretty bool, filters map[string][]string) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -406,12 +414,10 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 	performSearch(w, tx, q, off, lim, sortBy, fields, pretty, filters)
 }
 
-// Execute the search and compile results evaluating dynamic facet parameters.
+// performSearch executes the search and compiles results evaluating dynamic facet parameters.
 func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool, filters map[string][]string) {
 	allDocs, facets := filterDocs(q, filters)
-	if sortBy != "title" {
-		sortDocs(allDocs, sortBy)
-	}
+	sortDocs(allDocs, sortBy)
 	total := len(allDocs)
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, q)
@@ -420,7 +426,7 @@ func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, so
 	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty, facets, lastUp)
 }
 
-// Compare db state flag to decide if corpus should be refreshed in memory.
+// syncCorpus compares db state flag to decide if corpus should be refreshed in memory.
 func syncCorpus(tx *sql.Tx) error {
 	var ver int
 	if err := tx.QueryRow("pragma data_version").Scan(&ver); err != nil {
@@ -435,24 +441,119 @@ func syncCorpus(tx *sql.Tx) error {
 	return reloadCorpus(tx, ver)
 }
 
-// Rebuild the in-memory array by parsing texts from the SQLite catalog.
+// fetchDocumentMetas retrieves lightweight identification for all documents.
+func fetchDocumentMetas(tx *sql.Tx) ([]DocMeta, error) {
+	rows, err := tx.Query("select ident, updated_at from documents_search order by ident")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var metas []DocMeta
+	for rows.Next() {
+		var m DocMeta
+		if err := rows.Scan(&m.Ident, &m.UpdatedAt); err != nil {
+			return nil, err
+		}
+		metas = append(metas, m)
+	}
+	return metas, nil
+}
+
+// reloadCorpus incrementally updates the in-memory documents list.
 func reloadCorpus(tx *sql.Tx, ver int) error {
 	mu.Lock()
 	defer mu.Unlock()
 	if ver == lastDataVersion {
 		return nil
 	}
+	metas, err := fetchDocumentMetas(tx)
+	if err != nil {
+		return err
+	}
+	if err := mergeCorpus(tx, metas); err != nil {
+		return err
+	}
+	lastDataVersion = ver
+	lastReloadTime = time.Now().Unix()
+	return nil
+}
+
+// mergeCorpus applies the two-pointer algorithm to identify changes.
+func mergeCorpus(tx *sql.Tx, metas []DocMeta) error {
+	if len(corpus) == 0 {
+		return bootstrapCorpus(tx)
+	}
+	var newCorpus []Document
+	var toFetch []string
+	i, j := 0, 0
+	for i < len(corpus) || j < len(metas) {
+		if i < len(corpus) && j < len(metas) && corpus[i].Ident == metas[j].Ident {
+			if metas[j].UpdatedAt > lastReloadTime {
+				toFetch = append(toFetch, metas[j].Ident)
+			} else {
+				newCorpus = append(newCorpus, corpus[i])
+			}
+			i, j = i+1, j+1
+		} else if j == len(metas) || (i < len(corpus) && corpus[i].Ident < metas[j].Ident) {
+			i++
+		} else {
+			toFetch = append(toFetch, metas[j].Ident)
+			j++
+		}
+	}
+	return finalizeMerge(tx, newCorpus, toFetch)
+}
+
+// bootstrapCorpus performs the initial full load of the collection.
+func bootstrapCorpus(tx *sql.Tx) error {
 	docs, err := fetchDocuments(tx)
 	if err != nil {
 		return err
 	}
-	sortDocs(docs, "title")
+	sortDocs(docs, "ident")
 	corpus = docs
-	lastDataVersion = ver
 	return nil
 }
 
-// Read standard and newly added fields using lowercase sql statements.
+// finalizeMerge fetches required documents in batches to respect SQLite limits.
+func finalizeMerge(tx *sql.Tx, newCorpus []Document, toFetch []string) error {
+	for start := 0; start < len(toFetch); start += 900 {
+		end := start + 900
+		if end > len(toFetch) {
+			end = len(toFetch)
+		}
+		batch, err := fetchSpecificDocuments(tx, toFetch[start:end])
+		if err != nil {
+			return err
+		}
+		newCorpus = append(newCorpus, batch...)
+	}
+	sortDocs(newCorpus, "ident")
+	corpus = newCorpus
+	return nil
+}
+
+// fetchSpecificDocuments fetches fully populated documents matching idents.
+func fetchSpecificDocuments(tx *sql.Tx, idents []string) ([]Document, error) {
+	if len(idents) == 0 {
+		return nil, nil
+	}
+	placeholders := make([]string, len(idents))
+	args := make([]interface{}, len(idents))
+	for i, id := range idents {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	query := "select ident, logical, title, summary, repo_id, repo_name, hand, translation, bibliography, author, editor, lang, script from documents_search where ident in (" + strings.Join(placeholders, ",") + ")"
+	rows, err := tx.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanRows(rows, len(idents))
+}
+
+// fetchDocuments reads standard and newly added fields using lowercase sql statements.
 func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 	count, err := getCount(tx)
 	if err != nil {
@@ -469,14 +570,14 @@ func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 	return scanRows(rows, count)
 }
 
-// Extract the total row count to allocate slices precisely.
+// getCount extracts the total row count to allocate slices precisely.
 func getCount(tx *sql.Tx) (int, error) {
 	var count int
 	err := tx.QueryRow("select count(*) from documents_search").Scan(&count)
 	return count, err
 }
 
-// Iterate over query rows and map them to standard structs.
+// scanRows iterates over query rows and maps them to standard structs.
 func scanRows(rows *sql.Rows, count int) ([]Document, error) {
 	docs := make([]Document, 0, count)
 	for rows.Next() {
@@ -489,7 +590,7 @@ func scanRows(rows *sql.Rows, count int) ([]Document, error) {
 	return docs, rows.Err()
 }
 
-// Deserialize rows safely by handling sql.NullString for empty columns.
+// scanOne deserializes rows safely by handling sql.NullString for empty columns.
 func scanOne(rows *sql.Rows) (Document, error) {
 	var ident, logStr, titleJson, sum, rid, rname, hand, authJson, edJson, langJson, scrJson string
 	var transNull, biblioNull sql.NullString
@@ -508,52 +609,42 @@ func scanOne(rows *sql.Rows) (Document, error) {
 	return doc, nil
 }
 
-// Initialize structural caches dynamically guided by the loaded JSON schema.
+// buildDocCache initializes structural caches dynamically guided by the loaded JSON schema.
 func buildDocCache(d *Document) *DocCache {
 	c := &DocCache{}
-	if meta, ok := SearchSchema.Fields["logical"]; ok && meta.Cache {
-		c.Logical = &TransformCache{}
-	}
-	if meta, ok := SearchSchema.Fields["ident"]; ok && meta.Cache {
-		c.Ident = &TransformCache{}
-	}
-	if meta, ok := SearchSchema.Fields["summary"]; ok && meta.Cache {
-		c.Summary = &TransformCache{}
-	}
-	if meta, ok := SearchSchema.Fields["repo.ident"]; ok && meta.Cache {
-		c.RepoID = &TransformCache{}
-	}
-	if meta, ok := SearchSchema.Fields["repo.name"]; ok && meta.Cache {
-		c.RepoName = &TransformCache{}
-	}
-	if meta, ok := SearchSchema.Fields["hand"]; ok && meta.Cache {
-		c.Hand = &TransformCache{}
-	}
-	if meta, ok := SearchSchema.Fields["translation"]; ok && meta.Cache {
-		c.Translation = &TransformCache{}
-	}
-	if meta, ok := SearchSchema.Fields["bibliography"]; ok && meta.Cache {
-		c.Bibliography = &TransformCache{}
-	}
-	if meta, ok := SearchSchema.Fields["title"]; ok && meta.Cache {
-		c.Title = buildListCache(len(d.Title))
-	}
-	if meta, ok := SearchSchema.Fields["author"]; ok && meta.Cache {
-		c.Author = buildListCache(len(d.Author))
-	}
-	if meta, ok := SearchSchema.Fields["editor"]; ok && meta.Cache {
-		c.Editor = buildListCache(len(d.Editor))
-	}
-	if meta, ok := SearchSchema.Fields["lang"]; ok && meta.Cache {
-		c.Lang = buildListCache(len(d.Lang))
-	}
-	if meta, ok := SearchSchema.Fields["script"]; ok && meta.Cache {
-		c.Script = buildListCache(len(d.Script))
-	}
+	c.Logical = initTransformCache("logical")
+	c.Ident = initTransformCache("ident")
+	c.Summary = initTransformCache("summary")
+	c.RepoID = initTransformCache("repo.ident")
+	c.RepoName = initTransformCache("repo.name")
+	c.Hand = initTransformCache("hand")
+	c.Translation = initTransformCache("translation")
+	c.Bibliography = initTransformCache("bibliography")
+	c.Title = initListCache("title", len(d.Title))
+	c.Author = initListCache("author", len(d.Author))
+	c.Editor = initListCache("editor", len(d.Editor))
+	c.Lang = initListCache("lang", len(d.Lang))
+	c.Script = initListCache("script", len(d.Script))
 	return c
 }
 
-// Pre-allocate transformation cache pointers for array attributes.
+// initTransformCache allocates a cache if the field is set to be cached.
+func initTransformCache(field string) *TransformCache {
+	if meta, ok := SearchSchema.Fields[field]; ok && meta.Cache {
+		return &TransformCache{}
+	}
+	return nil
+}
+
+// initListCache allocates an array of caches if the field is set to be cached.
+func initListCache(field string, size int) []*TransformCache {
+	if meta, ok := SearchSchema.Fields[field]; ok && meta.Cache {
+		return buildListCache(size)
+	}
+	return nil
+}
+
+// buildListCache pre-allocates transformation cache pointers for array attributes.
 func buildListCache(size int) []*TransformCache {
 	list := make([]*TransformCache, size)
 	for i := range list {
@@ -562,7 +653,7 @@ func buildListCache(size int) []*TransformCache {
 	return list
 }
 
-// Interpret raw JSON arrays into generic string slices.
+// parseList interprets raw JSON arrays into generic string slices.
 func parseList(jsonStr string) []string {
 	var list []string
 	if err := json.Unmarshal([]byte(jsonStr), &list); err != nil {
@@ -571,7 +662,7 @@ func parseList(jsonStr string) []string {
 	return list
 }
 
-// Load complex source attributes for filtered results on demand.
+// enrichMatches loads complex source attributes for filtered results on demand.
 func enrichMatches(tx *sql.Tx, matches []SearchResult, docs []Document, fields []string) {
 	if !shouldFetchSource(fields) {
 		return
@@ -589,7 +680,7 @@ func enrichMatches(tx *sql.Tx, matches []SearchResult, docs []Document, fields [
 	}
 }
 
-// Determine if the full XML source code needs fetching.
+// shouldFetchSource determines if the full XML source code needs fetching.
 func shouldFetchSource(fields []string) bool {
 	if len(fields) == 0 {
 		return true
@@ -602,7 +693,7 @@ func shouldFetchSource(fields []string) bool {
 	return false
 }
 
-// Package final structs to write JSON payload efficiently.
+// sendResponse packages final structs to write JSON payload efficiently.
 func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fields []string, matches []SearchResult, query string, pretty bool, facets interface{}, lastUp string) {
 	var finalMatches interface{} = matches
 	if len(fields) > 0 {
@@ -621,7 +712,7 @@ func sendResponse(w http.ResponseWriter, count, off, lim int, sortBy string, fie
 	enc.Encode(resp)
 }
 
-// Prune output properties according to request constraints.
+// filterFields prunes output properties according to request constraints.
 func filterFields(matches []SearchResult, fields []string) []map[string]interface{} {
 	filtered := make([]map[string]interface{}, len(matches))
 	for i, m := range matches {
@@ -634,7 +725,7 @@ func filterFields(matches []SearchResult, fields []string) []map[string]interfac
 	return filtered
 }
 
-// Copy primary string fields dynamically to the untyped map.
+// assignBasicField copies primary string fields dynamically to the untyped map.
 func assignBasicField(mMap map[string]interface{}, m SearchResult, f string) {
 	switch f {
 	case "ident":
@@ -658,7 +749,7 @@ func assignBasicField(mMap map[string]interface{}, m SearchResult, f string) {
 	}
 }
 
-// Copy secondary attribute arrays dynamically to the untyped map.
+// assignExtraField copies secondary attribute arrays dynamically to the untyped map.
 func assignExtraField(mMap map[string]interface{}, m SearchResult, f string) {
 	switch f {
 	case "author":

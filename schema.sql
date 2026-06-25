@@ -225,6 +225,8 @@ create table if not exists documents(
 create table if not exists documents_search(
 	-- Renamed from 'identifier' to 'ident', used as PK.
 	ident text primary key,
+	-- The following is a timestamp.
+	updated_at integer,
 	repo_id text check(repo_id is null or typeof(repo_id) = 'text'),
 	repo_name text check(repo_name is null or typeof(repo_name) = 'text'),
 	-- list of strings.
@@ -261,6 +263,16 @@ create table if not exists documents_search(
 	foreign key(ident) references files(name),
 	foreign key(repo_id) references repos(repo)
 );
+
+-- The following is to update the insertion timestamp automatically.
+create trigger if not exists documents_search_update_timestamp
+after update on documents_search
+for each row
+begin
+	update documents_search
+	set updated_at = cast(strftime('%s', 'now') as integer)
+	where ident = new.ident;
+end;
 
 -- This table is modeled as a tree. Each record has a parent, which is either
 -- null (for the root of the tree) or the record id (rid) of its parent.
