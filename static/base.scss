@@ -924,6 +924,12 @@ fieldset {
 	flex-wrap: wrap;
 	align-items: center;
 	column-gap: 1em;
+	border: none;
+	margin: 0.7em 0;
+}
+
+fieldset > legend {
+	font-weight: bolder;
 }
 
 /*************************************** Footnotes ****************************/
