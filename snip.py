@@ -291,7 +291,6 @@ def render_match(self, node):
 	else:
 		href = "#"
 	link = tree.Tag("span", class_="link highlight")
-	link["data-tip"] = "See in context"
 	link["data-target"] = href
 	self.push(link)
 	self.dispatch_children(node)

@@ -891,7 +891,7 @@ def cli_search(query):
 		return
 	t = r["matches"][0]
 	doc = snip.process(t)
-	print(doc.translation)
+	print(doc.translation.xml())
 
 @common.transaction("texts")
 def main():

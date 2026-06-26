@@ -143,21 +143,21 @@ search form below can be used for filtering results. For help on the query synta
       Identifier: <span class="text-id">{{doc.identifier.html() | safe}}</span>.
    </p>
 % if doc.logical:
-   <p>Edition:</p>
    <div class="snippets">
-   {{doc.logical.html() | safe}}
+   <div class="snippets-section">Edition</div>
+   <div class="snippets-items">{{doc.logical.html() | safe}}</div>
    </div>
 % endif
 % if doc.translation:
-   <p>Translation:</p>
    <div class="snippets">
-   {{doc.translation.html() | safe}}
+   <div class="snippets-section">Translation</div>
+   <div class="snippets-items">{{doc.translation.html() | safe}}</div>
    </div>
 % endif
 % if doc.bibliography:
-   <p>Bibliography:</p>
    <div class="snippets">
-   {{doc.bibliography.html() | safe}}
+   <div class="snippets-section">Bibliography</div>
+   <div class="snippets-items">{{doc.bibliography.html() | safe}}</div>
    </div>
 % endif
 </div> ## class="card-body"

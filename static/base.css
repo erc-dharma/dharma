@@ -856,7 +856,14 @@ img {
   letter-spacing: initial; }
 
 .snippets {
-  background-color: white; }
+  background-color: white;
+  border-top-left-radius: 0.3em;
+  border-top-right-radius: 0.3em;
+  border: 1px solid var(--card-border);
+  padding: 0.4rem; }
+
+.snippets-section {
+  font-style: italic; }
 
 .glyph-record img {
   max-height: 10rem;

@@ -963,6 +963,13 @@ img {
 
 .snippets {
 	background-color: white;
+	border-top-left-radius: $border-radius;
+	border-top-right-radius: $border-radius;
+	border: 1px solid var(--card-border);
+	padding: 0.4rem;
+}
+.snippets-section {
+	font-style: italic;
 }
 
 .glyph-record img {
