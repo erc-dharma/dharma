@@ -1,6 +1,6 @@
 import os, unicodedata, datetime, html, urllib, urllib.parse, ntpath, io
 import unicodedata
-import flask, werkzeug.security # pip install flask
+import flask, werkzeug.security, jinja2 # pip install flask
 from bs4 import BeautifulSoup # pip install bs4
 # TODO Ultimately, we should remove the bs4 dependency, but for this we need a
 # HTML parser _and also_ a serialization method that does the appropriate thing
@@ -32,7 +32,7 @@ def format_date(when):
 			when = int(when)
 		case int():
 			pass
-		case None:
+		case jinja2.runtime.Undefined():
 			when = 0
 		case _:
 			raise Exception(f"bad value {type(when)}")
