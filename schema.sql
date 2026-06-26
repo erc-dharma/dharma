@@ -225,8 +225,8 @@ create table if not exists documents(
 create table if not exists documents_search(
 	-- Renamed from 'identifier' to 'ident', used as PK.
 	ident text primary key,
-	-- The following is a timestamp.
-	updated_at integer,
+	updated_at timestamp check(typeof(updated_at) = 'integer'
+		and updated_at > 0),
 	repo_id text check(repo_id is null or typeof(repo_id) = 'text'),
 	repo_name text check(repo_name is null or typeof(repo_name) = 'text'),
 	-- list of strings.
