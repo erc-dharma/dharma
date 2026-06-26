@@ -35,7 +35,7 @@ def format_date(when):
 		case None:
 			when = 0
 		case _:
-			raise Exception("bad value")
+			raise Exception(f"bad value {type(when)}")
 	when_obj = datetime.datetime.fromtimestamp(when).astimezone()
 	when_detailed = html.escape(when_obj.strftime("%FT%T%z"))
 	when_readable = html.escape(when_obj.strftime("%F %R"))
