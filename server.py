@@ -32,6 +32,8 @@ def format_date(when):
 			when = int(when)
 		case int():
 			pass
+		case None:
+			when = 0
 		case _:
 			raise Exception("bad value")
 	when_obj = datetime.datetime.fromtimestamp(when).astimezone()
