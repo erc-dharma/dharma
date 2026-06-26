@@ -9,7 +9,9 @@ Search
 <p>This interface allows you to look for texts in the DHARMA collection. The
 search form below can be used for filtering results. For help on the query syntax, see <a href="/search-help">here</a>.</p>
 
+% if last_updated:
 <p>The database was last updated {{last_updated | format_date}}.</p>
+% endif
 
 <form action="{{url_for('show_catalog')}}" method="get">
    <div class="search-wrapper">
