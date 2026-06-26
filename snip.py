@@ -148,9 +148,7 @@ def render_hand(self, node):
 	prepend_to_first_para(self.document.hand, "Palaeographic description: ")
 
 @handler("edition")
-@handler("translation")
 @handler("commentary")
-@handler("bibliography")
 def render_section(self, node):
 	self.heading_level += 1
 	# XXX not necessarily correct! should use the actual @xml:lang
@@ -170,6 +168,19 @@ def render_logical_display(self, node):
 	self.push("div", class_="logical")
 	self.dispatch_children(node)
 	self.document.logical = self.pop()
+
+@handler("translation")
+@handler("bibliography")
+def render_translation(self, node):
+	if node["match"] != "true":
+		return
+	# TODO lang is not necessarily correct, should use the original
+	# @xml:lang.
+	self.heading_level += 1
+	self.push("div", class_=node.name, lang="en")
+	self.dispatch_children(node)
+	setattr(self.document, node.name, self.pop())
+	self.heading_level -= 1
 
 @handler("title")
 def render_title(self, node):
@@ -319,7 +330,9 @@ class Document:
 		self.hand = None
 		self.editors = []
 		self.edition_languages = []
-		self.logical = tree.Tree()
+		self.logical = None
+		self.translation = None
+		self.bibliography = None
 		self.repository = paired(identifier="", name="")
 		self.identifier = None
 		self.commit = None

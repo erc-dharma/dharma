@@ -285,7 +285,7 @@ class SnippetGenerator:
 	def _get_roots(self):
 		# Identify the primary structural nodes for snippet extraction
 		roots = []
-		for path in ("/document/edition/logical", "/document/hand", "/document/summary"):
+		for path in ("/document/edition/logical", "/document/hand", "/document/summary", "/document/translation", "/document/bibliography"):
 			node = self.doc.first(path)
 			if node: roots.append(node)
 		return roots
@@ -890,8 +890,8 @@ def cli_search(query):
 		eprint("no match")
 		return
 	t = r["matches"][0]
-	print(t.first("//logical").xml())
 	doc = snip.process(t)
+	print(doc.translation)
 
 @common.transaction("texts")
 def main():
@@ -899,9 +899,9 @@ def main():
 	doc = tree.parse_string(sys.stdin.read())
 	doc = ingest.process_tree(doc)
 	enrich.process(doc)
-	translation = doc.first("/document/edition/logical")
+	translation = doc.first("/document/translation")
 	assert translation
 	print(extract_text(translation))
 
 if __name__ == "__main__":
-	main()
+	cli_search(sys.argv[1])

@@ -142,9 +142,24 @@ search form below can be used for filtering results. For help on the query synta
    <p>
       Identifier: <span class="text-id">{{doc.identifier.html() | safe}}</span>.
    </p>
+% if doc.logical:
+   <p>Edition:</p>
    <div class="snippets">
    {{doc.logical.html() | safe}}
    </div>
+% endif
+% if doc.translation:
+   <p>Translation:</p>
+   <div class="snippets">
+   {{doc.translation.html() | safe}}
+   </div>
+% endif
+% if doc.bibliography:
+   <p>Bibliography:</p>
+   <div class="snippets">
+   {{doc.bibliography.html() | safe}}
+   </div>
+% endif
 </div> ## class="card-body"
 </div> ## class=card
 % endfor
