@@ -264,16 +264,6 @@ create table if not exists documents_search(
 	foreign key(repo_id) references repos(repo)
 );
 
--- The following is to update the insertion timestamp automatically.
-create trigger if not exists documents_search_update_timestamp
-after update on documents_search
-for each row
-begin
-	update documents_search
-	set updated_at = cast(strftime('%s', 'now') as integer)
-	where ident = new.ident;
-end;
-
 -- This table is modeled as a tree. Each record has a parent, which is either
 -- null (for the root of the tree) or the record id (rid) of its parent.
 -- Interesting read for representing and querying trees in sqlite:

@@ -85,12 +85,12 @@ def _insert_search(db, data):
 	insert or replace into documents_search(
 		ident, logical, title, summary, repo_id, repo_name, hand,
 		author, editor, lang, script, source, translation,
-		bibliography
+		bibliography, updated_at,
 	)
 	values (
 		:ident, :logical, :title, :summary, :repo_id, :repo_name, :hand,
 		:author, :editor, :lang, :script, :source, :translation,
-		:bibliography
+		:bibliography, cast(strftime('%s', 'now') as integer)
 	)
 	""", data)
 
