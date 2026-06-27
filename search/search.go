@@ -587,17 +587,13 @@ func evalOr(d Document, args []QueryNode) bool {
 // containsMatcher normalizes incoming strings to execute character comparisons identically.
 // Delegates to the Glob algorithm if wildcard characters are detected.
 func containsMatcher(cache *TransformCache, text, term, mode, field string) bool {
-	// 1. Si aucun mode n'est fourni, on cherche la valeur par défaut dans le schéma JSON
 	if mode == "" {
 		if meta, ok := SearchSchema.Fields[field]; ok && meta.DefaultMode != "" {
 			mode = meta.DefaultMode
 		} else {
-			// Valeur par défaut globale si le champ n'est pas dans le schéma
 			mode = "forma"
 		}
 	}
-
-	// 2. On exécute la transformation avec le mode résolu (qui peut être maintenant "formc")
 	transText := cache.get(text, mode)
 	if !strings.ContainsAny(term, "*?") {
 		return strings.Contains(transText, transform(term, mode))
@@ -833,8 +829,8 @@ type StringMapper func(string) (string, []int)
 // Identifies start and end indices for highlighting via Glob if necessary.
 func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2]int {
 	if mode == "" {
-		if field == "logical" {
-			mode = "formb"
+		if meta, ok := SearchSchema.Fields[field]; ok && meta.DefaultMode != "" {
+			mode = meta.DefaultMode
 		} else {
 			mode = "forma"
 		}
