@@ -111,6 +111,7 @@ func findFirstGlobMatch(pattern []byte, name string, start int) (int, int, bool)
 }
 
 // get retrieves cached normalizations to avoid repeated processing of string bytes.
+// The formc mode has been introduced to cache the prefix mapping directly, which isolates graphemes without phonological reduction.
 func (c *TransformCache) get(text, mode string) string {
 	if c == nil {
 		return transform(text, mode)
@@ -118,6 +119,10 @@ func (c *TransformCache) get(text, mode string) string {
 	if mode == "formb" {
 		c.onceFormB.Do(func() { c.formB = transform(text, "formb") })
 		return c.formB
+	}
+	if mode == "formc" {
+		c.onceFormC.Do(func() { c.formC = transform(text, "formc") })
+		return c.formC
 	}
 	c.onceFormA.Do(func() { c.formA = transform(text, "forma") })
 	return c.formA
@@ -582,13 +587,17 @@ func evalOr(d Document, args []QueryNode) bool {
 // containsMatcher normalizes incoming strings to execute character comparisons identically.
 // Delegates to the Glob algorithm if wildcard characters are detected.
 func containsMatcher(cache *TransformCache, text, term, mode, field string) bool {
+	// 1. Si aucun mode n'est fourni, on cherche la valeur par défaut dans le schéma JSON
 	if mode == "" {
-		if field == "logical" {
-			mode = "formb"
+		if meta, ok := SearchSchema.Fields[field]; ok && meta.DefaultMode != "" {
+			mode = meta.DefaultMode
 		} else {
+			// Valeur par défaut globale si le champ n'est pas dans le schéma
 			mode = "forma"
 		}
 	}
+
+	// 2. On exécute la transformation avec le mode résolu (qui peut être maintenant "formc")
 	transText := cache.get(text, mode)
 	if !strings.ContainsAny(term, "*?") {
 		return strings.Contains(transText, transform(term, mode))

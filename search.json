@@ -2,7 +2,8 @@
   "_comment": "Configuration mapping virtual and physical search fields. Fields are sorted alphabetically. The empty string key defines global search behavior, expanding to all searchable elements. A default_mode is specified for each field to explicitly override implicit text normalization behaviors.",
   "modes": [
     "forma",
-    "formb"
+    "formb",
+    "formc"
   ],
   "fields": {
     "": {
@@ -123,7 +124,7 @@
       "db_column": "logical",
       "xpath": "/document/edition/logical",
       "cache": true,
-      "default_mode": "formb"
+      "default_mode": "formc"
     },
     "repo": {
       "type": "fieldset",

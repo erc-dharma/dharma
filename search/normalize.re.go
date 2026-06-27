@@ -20,6 +20,8 @@ var (
 	_ = cases.Fold
 )
 
+var folder = cases.Fold()
+
 const Pai = 0xE002
 const Pau = 0xE003
 const Pkh = 0xE004
@@ -44,8 +46,9 @@ func peekByte(s string, i int) byte {
 }
 
 // lexPrefix uses a finite state machine to identify the next semantic sequence.
-// It returns the byte length of the matched sequence, its replacement, and an elision flag.
-func lexPrefix(text string) (int, rune, bool) {
+// It returns the byte length of the sequence, its string representation, and an elision flag.
+// Updated to return string instead of rune for complex graphemes mapping.
+func lexPrefix(text string) (int, string, bool) {
 	cursor, marker := 0, 0
 	_ = cursor
 	_ = marker
@@ -58,93 +61,98 @@ func lexPrefix(text string) (int, rune, bool) {
 	re2c:define:YYSKIP = "cursor++";
 	re2c:define:YYBACKUP = "marker = cursor";
 	re2c:define:YYRESTORE = "cursor = marker";
-	* { return 1, 0, true }
+
+	* { return 1, "", true }
+	"æ" | "Æ" { return cursor, "ae", false }
+	"œ" | "Œ" { return cursor, "oe", false }
+	"đ" | "Đ" { return cursor, "d", false }
+
 	// In Tamil, the character "'" represents an elided "u" when it appears
 	// at the end of a word (viz. before a non-alphanumeric char or the
 	// empty string), as in:
+	//
 	//     kaṇṇāṟṟ’ iraṇṭāñ
 	//     uttirōttar’-abhivriddhi
+	//
 	// But when "'" appears at the beginning of a word (viz. immediately
 	// before an alphabetic char), it represents the avagraha, even in
 	// Tamil, as in:
+	//
 	//     durvvāso-’nukāribhyaḥ
 	//     bar ’nukāribhyaḥ
 	//     sthirayogo’pi # not supposed to happen, but does happen.
+	//
 	// Ideally, we should resolve the ambiguity, and transform the "'" into
 	// an "a" or an "u". But for now, for simplicity, we just turn this
 	// character into an "a".
+	//
 	// The sequences "'!" and "’!" always represent the avagraha, e.g.
 	// ’!pi = 'pi = api
-	"a" | "A" | "ă" | "Ă" | "'" | "’" | "'!" | "’!" { return cursor, 'a', false }
-	"ā" | "Ā" { return cursor, 'ā', false }
-	"i" | "I" | "ĭ" | "Ĭ" { return cursor, 'i', false }
-	"ī" | "Ī" { return cursor, 'ī', false }
-	"u" | "U" | "ŭ" | "Ŭ" { return cursor, 'u', false }
-	"ū" | "Ū" { return cursor, 'ū', false }
-	"ṛ" | "Ṛ" | "r̥" | "R̥" { return cursor, 'ṛ', false }
-	"ṝ" | "Ṝ" | "r̥̄" | "R̥̄" { return cursor, 'ṝ', false }
-	"ḷ" | "Ḷ" | "l̥" | "L̥"{ return cursor, 'ḷ', false }
-	"ḹ" | "Ḹ" | "l̥̄" | "L̥̄" { return cursor, 'ḹ', false }
-	"e" | "E" | "ĕ" | "Ĕ" | "ē" | "Ē" { return cursor, 'e', false }
-	"ai" | "Ai" | "AI" | "aI" { return cursor, Pai, false }
-	"o" | "O" | "ŏ" | "Ŏ" | "ō" | "Ō" { return cursor, 'o', false }
-	"au" | "Au" | "AU" | "aU" { return cursor, Pau, false }
-	// Anusvara and anunāsika, Cam anusvāra-candra, all treated as the anusvara.
-	"ṁ" | "Ṁ" | "ṃ" | "Ṃ" | "m̐" | "M̐" | "m̃" | "M̃" { return cursor, 'ṃ', false }
-	// Upadhmānīya and jihvāmūlīya. Just fold them to a visarga.
-	"ḥ" | "Ḥ" | "ḫ" | "Ḫ" | "ẖ" | "H̱" { return cursor, 'ḥ', false }
-	"k" | "K" { return cursor, 'k', false }
-	"kh" | "Kh" | "KH" | "kH" { return cursor, Pkh, false }
-	"g" | "G" { return cursor, 'g', false }
-	"gh" | "Gh" | "GH" | "gH" { return cursor, Pgh, false }
-	"ṅ" | "Ṅ" { return cursor, 'ṅ', false }
-	"c" | "C" { return cursor, 'c', false }
-	"ch" | "Ch" | "CH" | "cH" { return cursor, Pch, false }
-	"j" | "J" { return cursor, 'j', false }
-	"jh" | "Jh" | "JH" | "jH" { return cursor, Pjh, false }
-	"ñ" | "Ñ" { return cursor, 'ñ', false }
-	"ṭ" | "Ṭ" { return cursor, 'ṭ', false }
-	"ṭh" | "Ṭh" | "ṬH" | "ṭH" { return cursor, P_th, false }
-	"ḍ" | "Ḍ" { return cursor, 'ḍ', false }
-	"ḍh" | "Ḍh" | "ḌH" | "ḍH" { return cursor, P_dh, false }
-	"ṇ" | "Ṇ" { return cursor, 'ṇ', false }
-	"t" | "T" { return cursor, 't', false }
-	"th" | "Th" | "TH" | "tH" { return cursor, Pth, false }
-	"d" | "D" { return cursor, 'd', false }
-	"dh" | "Dh" | "DH" | "dH" { return cursor, Pdh, false }
-	"n" | "N" { return cursor, 'n', false }
-	"p" | "P" { return cursor, 'p', false }
-	"ph" | "Ph" | "PH" | "pH" { return cursor, Pph, false }
-	"b" | "B" { return cursor, 'b', false }
-	"bh" | "Bh" | "BH" | "bH" { return cursor, Pbh, false }
-	"m" | "M" { return cursor, 'm', false }
-	"y" | "Y" { return cursor, 'y', false }
-	"r" | "R" { return cursor, 'r', false }
-	"l" | "L" { return cursor, 'l', false }
-	"v" | "V" { return cursor, 'v', false }
-	"ś" | "Ś" { return cursor, 'ś', false }
-	"ṣ" | "Ṣ" { return cursor, 'ṣ', false }
-	"s" | "S" { return cursor, 's', false }
-	"h" | "H" { return cursor, 'h', false }
-	// Javanese/Balinese pepet. For the following, we both map
-	// LATIN SMALL LETTER SCHWA (the correct character) and CYRILLIC
-	// SMALL LETTER SCHWA (incorrect one), in both the upper- and lowercase versions.
-	"ə" | "Ə" | "ә" | "Ә" { return cursor, 'ə', false }
-	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, Plongschwa, false }
+	"a" | "A" | "ă" | "Ă" | "'" | "’" | "'!" | "’!" { return cursor, "a", false }
+	"ā" | "Ā" { return cursor, "ā", false }
+	"i" | "I" | "ĭ" | "Ĭ" { return cursor, "i", false }
+	"ī" | "Ī" { return cursor, "ī", false }
+	"u" | "U" | "ŭ" | "Ŭ" { return cursor, "u", false }
+	"ū" | "Ū" { return cursor, "ū", false }
+	"ṛ" | "Ṛ" | "r̥" | "R̥" { return cursor, "ṛ", false }
+	"ṝ" | "Ṝ" | "r̥̄" | "R̥̄" { return cursor, "ṝ", false }
+	"ḷ" | "Ḷ" | "l̥" | "L̥"{ return cursor, "ḷ", false }
+	"ḹ" | "Ḹ" | "l̥̄" | "L̥̄" { return cursor, "ḹ", false }
+	"e" | "E" | "ĕ" | "Ĕ" | "ē" | "Ē" { return cursor, "e", false }
+	"ai" | "Ai" | "AI" | "aI" { return cursor, string(rune(Pai)), false }
+	"o" | "O" | "ŏ" | "Ŏ" | "ō" | "Ō" { return cursor, "o", false }
+	"au" | "Au" | "AU" | "aU" { return cursor, string(rune(Pau)), false }
+	"ṁ" | "Ṁ" | "ṃ" | "Ṃ" | "m̐" | "M̐" | "m̃" | "M̃" { return cursor, "ṃ", false }
+	"ḥ" | "Ḥ" | "ḫ" | "Ḫ" | "ẖ" | "H̱" { return cursor, "ḥ", false }
+	"k" | "K" { return cursor, "k", false }
+	"kh" | "Kh" | "KH" | "kH" { return cursor, string(rune(Pkh)), false }
+	"g" | "G" { return cursor, "g", false }
+	"gh" | "Gh" | "GH" | "gH" { return cursor, string(rune(Pgh)), false }
+	"ṅ" | "Ṅ" { return cursor, "ṅ", false }
+	"c" | "C" { return cursor, "c", false }
+	"ch" | "Ch" | "CH" | "cH" { return cursor, string(rune(Pch)), false }
+	"j" | "J" { return cursor, "j", false }
+	"jh" | "Jh" | "JH" | "jH" { return cursor, string(rune(Pjh)), false }
+	"ñ" | "Ñ" { return cursor, "ñ", false }
+	"ṭ" | "Ṭ" { return cursor, "ṭ", false }
+	"ṭh" | "Ṭh" | "ṬH" | "ṭH" { return cursor, string(rune(P_th)), false }
+	"ḍ" | "Ḍ" { return cursor, "ḍ", false }
+	"ḍh" | "Ḍh" | "ḌH" | "ḍH" { return cursor, string(rune(P_dh)), false }
+	"ṇ" | "Ṇ" { return cursor, "ṇ", false }
+	"t" | "T" { return cursor, "t", false }
+	"th" | "Th" | "TH" | "tH" { return cursor, string(rune(Pth)), false }
+	"d" | "D" { return cursor, "d", false }
+	"dh" | "Dh" | "DH" | "dH" { return cursor, string(rune(Pdh)), false }
+	"n" | "N" { return cursor, "n", false }
+	"p" | "P" { return cursor, "p", false }
+	"ph" | "Ph" | "PH" | "pH" { return cursor, string(rune(Pph)), false }
+	"b" | "B" { return cursor, "b", false }
+	"bh" | "Bh" | "BH" | "bH" { return cursor, string(rune(Pbh)), false }
+	"m" | "M" { return cursor, "m", false }
+	"y" | "Y" { return cursor, "y", false }
+	"r" | "R" { return cursor, "r", false }
+	"l" | "L" { return cursor, "l", false }
+	"v" | "V" { return cursor, "v", false }
+	"ś" | "Ś" { return cursor, "ś", false }
+	"ṣ" | "Ṣ" { return cursor, "ṣ", false }
+	"s" | "S" { return cursor, "s", false }
+	"h" | "H" { return cursor, "h", false }
+	"ə" | "Ə" | "ә" | "Ә" { return cursor, "ə", false }
+	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, string(rune(Plongschwa)), false }
 	[^] {
 		r, _ := utf8.DecodeRuneInString(text[:cursor])
 		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
-			return cursor, 0, true
+			return cursor, "", true
 		}
-		return cursor, r, false
+		return cursor, folder.String(string(r)), false
 	}
 	*/
-	return 0, 0, false
+	return 0, "", false
 }
 
-// consumeToken reads the next token and aligns the cursor with grapheme boundaries.
-// It absorbs any trailing combining characters attached to the recognized sequence.
-func consumeToken(text string) (int, rune, bool) {
+// consumeToken reads the token and converts the representation to a string to support multi-character graphemes.
+// It continues to absorb combining characters sequentially until the matched length is reached.
+func consumeToken(text string) (int, string, bool) {
 	matchLen, rep, elide := lexPrefix(text)
 	consumed := 0
 	state := -1
@@ -221,8 +229,8 @@ func lexReduced(encoded string) (int, rune) {
 	return 0, 0
 }
 
-// encodeSequence converts UTF-8 text to the internal binary sequence without allocating bounds.
-// It is optimized for high-speed evaluation during the filtering phase.
+// encodeSequence converts text into the binary sequence using string concatenation rather than rune writing.
+// This accommodates the new multi-character mapping defined in the lexer block.
 func encodeSequence(text string) string {
 	var seq strings.Builder
 	for len(text) > 0 {
@@ -231,14 +239,14 @@ func encodeSequence(text string) string {
 			text = text[consumed:]
 			continue
 		}
-		seq.WriteRune(rep)
+		seq.WriteString(rep)
 		text = text[consumed:]
 	}
 	return seq.String()
 }
 
-// encodeSequenceWithBounds converts text to the internal sequence and returns an interleaved bounds array.
-// The array alternates original start and original end indices for each byte.
+// encodeSequenceWithBounds maps the boundaries relative to the byte length of the string representations.
+// It iterates over len(rep) which evaluates the number of bytes for proper structural offset mapping.
 func encodeSequenceWithBounds(text string) (string, []int) {
 	var seq strings.Builder
 	var bounds []int
@@ -251,8 +259,8 @@ func encodeSequenceWithBounds(text string) (string, []int) {
 			continue
 		}
 		endCursor := cursor + consumed
-		seq.WriteRune(rep)
-		n := utf8.RuneLen(rep)
+		seq.WriteString(rep)
+		n := len(rep)
 		for j := 0; j < n; j++ {
 			bounds = append(bounds, cursor, endCursor)
 		}
@@ -298,8 +306,6 @@ func reduceSequenceWithBounds(encoded string) (string, []int) {
 	}
 	return reduced.String(), bounds
 }
-
-var folder = cases.Fold()
 
 // lexNormalPrefix uses a finite state machine to identify the next sequence for normal mode.
 // It returns the byte length of the matched sequence, its replacement string, and an elision flag.
@@ -421,11 +427,26 @@ func transformNormalizedWithBounds(text string) (string, []int) {
 	return reduced, finalBounds
 }
 
+// transformPrefix executes the formc pipeline using only the prefix lexer.
+// It maps text directly to the base semantic tokens without phonological reduction.
+func transformPrefix(text string) string {
+	return encodeSequence(text)
+}
+
+// transformPrefixWithBounds executes the formc pipeline and returns the original text bounds.
+// It tracks positions through the single-layer prefix encoding sequence.
+func transformPrefixWithBounds(text string) (string, []int) {
+	return encodeSequenceWithBounds(text)
+}
+
 // transform acts as a fast text dispatcher ignoring positional metadata.
 // It is intended for boolean evaluation matrices.
 func transform(text string, mode string) string {
 	if mode == "formb" {
 		return transformNormalized(text)
+	}
+	if mode == "formc" {
+		return transformPrefix(text)
 	}
 	return transformNormal(text)
 }
@@ -435,6 +456,9 @@ func transform(text string, mode string) string {
 func transformWithBounds(text string, mode string) (string, []int) {
 	if mode == "formb" {
 		return transformNormalizedWithBounds(text)
+	}
+	if mode == "formc" {
+		return transformPrefixWithBounds(text)
 	}
 	return transformNormalWithBounds(text)
 }
