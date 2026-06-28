@@ -6,6 +6,8 @@ Bibliography
 
 % block body
 
+<p>On these pages are listed only those bibliographic references which are actually cited in the database. For the complete library of bibliographic references compiled and maintained by DHARMA, see <a href="https://www.zotero.org/groups/1633743/erc-dharma/library">our Zotero library</a>.</p>
+
 <p>Entries
 {{"%d\N{en dash}%d" % (first_entry, last_entry)}}
 of

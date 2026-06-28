@@ -34,6 +34,7 @@
          <li><a href="/repositories">Repositories</a></li>
          <li><a href="/languages">Languages</a></li>
          <li><a href="/scripts">Scripts</a></li>
+	 <li><a href="/bibliography">Bibliography</a></li>
       </ul>
    </li>
 
