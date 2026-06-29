@@ -884,18 +884,18 @@ def eprint(*args, **kwargs):
 
 def cli_search(query):
 	# Execute a command line search and display initial snippet
-	import snip
+	from dharma import snippets
 	r = query_search_service(query, offset=0, limit=20, sort="title")
 	if r["match_count"] < 1:
 		eprint("no match")
 		return
 	t = r["matches"][0]
-	doc = snip.process(t)
+	doc = snippets.process(t)
 	print(doc.translation.xml())
 
 @common.transaction("texts")
 def main():
-	import ingest, enrich
+	from dharma import ingest, enrich
 	doc = tree.parse_string(sys.stdin.read())
 	doc = ingest.process_tree(doc)
 	enrich.process(doc)

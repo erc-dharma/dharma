@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup # pip install bs4
 
 from dharma import common, change, parallels, catalog, validate, ingest, tree
 from dharma import biblio, texts, editorial, prosody, render, languages
-from dharma import enrich, search, snip, glyphs
+from dharma import enrich, search, snippets, glyphs
 from dharma.query import InvalidQuery
 
 # TODO Should use the w3c validator API https://validator.w3.org/docs/api.html
@@ -639,7 +639,7 @@ def show_catalog():
 		return flask.render_template("search.tpl", error=f"Search error: {e}", query=query, sort=sort, matches=[], match_count=0, filters=filters)
 
 	# Process each match to generate contextual snippets highlighting the query terms
-	matches = [snip.process(match, query=query) for match in context["matches"]]
+	matches = [snippets.process(match, query=query) for match in context["matches"]]
 	context["matches"] = matches
 	count = context.get("match_count", 0)
 
