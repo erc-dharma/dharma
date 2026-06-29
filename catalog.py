@@ -85,7 +85,7 @@ def _insert_search(db, data):
 	insert or replace into documents_search(
 		ident, logical, title, summary, repo_id, repo_name, hand,
 		author, editor, lang, script, source, translation,
-		bibliography, updated_at,
+		bibliography, updated_at
 	)
 	values (
 		:ident, :logical, :title, :summary, :repo_id, :repo_name, :hand,
