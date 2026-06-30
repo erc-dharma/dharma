@@ -2870,7 +2870,7 @@
                                 <valItem ident="numbered">
                                     <desc>numbered list, like &lt;ol&gt; in HTML</desc>
                                 </valItem>
-                                <valItem ident="description">
+                                <valItem ident="paired">
                                     <desc>description list, like &lt;dl&gt; in HTML</desc>
                                 </valItem>
                             </valList>

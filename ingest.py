@@ -1683,7 +1683,7 @@ réduire les espaces entre ce qui précède et suit du para + entre les items
 # <dl> within <p>, so no special treatment is needed in this case. Still, it
 # might be better to use the same structure for both.
 
-@_handler("list[@rend='description' or label]")
+@_handler("list[@rend='paired' or label]")
 def _parse_description_list(p, lst):
 	p.push(tree.Tag("dlist"))
 	# We expect a series of (label, item). Only these elements are supposed

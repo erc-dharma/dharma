@@ -9507,7 +9507,7 @@ Measures</ref>
                                 <valItem ident="numbered">
                                     <desc>numbered list, like &lt;ol&gt; in HTML</desc>
                                 </valItem>
-                                <valItem ident="description">
+                                <valItem ident="paired">
                                     <desc>description list, like &lt;dl&gt; in HTML</desc>
                                 </valItem>
                             </valList>
@@ -14984,7 +14984,6 @@ contexts.</p>
                         </attDef><attDef ident="rend" mode="change">
                             <valList type="closed" mode="replace">
                                 <valItem ident="pun"/>
-                                <valItem ident="check"/>
                             </valList>
                         </attDef><attDef ident="met" mode="change">
                             
