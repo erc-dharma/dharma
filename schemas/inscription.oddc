@@ -8870,9 +8870,6 @@ Normalization</ref>
                             <datatype>
                                 <dataRef name="string"/>
                             </datatype>
-                            <valList type="closed" mode="replace">
-                                <valItem ident="check"/>
-                            </valList>
                         </attDef><attDef ident="reason" usage="opt"><desc versionDate="2005-01-14" xml:lang="en">indicates why the material is hard to transcribe.</desc><desc versionDate="2007-12-20" xml:lang="ko">전사하기 어려운 이유를 표시한다.</desc><desc versionDate="2007-05-02" xml:lang="zh-TW">指出資料難以轉錄的原因。</desc><desc versionDate="2008-04-05" xml:lang="ja">当該資料から転記が困難である理由を示す。</desc><desc versionDate="2009-01-06" xml:lang="fr">indique pourquoi il est difficile de transcrire le document.</desc><desc versionDate="2022-02-20" xml:lang="es">Cuando la dificultad de transcripción se debe a un daño, se categoriza, si se puede, la causa de ese daño.</desc><desc versionDate="2007-01-21" xml:lang="it">indica la ragione per la quale è difficile
                 trascrivere il brano.</desc><desc versionDate="2016-11-24" xml:lang="de">gibt den Grund an, warum das Material schwer zu transkribieren ist.</desc><datatype>
                                 <dataRef name="string"/>

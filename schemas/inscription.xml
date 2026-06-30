@@ -1146,9 +1146,6 @@
                             <datatype>
                                 <dataRef name="string"/>
                             </datatype>
-                            <valList type="closed" mode="replace">
-                                <valItem ident="check"/>
-                            </valList>
                         </attDef>
                     </attList>
                 </elementSpec>
