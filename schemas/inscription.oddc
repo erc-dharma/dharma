@@ -17557,7 +17557,7 @@ généralement dans des textes oraux.</desc>
                 </dataSpec><dataSpec rend="add" module="derived-module-dharma" ident="dharma.language">
                     <desc>language code</desc>
                     <content>
-                        <valList type="closed">
+                        <valList type="open">
                             <valItem ident="ara"><desc>Arabic</desc></valItem>
                             <valItem ident="ban"><desc>Balinese</desc></valItem>
                             <valItem ident="bya"><desc>Batak</desc></valItem>
