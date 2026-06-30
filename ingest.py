@@ -1964,7 +1964,7 @@ def _gather_biblio(p):
 		short_title = ptr["target"].removeprefix("bib:")
 		if not short_title or short_title == "AuthorYear_01":
 			continue
-		siglum = bibl["n"]
+		siglum = bibl["n"].replace("+", "&")
 		if siglum:
 			# The same siglum might erroneously be used for several
 			# entries. In this case, map it to the first one (since
