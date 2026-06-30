@@ -3914,7 +3914,6 @@
                         <attDef ident="rend" mode="change">
                             <valList type="closed" mode="replace">
                                 <valItem ident="pun"/>
-                                <valItem ident="check"/>
                             </valList>
                         </attDef>
                         <attDef ident="met" mode="change">

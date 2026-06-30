@@ -227,7 +227,7 @@ class Writer(tree.Serializer):
 				self.name_last_first(author)
 				continue
 			if i == len(authors) - 1:
-				self.append(" and ")
+				self.append(" & ")
 			else:
 				self.append(", ")
 			self.name_first_last(author)
@@ -265,7 +265,7 @@ class Writer(tree.Serializer):
 					self.name_first_last(creator)
 					continue
 				if i == len(creators) - 1:
-					self.append(" and ")
+					self.append(" & ")
 				else:
 					self.append(", ")
 				self.name_first_last(creator)
@@ -297,7 +297,7 @@ class Writer(tree.Serializer):
 		elif len(authors) == 2:
 			self.name_last(authors[0])
 			self.space()
-			self.append("and")
+			self.append("&")
 			self.space()
 			self.name_last(authors[1])
 		else:
