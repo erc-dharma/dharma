@@ -553,7 +553,9 @@ class Writer(tree.Serializer):
 
 cited_range_units = {
 	"volume": ("vol.", "vols."),
-	"appendix": ("appendix", "appendices"),
+	# Below, the use of "appendix" for the plural is intentional. See
+	# https://github.com/erc-dharma/project-documentation/issues/310#issuecomment-4856804546
+	"appendix": ("appendix", "appendix"),
 	"book": ("book", "books"),
 	"section": ("§", "§§"),
 	"page": ("p.", "pp."),
