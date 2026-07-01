@@ -514,11 +514,13 @@
                         <attDef ident="part" mode="delete"/>
                         <attDef ident="prev" mode="delete"/>
                         <attDef ident="real" mode="delete"/>
+                        <attDef ident="rend" mode="delete"/>
                         <attDef ident="corresp" mode="delete"/>
                         <attDef ident="rhyme" mode="delete"/>
                         <attDef ident="sameAs" mode="delete"/>
                         <attDef ident="sample" mode="delete"/>
                         <attDef ident="select" mode="delete"/>
+                        <attDef ident="style" mode="delete"/>
                         <attDef ident="synch" mode="delete"/>
                         <attDef ident="xml:base" mode="delete"/>
                         <attDef ident="xml:id" mode="delete"/>
@@ -527,53 +529,6 @@
                             <datatype>
                                 <dataRef key="dharma.n"/>
                             </datatype>
-                        </attDef>
-                        <attDef ident="rend" mode="change">
-                            <datatype>
-                                <dataRef name="string"/>
-                            </datatype>
-                            <valList type="closed" mode="replace">
-                                <valItem ident="bt-rotated">
-                                    <desc> written vertically from bottom to top, with the tops of
-                                        characters facing left </desc>
-                                </valItem>
-                                <valItem ident="tb-rotated">
-                                    <desc> written vertically from top to bottom, with the tops of
-                                        characters facing right </desc>
-                                </valItem>
-                                <valItem ident="bt-upright">
-                                    <desc> written vertically from bottom to top, with the tops of
-                                        characters facing upward </desc>
-                                </valItem>
-                                <valItem ident="tb-upright">
-                                    <desc> written vertically from top to bottom, with the tops of
-                                        characters facing upward </desc>
-                                </valItem>
-                                <valItem ident="rl-upright">
-                                    <desc> written horizontally from right to left, with characters
-                                        in their regular orientation </desc>
-                                </valItem>
-                                <valItem ident="rl-flipped">
-                                    <desc> written horizontally from right to left, with characters
-                                        mirrored around their vertical axis as in true boustrophedon
-                                    </desc>
-                                </valItem>
-                                <valItem ident="rl-rotated">
-                                    <desc> written horizontally from right to left, with the tops of
-                                        characters facing downward </desc>
-                                </valItem>
-                            </valList>
-                        </attDef>
-                        <attDef ident="style" mode="change">
-                            <datatype>
-                                <dataRef name="string"/>
-                            </datatype>
-                            <valList type="closed" mode="replace">
-                                <valItem ident="text-align: right"/>
-                                <valItem ident="text-align: center"/>
-                                <valItem ident="text-align: left"/>
-                                <valItem ident="text-align: justify"/>
-                            </valList>
                         </attDef>
                         <attDef ident="subtype" mode="change">
                             <datatype>
@@ -2088,7 +2043,11 @@
                         <attDef ident="hand" mode="delete"/>
                         <attDef ident="next" mode="delete"/>
                         <attDef ident="prev" mode="delete"/>
-                        <attDef ident="rendition" mode="delete"/>
+                        <attDef ident="rendition" mode="change">
+                            <datatype>
+                                <dataRef key="dharma.script"/>
+                            </datatype>
+                        </attDef>
                         <attDef ident="resp" mode="delete"/>
                         <attDef ident="sameAs" mode="delete"/>
                         <attDef ident="select" mode="delete"/>
@@ -2123,35 +2082,6 @@
                                 <dataRef name="string"/>
                             </datatype>
                             <valList type="closed" mode="replace">
-                                <valItem ident="bt-rotated">
-                                    <desc> written vertically from bottom to top, with the tops of
-                                        characters facing left </desc>
-                                </valItem>
-                                <valItem ident="tb-rotated">
-                                    <desc> written vertically from top to bottom, with the tops of
-                                        characters facing right </desc>
-                                </valItem>
-                                <valItem ident="bt-upright">
-                                    <desc> written vertically from bottom to top, with the tops of
-                                        characters facing upward </desc>
-                                </valItem>
-                                <valItem ident="tb-upright">
-                                    <desc> written vertically from top to bottom, with the tops of
-                                        characters facing upward </desc>
-                                </valItem>
-                                <valItem ident="rl-upright">
-                                    <desc> written horizontally from right to left, with characters
-                                        in their regular orientation </desc>
-                                </valItem>
-                                <valItem ident="rl-flipped">
-                                    <desc> written horizontally from right to left, with characters
-                                        mirrored around their vertical axis as in true boustrophedon
-                                    </desc>
-                                </valItem>
-                                <valItem ident="rl-rotated">
-                                    <desc> written horizontally from right to left, with the tops of
-                                        characters facing downward </desc>
-                                </valItem>
                                 <valItem ident="grantha"/>
                                 <valItem ident="ornate"/>
                                 <valItem ident="large"/>
@@ -2161,17 +2091,7 @@
                                 <valItem ident="expanded"/>
                             </valList>
                         </attDef>
-                        <attDef ident="style" mode="change">
-                            <!-- For this one, no default value, we assume that the alignment
-                            is insignificant and do not mention it if it is not given; could
-                            have @style='default' or sth. -->
-                            <valList type="closed" mode="replace">
-                                <valItem ident="text-align: right"/>
-                                <valItem ident="text-align: center"/>
-                                <valItem ident="text-align: left"/>
-                                <valItem ident="text-align: justify"/>
-                            </valList>
-                        </attDef>
+                        <attDef ident="style" mode="delete"/>
                     </attList>
                 </elementSpec>
                 <elementSpec ident="g" module="gaiji" mode="change">

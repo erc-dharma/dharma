@@ -13508,55 +13508,10 @@ supplied to printer.</change>
                                 </valItem>
                                 <valItem ident="translation"/>
                             </valList>
-                        </attDef><attDef ident="ana" mode="delete"/><attDef ident="cert" mode="delete"/><attDef ident="change" mode="delete"/><attDef ident="copyOf" mode="delete"/><attDef ident="decls" mode="delete"/><attDef ident="exclude" mode="delete"/><attDef ident="facs" mode="delete"/><attDef ident="hand" mode="delete"/><attDef ident="met" mode="delete"/><attDef ident="next" mode="delete"/><attDef ident="org" mode="delete"/><attDef ident="part" mode="delete"/><attDef ident="prev" mode="delete"/><attDef ident="real" mode="delete"/><attDef ident="corresp" mode="delete"/><attDef ident="rhyme" mode="delete"/><attDef ident="sameAs" mode="delete"/><attDef ident="sample" mode="delete"/><attDef ident="select" mode="delete"/><attDef ident="synch" mode="delete"/><attDef ident="xml:base" mode="delete"/><attDef ident="xml:id" mode="delete"/><attDef ident="xml:space" mode="delete"/><attDef ident="n" mode="change">
+                        </attDef><attDef ident="ana" mode="delete"/><attDef ident="cert" mode="delete"/><attDef ident="change" mode="delete"/><attDef ident="copyOf" mode="delete"/><attDef ident="decls" mode="delete"/><attDef ident="exclude" mode="delete"/><attDef ident="facs" mode="delete"/><attDef ident="hand" mode="delete"/><attDef ident="met" mode="delete"/><attDef ident="next" mode="delete"/><attDef ident="org" mode="delete"/><attDef ident="part" mode="delete"/><attDef ident="prev" mode="delete"/><attDef ident="real" mode="delete"/><attDef ident="rend" mode="delete"/><attDef ident="corresp" mode="delete"/><attDef ident="rhyme" mode="delete"/><attDef ident="sameAs" mode="delete"/><attDef ident="sample" mode="delete"/><attDef ident="select" mode="delete"/><attDef ident="style" mode="delete"/><attDef ident="synch" mode="delete"/><attDef ident="xml:base" mode="delete"/><attDef ident="xml:id" mode="delete"/><attDef ident="xml:space" mode="delete"/><attDef ident="n" mode="change">
                             <datatype>
                                 <dataRef key="dharma.n"/>
                             </datatype>
-                        </attDef><attDef ident="rend" mode="change">
-                            <datatype>
-                                <dataRef name="string"/>
-                            </datatype>
-                            <valList type="closed" mode="replace">
-                                <valItem ident="bt-rotated">
-                                    <desc> written vertically from bottom to top, with the tops of
-                                        characters facing left </desc>
-                                </valItem>
-                                <valItem ident="tb-rotated">
-                                    <desc> written vertically from top to bottom, with the tops of
-                                        characters facing right </desc>
-                                </valItem>
-                                <valItem ident="bt-upright">
-                                    <desc> written vertically from bottom to top, with the tops of
-                                        characters facing upward </desc>
-                                </valItem>
-                                <valItem ident="tb-upright">
-                                    <desc> written vertically from top to bottom, with the tops of
-                                        characters facing upward </desc>
-                                </valItem>
-                                <valItem ident="rl-upright">
-                                    <desc> written horizontally from right to left, with characters
-                                        in their regular orientation </desc>
-                                </valItem>
-                                <valItem ident="rl-flipped">
-                                    <desc> written horizontally from right to left, with characters
-                                        mirrored around their vertical axis as in true boustrophedon
-                                    </desc>
-                                </valItem>
-                                <valItem ident="rl-rotated">
-                                    <desc> written horizontally from right to left, with the tops of
-                                        characters facing downward </desc>
-                                </valItem>
-                            </valList>
-                        </attDef><attDef ident="style" mode="change">
-                            <datatype>
-                                <dataRef name="string"/>
-                            </datatype>
-                            <valList type="closed" mode="replace">
-                                <valItem ident="text-align: right"/>
-                                <valItem ident="text-align: center"/>
-                                <valItem ident="text-align: left"/>
-                                <valItem ident="text-align: justify"/>
-                            </valList>
                         </attDef><attDef ident="subtype" mode="change">
                             <datatype>
                                 <dataRef name="string"/>
@@ -13836,7 +13791,11 @@ appropriate for which circumstance.</p>
                         <constraint><sch:rule context="tei:fw"><sch:report test="not(preceding-sibling::tei:pb[1] or preceding-sibling::tei:fw[1])"> The element fw must
                                     always be preceded by the element pb or by the element fw.
                                 </sch:report></sch:rule></constraint>
-                    </constraintSpec><attList><attDef ident="ana" mode="delete"/><attDef ident="cert" mode="delete"/><attDef ident="change" mode="delete"/><attDef ident="copyOf" mode="delete"/><attDef ident="corresp" mode="delete"/><attDef ident="exclude" mode="delete"/><attDef ident="facs" mode="delete"/><attDef ident="hand" mode="delete"/><attDef ident="next" mode="delete"/><attDef ident="prev" mode="delete"/><attDef ident="rendition" mode="delete"/><attDef ident="resp" mode="delete"/><attDef ident="sameAs" mode="delete"/><attDef ident="select" mode="delete"/><attDef ident="source" mode="delete"/><attDef ident="subtype" mode="delete"/><attDef ident="synch" mode="delete"/><attDef ident="xml:base" mode="delete"/><attDef ident="xml:id" mode="delete"/><attDef ident="xml:lang" mode="delete"/><attDef ident="xml:space" mode="delete"/><attDef ident="n" mode="change" usage="req">
+                    </constraintSpec><attList><attDef ident="ana" mode="delete"/><attDef ident="cert" mode="delete"/><attDef ident="change" mode="delete"/><attDef ident="copyOf" mode="delete"/><attDef ident="corresp" mode="delete"/><attDef ident="exclude" mode="delete"/><attDef ident="facs" mode="delete"/><attDef ident="hand" mode="delete"/><attDef ident="next" mode="delete"/><attDef ident="prev" mode="delete"/><attDef ident="rendition" mode="change">
+                            <datatype>
+                                <dataRef key="dharma.script"/>
+                            </datatype>
+                        </attDef><attDef ident="resp" mode="delete"/><attDef ident="sameAs" mode="delete"/><attDef ident="select" mode="delete"/><attDef ident="source" mode="delete"/><attDef ident="subtype" mode="delete"/><attDef ident="synch" mode="delete"/><attDef ident="xml:base" mode="delete"/><attDef ident="xml:id" mode="delete"/><attDef ident="xml:lang" mode="delete"/><attDef ident="xml:space" mode="delete"/><attDef ident="n" mode="change" usage="req">
                             <datatype>
                                 <dataRef key="dharma.n"/>
                             </datatype>
@@ -13857,35 +13816,6 @@ appropriate for which circumstance.</p>
                                 <dataRef name="string"/>
                             </datatype>
                             <valList type="closed" mode="replace">
-                                <valItem ident="bt-rotated">
-                                    <desc> written vertically from bottom to top, with the tops of
-                                        characters facing left </desc>
-                                </valItem>
-                                <valItem ident="tb-rotated">
-                                    <desc> written vertically from top to bottom, with the tops of
-                                        characters facing right </desc>
-                                </valItem>
-                                <valItem ident="bt-upright">
-                                    <desc> written vertically from bottom to top, with the tops of
-                                        characters facing upward </desc>
-                                </valItem>
-                                <valItem ident="tb-upright">
-                                    <desc> written vertically from top to bottom, with the tops of
-                                        characters facing upward </desc>
-                                </valItem>
-                                <valItem ident="rl-upright">
-                                    <desc> written horizontally from right to left, with characters
-                                        in their regular orientation </desc>
-                                </valItem>
-                                <valItem ident="rl-flipped">
-                                    <desc> written horizontally from right to left, with characters
-                                        mirrored around their vertical axis as in true boustrophedon
-                                    </desc>
-                                </valItem>
-                                <valItem ident="rl-rotated">
-                                    <desc> written horizontally from right to left, with the tops of
-                                        characters facing downward </desc>
-                                </valItem>
                                 <valItem ident="grantha"/>
                                 <valItem ident="ornate"/>
                                 <valItem ident="large"/>
@@ -13894,15 +13824,7 @@ appropriate for which circumstance.</p>
                                 <valItem ident="wide"/>
                                 <valItem ident="expanded"/>
                             </valList>
-                        </attDef><attDef ident="style" mode="change">
-                            
-                            <valList type="closed" mode="replace">
-                                <valItem ident="text-align: right"/>
-                                <valItem ident="text-align: center"/>
-                                <valItem ident="text-align: left"/>
-                                <valItem ident="text-align: justify"/>
-                            </valList>
-                        </attDef><attDef ident="type" mode="delete"/></attList><exemplum xml:lang="en">
+                        </attDef><attDef ident="style" mode="delete"/><attDef ident="type" mode="delete"/></attList><exemplum xml:lang="en">
     <egXML xmlns="http://www.tei-c.org/ns/Examples" xml:id="gi-fw-egXML-lr">
       <fw type="sig" place="bottom">C3</fw>
     </egXML>
