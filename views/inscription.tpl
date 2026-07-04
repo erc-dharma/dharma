@@ -35,10 +35,7 @@
 		Alternative titles:
 	% endif
 	% for title in doc.titles[1:]:
-		“{{title.html() | safe}}”
-		% if not loop.last:
-		<br/>
-		% endif
+		{{title.html() | safe}}{% if not loop.last %} − {% else %}.{% endif %}
 	% endfor
 </div>
 % endif
