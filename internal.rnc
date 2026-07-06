@@ -44,7 +44,7 @@ document = element document {
 	apparatus?,
 	translation*,
 	commentary?,
-	bibliography?
+	bibliography?,
 	citations?
 }
 
