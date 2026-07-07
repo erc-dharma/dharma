@@ -166,20 +166,20 @@ def _add_edition_languages(t: tree.Tree, logical: tree.Tag | None):
 	lang_nodes = {}
 	for lang in langs:
 		node = tree.Tag("language")
-		lang_id = tree.Tag("identifier")
+		lang_id = tree.Tag("identifier", lang="und latin")
 		lang_id.append(lang)
 		node.append(lang_id)
-		lang_name = tree.Tag("name")
+		lang_name = tree.Tag("name", lang="und latin")
 		lang_name.append(lang_names[lang])
 		node.append(lang_name)
 		lang_nodes[lang] = node
 	script_nodes = {}
 	for script in scripts:
 		node = tree.Tag("script")
-		script_id = tree.Tag("identifier")
+		script_id = tree.Tag("identifier", lang="und latin")
 		script_id.append(script)
 		node.append(script_id)
-		script_name = tree.Tag("name")
+		script_name = tree.Tag("name", lang="und latin")
 		script_name.append(script_names[script])
 		node.append(script_name)
 		script_nodes[script] = node
@@ -1470,8 +1470,8 @@ def add_file_info(t: tree.Tree, data: dict):
 	<document>
 		<identifier/>
 		<repository>
-			<identifier/>
 			<name/>
+			<identifier/>
 		</repository>
 		<path/>
 		<commit>
@@ -1519,12 +1519,12 @@ def add_file_info(t: tree.Tree, data: dict):
 	# Repository
 	if data.get("repo_ident"):
 		repo = tree.Tag("repository")
-		identifier = tree.Tag("identifier")
-		identifier.append(data["repo_ident"])
-		repo.append(identifier)
-		name = tree.Tag("name")
+		name = tree.Tag("name", lang="und latin")
 		name.append(data["repo_title"])
 		repo.append(name)
+		identifier = tree.Tag("identifier", lang="und latin")
+		identifier.append(data["repo_ident"])
+		repo.append(identifier)
 		t.root.prepend(repo)
 	# Identifier
 	if data.get("ident"):
@@ -1551,6 +1551,8 @@ if __name__ == "__main__":
 		f = texts.File("/", path)
 		t = ingest.process_file(f)
 		process(t)
+		file_data = fetch_file_data(f.name)
+		add_file_info(t, file_data)
 		make_pretty_printable(t)
 		sys.stdout.write(t.xml(add_xml_prefix=False))
 	try:

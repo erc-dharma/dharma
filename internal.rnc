@@ -21,7 +21,7 @@ start = document
 
 document = element document {
 	element identifier { text },
-	element repository { name, identifier? }*,
+	element repository { name, identifier }*,
 	element path { text },
 	element commit { hash, date }?,
 	element last-modified-commit { hash, date }?,
@@ -53,7 +53,10 @@ hash = element hash {
 date = element date { text }
 
 citations = element citations {
-	element citation { text }+
+	element citation {
+		attribute lang { text }?,
+		text
+	}+
 }
 
 # Source languages given in the edition division.
@@ -136,6 +139,7 @@ note = element note {
 # Span of text (like in html).
 span = element span {
 	attribute lang { text }?,
+	attribute editorial { xsd:boolean }?,
 	# "class" is a list of CSS classes.
 	attribute class { text }?,
 	# Tooltip
@@ -144,14 +148,12 @@ span = element span {
 }
 
 name = element name {
-	attribute lang { text },
+	attribute lang { "und latin" },
 	text
 }
 # An identifier in the database.
 identifier = element identifier {
-	# The "language" of an identifier is a special one "ident"; and
-	# identifiers are always in latin. Thus the following attribute.
-	attribute lang { "ident latin" },
+	attribute lang { "und latin" },
 	text
 }
 
@@ -185,6 +187,7 @@ quote = element quote {
 
 head = element head {
 	attribute lang { text }?,
+	attribute editorial { xsd:boolean }?,
 	inline+
 }
 
