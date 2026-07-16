@@ -247,7 +247,11 @@ def render_para(self, node):
 
 @handler("link")
 def render_link(self, node):
-	self.push(tree.Tag("a", href=node["href"]))
+	target = node["href"]
+	# Make internal bibliography links point to the global bibliography.
+	if target.startswith("#bib-"):
+		target = "/bibliography/entry/" + target.removeprefix("#bib-")
+	self.push(tree.Tag("a", href=target))
 	self.dispatch_children(node)
 	self.join()
 
