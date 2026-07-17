@@ -22,6 +22,8 @@ need to install `libicu-devel` or `libicu-dev` (depending on the distribution),
 not just `libicu`. You also need to install Python's headers (`python-devel` or
 `python-dev`).
 
+You also need to install a Golang environment on each machine you intend to run the application on. See [here](https://go.dev/doc/install) for installation details.
+
 Also needed are [`pandoc`](https://pandoc.org) (we use it at runtime
 for rendering Markdown files) and the `sqlite3` command-line tool.
 
@@ -99,12 +101,13 @@ on error, to prevent our builds from failing all the time. The Zotero proxy also
 allows querying the bibliography by short titles (lookup keys), which Zotero's
 API does not support.
 
-Finally, we have a search server, written in Go. The code is in the `*.go` files
-in this directory. This server is not meant to be accessible from the internet.
-It is used internally by the main Python server from `server.py`. The search
-server only accesses the disk when the database is updated: it pulls all the
-data it needs from the database, loads it into memory, and performs searches on
-that.
+Finally, we have a search server, written in Go. The generated binary is named
+`dharma-search`. You need to start it if you need the python server to talk to
+it (for the search page). The code is in the `*.go` files in the `search`
+directory. This server is not meant to be accessible from the internet. It is
+used internally by the main Python server from `server.py`. The search server
+only accesses the disk when the database is updated: it pulls all the data it
+needs from the database, loads it into memory, and performs searches on that.
 
 ## Configuration
 
