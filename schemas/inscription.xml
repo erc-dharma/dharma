@@ -3664,7 +3664,17 @@
                         <attDef ident="from" mode="delete"/>
                         <attDef ident="from-custom" mode="delete"/>
                         <attDef ident="from-iso" mode="delete"/>
-                        <attDef ident="key" mode="delete"/>
+                        <attDef ident="key" mode="change">
+                            <defaultVal>creator</defaultVal>
+                            <valList type="closed" mode="replace">
+                                <valItem ident="creator">
+                                    <desc>Author of the digital edition</desc>
+                                </valItem>
+                                <valItem ident="contributor">
+                                    <desc>Contributor to the edition</desc>
+                                </valItem>
+                            </valList>
+                        </attDef>
                         <attDef ident="n" mode="delete"/>
                         <attDef ident="next" mode="delete"/>
                         <attDef ident="notAfter" mode="delete"/>
