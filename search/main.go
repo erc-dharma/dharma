@@ -32,6 +32,7 @@ type FieldMeta struct {
 	FacetLimit  int      `json:"facet_limit,omitempty"`
 	DefaultMode string   `json:"default_mode,omitempty"`
 	Cache       bool     `json:"cache,omitempty"`
+	Aliases     []string `json:"aliases,omitempty"`
 }
 
 // SchemaConfig holds the unified definitions for the search engine loaded from JSON.
@@ -777,4 +778,38 @@ func assignExtraField(mMap map[string]interface{}, m SearchResult, f string) {
 	case "original":
 		mMap["original"] = m.Original
 	}
+}
+
+func resolveFieldName(field string) string {
+	// 1. Cas exact : le champ existe tel quel
+	if _, ok := SearchSchema.Fields[field]; ok {
+		return field
+	}
+
+	// 2. Cas des alias avec notation pointée (ex: editor.ident)
+	// On sépare le champ en deux parties : préfixe et suffixe
+	if strings.Contains(field, ".") {
+		parts := strings.SplitN(field, ".", 2)
+		prefix, suffix := parts[0], parts[1]
+
+		// On cherche si le préfixe possède un alias
+		for canonicalName, meta := range SearchSchema.Fields {
+			for _, alias := range meta.Aliases {
+				if alias == prefix {
+					// On reconstruit le nom canonique : creator + . + ident
+					return canonicalName + "." + suffix
+				}
+			}
+		}
+	}
+
+	// 3. Cas standard : alias de champ simple (ex: editor -> creator)
+	for canonicalName, meta := range SearchSchema.Fields {
+		for _, alias := range meta.Aliases {
+			if alias == field {
+				return canonicalName
+			}
+		}
+	}
+	return field
 }

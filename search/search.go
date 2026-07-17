@@ -365,7 +365,8 @@ func matchQuery(doc Document, q QueryNode) bool {
 // matchScopedField resolves specific column demands by inspecting the JSON schema type.
 // It dynamically delegates the query to the appropriate evaluation branch.
 func matchScopedField(d Document, q QueryNode) bool {
-	meta, exists := SearchSchema.Fields[q.Field]
+	field := resolveFieldName(q.Field)
+	meta, exists := SearchSchema.Fields[field]
 	if !exists {
 		return false
 	}
@@ -607,9 +608,26 @@ func containsMatcher(cache *TransformCache, text, term, mode, field string) bool
 
 // matchField routes structural queries to corresponding column interpretation branches.
 func matchField(doc Document, field, val, mode string) bool {
+	field = resolveFieldName(field)
 	meta, exists := SearchSchema.Fields[field]
 	if !exists {
 		return docMatchesAll(doc, val, mode)
+	}
+	if meta.Type == "fieldset" {
+		for _, subField := range meta.ExpandTo {
+			// On extrait le nom du sous-champ (ex: "creator.ident" -> "ident")
+			parts := strings.Split(subField, ".")
+			subFieldName := parts[len(parts)-1]
+
+			// On récupère les métadonnées du sous-champ pour valider
+			if subMeta, ok := SearchSchema.Fields[subFieldName]; ok {
+				vStr, c := getStringField(doc, subMeta.DbColumn)
+				if containsMatcher(c, vStr, val, mode, subMeta.DbColumn) {
+					return true
+				}
+			}
+		}
+		return false
 	}
 	if meta.Type == "string" && !isPeopleColumn(meta.DbColumn) {
 		vStr, c := getStringField(doc, meta.DbColumn)
@@ -726,6 +744,8 @@ func primitiveExtractTerms(q QueryNode) []QueryTerm {
 }
 
 // termsForFields retrieves relevant evaluation criteria corresponding strictly explicitly.
+// Dans search.go
+
 func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
 	var filtered []QueryTerm
 	for _, t := range terms {
@@ -733,7 +753,13 @@ func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
 			filtered = append(filtered, t)
 			continue
 		}
-		normField := strings.ReplaceAll(t.Field, ".", "_")
+
+		// 1. D'abord, on résout l'alias (ex: "editor.ident" -> "creator.ident")
+		resolvedField := resolveFieldName(t.Field)
+
+		// 2. Ensuite, on normalise (remplacement des points par des underscores)
+		normField := strings.ReplaceAll(resolvedField, ".", "_")
+
 		for _, f := range fields {
 			if normField == f {
 				filtered = append(filtered, t)

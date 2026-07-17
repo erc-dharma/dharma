@@ -88,6 +88,7 @@
         "creator.name"
       ],
       "db_column": "creator",
+      "aliases": ["editor"],
       "xpath": "/document/creator",
       "cache": true,
       "facet_limit": 15,

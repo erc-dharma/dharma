@@ -11,12 +11,31 @@ class InvalidQuery(Exception):
 	pass
 
 def get_valid_fields():
-	# Extract all valid fields and their aliases from the JSON schema
-	fields = set(SEARCH_SCHEMA["fields"].keys())
-	for meta in SEARCH_SCHEMA["fields"].values():
-		if "aliases" in meta:
-			fields.update(meta["aliases"])
-	return fields
+    fields = set()
+
+    # On parcourt le dictionnaire des champs
+    for field_name, meta in SEARCH_SCHEMA["fields"].items():
+        # 1. Ajouter le nom du champ de base (ex: "creator")
+        fields.add(field_name)
+
+        # 2. Ajouter les alias directs (ex: "editor")
+        aliases = meta.get("aliases", [])
+        fields.update(aliases)
+
+        # 3. Gérer l'expansion (ex: "creator.ident")
+        if "expand_to" in meta:
+            for sub_field in meta["expand_to"]:
+                # Ajouter le sous-champ (ex: "creator.ident")
+                fields.add(sub_field)
+
+                # 4. Générer les alias des sous-champs (ex: "editor.ident")
+                # On récupère le suffixe après le point (ex: "ident")
+                if "." in sub_field:
+                    suffix = sub_field.split(".", 1)[1]
+                    for alias in aliases:
+                        fields.add(f"{alias}.{suffix}")
+
+    return fields
 
 VALID_FIELDS = get_valid_fields()
 
@@ -79,7 +98,7 @@ def check_field_validity(node, valid_fields):
 		if node.name not in valid_fields:
 			matches = difflib.get_close_matches(node.name, list(valid_fields), n=1)
 			if matches:
-				raise InvalidQuery(f"Unknown search field: '{node.name}'. Did you mean '{matches[0]}'?")
+				raise InvalidQuery(f"Unknown search field: “{node.name}”. Did you mean “{matches[0]}”?")
 			raise InvalidQuery(f"Unknown search field: '{node.name}'")
 	if hasattr(node, "children"):
 		for child in node.children:
