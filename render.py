@@ -141,9 +141,13 @@ def _process_path(self, node):
 def _process_repo(self, node):
 	self.document.repository = _extract_paired(self, node)
 
-@_handler("editor")
-def _process_editor(self, node):
-	self.document.editors.append(_extract_paired(self, node))
+@_handler("creator")
+def _process_creator(self, node):
+	self.document.creators.append(_extract_paired(self, node))
+
+@_handler("contributor")
+def _process_contributor(self, node):
+	self.document.contributors.append(_extract_paired(self, node))
 
 @_handler("languages")
 def _process_languages(self, node):
@@ -431,7 +435,8 @@ class Document:
 		self.titles: list[tree.Tree] = []
 		self.summary: tree.Tree | None = None
 		self.hand: tree.Tree | None = None
-		self.editors: list[tree.Tree] = []
+		self.creators: list[tree.Tree] = []
+		self.contributors: list[tree.Tree] = []
 		self.edition_languages: list[tree.Tree] = []
 		self.body: tree.Tree | None = None
 		self.repository: Paired | None = None

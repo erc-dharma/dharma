@@ -107,12 +107,23 @@ search form below can be used for filtering results. For help on the query synta
    </div>
 
 <div class="card-body">
-% if doc.editors:
+
+% if doc.creators:
 <p>
-{{numberize("Author", (doc.editors | length))}} of digital edition:
-% for editor_ident, editor_name in doc.editors:
+{{numberize("Author", (doc.creators | length))}} of digital edition:
+% for editor_ident, editor_name in doc.creators:
    {{editor_name.html() | safe}}{% if editor_ident %}
    (<a href="/contributors/{{editor_ident.text()}}" class="monospace">{{editor_ident.html() | safe}}</a>){% endif %}{% if loop.index < loop.length %},{% else %}.{% endif %}
+% endfor
+</p>
+% endif
+
+% if doc.contributors:
+<p>
+{{numberize("Contributor", (doc.contributors | length))}}:
+% for editor_ident, editor_name in doc.contributors:
+   {{editor_name.html() | safe}}{% if editor_ident %}
+   (<span class="monospace">{{editor_ident.html() | safe}}</span>){% endif %}{% if loop.index < loop.length %},{% else %}.{% endif %}
 % endfor
 </p>
 % endif

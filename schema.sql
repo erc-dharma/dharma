@@ -240,10 +240,15 @@ create table if not exists documents_search(
 		and json_valid(author)
 		and json_type(author) = 'array'),
 	-- flat list of pairs [id, name, id, name...].
-	editor json check(
-		typeof(editor) = 'text'
-		and json_valid(editor)
-		and json_type(editor) = 'array'),
+	creator json check(
+		typeof(creator) = 'text'
+		and json_valid(creator)
+		and json_type(creator) = 'array'),
+	-- flat list of pairs [id, name, id, name...].
+	contributor json check(
+		typeof(contributor) = 'text'
+		and json_valid(contributor)
+		and json_type(contributor) = 'array'),
 	hand text not null,
 	summary text not null,
 	logical text not null,

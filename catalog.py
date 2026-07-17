@@ -22,10 +22,10 @@ def make_document_record(doc: tree.Tree):
 	for node in doc.find("/document/scripts/script/identifier"):
 		scripts.append(node.text())
 	rec["scripts"] = scripts if scripts else ["script_other"]
-	editors_ids = []
-	for node in doc.find("/document/editor/identifier"):
-		editors_ids.append(node.text())
-	rec["editors"] = editors_ids
+	creators = []
+	for node in doc.find(f"/document/creator/identifier"):
+		creators.append(node.text())
+	rec["editors"] = creators
 	return rec
 
 def insert(file: texts.File):
@@ -47,7 +47,11 @@ def _extract_catalog_data(file: texts.File):
 	except tree.Error:
 		doc = tree.Tree()
 		doc.append(tree.Tag("document"))
-		data = {"langs": ["und"], "scripts": ["script_other"], "editors": []}
+		data = {
+			"langs": ["und"],
+			"scripts": ["script_other"],
+			"editors": [],
+		}
 	data.update({"name": file.name, "repo": file.repo, "status": file.status})
 	return doc, data
 
@@ -68,8 +72,10 @@ def _extract_search_data(file: texts.File, doc: tree.Tree):
 def _insert_catalog(db, data):
 	# Persist the extracted catalog metadata into the main documents table
 	db.execute("""
-	insert or replace into documents(name, repo, editors, langs, status, scripts)
-	values (:name, :repo, :editors, :langs, :status, :scripts)
+	insert or replace into documents(name, repo, editors,
+		langs, status, scripts)
+	values (:name, :repo, :editors,
+		:langs, :status, :scripts)
 	""", data)
 
 def _insert_biblio_cited(db, ident, doc):
@@ -84,12 +90,14 @@ def _insert_search(db, data):
 	db.execute("""
 	insert or replace into documents_search(
 		ident, logical, title, summary, repo_id, repo_name, hand,
-		author, editor, lang, script, source, translation,
+		author, creator, contributor,
+		lang, script, source, translation,
 		bibliography, updated_at
 	)
 	values (
 		:ident, :logical, :title, :summary, :repo_id, :repo_name, :hand,
-		:author, :editor, :lang, :script, :source, :translation,
+		:author, :creator, :contributor,
+		:lang, :script, :source, :translation,
 		:bibliography, cast(strftime('%s', 'now') as integer)
 	)
 	""", data)

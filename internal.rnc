@@ -35,7 +35,8 @@ document = element document {
 		inline+
 	}*,
 	element author { name, identifier? }*,
-	element editor { name, identifier? }*,
+	element creator { name, identifier? }*,
+	element contributor { name, identifier? }*,
 	# Two fields "summary" and "hand" that can not contain divs.
 	element summary { block+ }?,
 	element hand { block+ }?,

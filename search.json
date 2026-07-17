@@ -57,27 +57,51 @@
       "cache": true,
       "default_mode": "forma"
     },
-    "editor": {
+    "contributor": {
       "type": "fieldset",
       "expand_to": [
-        "editor.ident",
-        "editor.name"
+        "contributor.ident",
+        "contributor.name"
       ],
-      "db_column": "editor",
-      "xpath": "/document/editor",
+      "db_column": "contributor",
+      "xpath": "/document/contributor",
       "cache": true,
       "facet_limit": 15,
       "default_mode": "forma"
     },
-    "editor.ident": {
+    "contributor.ident": {
       "type": "string",
-      "db_column": "editor",
+      "db_column": "contributor",
       "parity": 0,
       "default_mode": "forma"
     },
-    "editor.name": {
+    "contributor.name": {
       "type": "string",
-      "db_column": "editor",
+      "db_column": "contributor",
+      "parity": 1,
+      "default_mode": "forma"
+    },
+    "creator": {
+      "type": "fieldset",
+      "expand_to": [
+        "creator.ident",
+        "creator.name"
+      ],
+      "db_column": "creator",
+      "xpath": "/document/creator",
+      "cache": true,
+      "facet_limit": 15,
+      "default_mode": "forma"
+    },
+    "creator.ident": {
+      "type": "string",
+      "db_column": "creator",
+      "parity": 0,
+      "default_mode": "forma"
+    },
+    "creator.name": {
+      "type": "string",
+      "db_column": "creator",
       "parity": 1,
       "default_mode": "forma"
     },

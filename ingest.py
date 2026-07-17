@@ -32,7 +32,8 @@ class _Document:
 		# (dharma_id, name) where dharma_id is the xxxx stuff in
 		# "part:xxxx" and name is a string.  dharma_id can be None
 		self.authors: list[tuple[str, str]] = []
-		self.editors: list[tuple[str, str]] = []
+		self.creators: list[tuple[str, str]] = []
+		self.contributors: list[tuple[str, str]] = []
 		# For bestow.
 		self.extra = tree.Tree()
 		self.citations: set[str] = set()
@@ -44,36 +45,22 @@ class _Document:
 			f.push(tree.Tag("title"))
 			f.extend(title)
 			f.join()
-		for author_id, author_name in self.authors:
-			f.push(tree.Tag("author"))
-			assert author_name
-			f.push(tree.Tag("name"))
-			author_name = tree.String(author_name)
-			author_name.notes["lang"] = languages.Descriptor("und", "latin")
-			f.append(author_name)
-			f.join()
-			if author_id:
-				f.push(tree.Tag("identifier"))
-				author_id = tree.String(author_id)
-				author_id.notes["lang"] = languages.Descriptor("und", "latin")
-				f.append(author_id)
+		for person_type in ("author", "creator", "contributor"):
+			for person_id, person_name in getattr(self, f"{person_type}s"):
+				f.push(tree.Tag(person_type))
+				assert person_name
+				person_name = tree.String(person_name)
+				person_name.notes["lang"] = languages.Descriptor("und", "latin")
+				f.push(tree.Tag("name"))
+				f.append(person_name)
 				f.join()
-			f.join()
-		for editor_id, editor_name in self.editors:
-			f.push(tree.Tag("editor"))
-			assert editor_name
-			editor_name = tree.String(editor_name)
-			editor_name.notes["lang"] = languages.Descriptor("und", "latin")
-			f.push(tree.Tag("name"))
-			f.append(editor_name)
-			f.join()
-			if editor_id:
-				f.push(tree.Tag("identifier"))
-				editor_id = tree.String(editor_id)
-				editor_id.notes["lang"] = languages.Descriptor("und", "latin")
-				f.append(editor_id)
+				if person_id:
+					person_id = tree.String(person_id)
+					person_id.notes["lang"] = languages.Descriptor("und", "latin")
+					f.push(tree.Tag("identifier"))
+					f.append(person_id)
+					f.join()
 				f.join()
-			f.join()
 		if not self.summary.empty:
 			f.push(tree.Tag("summary"))
 			f.extend(self.summary)
@@ -1839,8 +1826,7 @@ def _append_unique_name(items, ident, name):
 # We don't attempty to preserve the structure <forename>+<surname> for
 # searching, because we can also have just <name>, so it's simpler to use
 # a simple string.
-def _gather_people(stmt, *paths):
-	nodes = [node for path in paths for node in stmt.find(path)]
+def _gather_people(nodes):
 	# Sort by order of appearance in the file
 	nodes.sort(key=lambda node: node.location.start)
 	ret = []
@@ -1885,11 +1871,22 @@ def _parse_titleStmt(p, stmt):
 		p.dispatch(title)
 		p.document.title.append(p.pop())
 	# Author of the text (only for critical editions).
-	p.document.authors = _gather_people(stmt, "author")
+	authors = stmt.find("author")
 	# Editor(s) of the text.
 	# The only allowed form is respStmt/persName, but also prepare for a few
 	# other forms that are valid TEI but not valid DHARMA.
-	p.document.editors = _gather_people(stmt, "respStmt/persName", "editor", "principal", "respStmt/name")
+	creators = stmt.find("editor") + stmt.find("principal")
+	contributors = []
+	for resp_stmt in stmt.find("respStmt"):
+		people = resp_stmt.find("persName") + resp_stmt.find("name")
+		resp = resp_stmt.first("resp")
+		if not resp or resp["key"] != "contributor":
+			creators.extend(people)
+		else:
+			contributors.extend(people)
+	p.document.authors = _gather_people(authors)
+	p.document.creators = _gather_people(creators)
+	p.document.contributors = _gather_people(contributors)
 
 @_handler("roleName")
 @_handler("measure")
@@ -1995,7 +1992,7 @@ def _parse_div_translation(p, div):
 			# If translators names are the exact same set of people
 			# who edited the inscription, do not display them.
 			resps = resps.split()
-			editors = set(ident for ident, name in p.document.editors)
+			editors = set(ident for ident, name in p.document.creators)
 			if editors != set(resps):
 				resps = None
 		p.append("Translation")
