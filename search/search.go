@@ -232,21 +232,21 @@ func evaluateDocFacets(docs *[]Document, col *FacetCollector, d Document, f map[
 	mRepo := matchSingleFacet(d.RepoID, f["repo"])
 	mLang := matchListFacet(d.Lang, f["lang"])
 	mScript := matchListFacet(d.Script, f["script"])
-	mEditor := matchListFacet(d.Editor, f["editor"])
-	if mRepo && mLang && mScript && mEditor {
+	mCreator := matchListFacet(d.Creator, f["creator"])
+	if mRepo && mLang && mScript && mCreator {
 		*docs = append(*docs, d)
 	}
-	if mLang && mScript && mEditor && d.RepoID != "" {
+	if mLang && mScript && mCreator && d.RepoID != "" {
 		updateFacet(col.Repo, d.RepoID, d.RepoName)
 	}
-	if mRepo && mScript && mEditor {
+	if mRepo && mScript && mCreator {
 		collectListFacets(col.Lang, d.Lang)
 	}
-	if mRepo && mLang && mEditor {
+	if mRepo && mLang && mCreator {
 		collectListFacets(col.Script, d.Script)
 	}
 	if mRepo && mLang && mScript {
-		collectListFacets(col.Editor, d.Editor)
+		collectListFacets(col.Creator, d.Creator)
 	}
 }
 
@@ -305,10 +305,10 @@ func buildFacetsResponse(col *FacetCollector) *FacetsResponse {
 		return 0
 	}
 	return &FacetsResponse{
-		Lang:   limitFacets(sortFacetMap(col.Lang), getLimit("lang")),
-		Script: limitFacets(sortFacetMap(col.Script), getLimit("script")),
-		Editor: limitFacets(sortFacetMap(col.Editor), getLimit("editor")),
-		Repo:   limitFacets(sortFacetMap(col.Repo), getLimit("repo")),
+		Lang:    limitFacets(sortFacetMap(col.Lang), getLimit("lang")),
+		Script:  limitFacets(sortFacetMap(col.Script), getLimit("script")),
+		Creator: limitFacets(sortFacetMap(col.Creator), getLimit("creator")),
+		Repo:    limitFacets(sortFacetMap(col.Repo), getLimit("repo")),
 	}
 }
 
@@ -384,7 +384,7 @@ func matchScopedField(d Document, q QueryNode) bool {
 // isPeopleColumn checks if the database column represents a flat people array.
 func isPeopleColumn(dbColumn string) bool {
 	switch dbColumn {
-	case "author", "editor", "lang", "script":
+	case "author", "creator", "contributor", "lang", "script":
 		return true
 	}
 	return false
@@ -395,8 +395,10 @@ func getPeopleList(d Document, dbCol string) ([]string, []*TransformCache) {
 	switch dbCol {
 	case "author":
 		return d.Author, d.Cache.Author
-	case "editor":
-		return d.Editor, d.Cache.Editor
+	case "creator":
+		return d.Creator, d.Cache.Creator
+	case "contributor":
+		return d.Contributor, d.Cache.Contributor
 	case "lang":
 		return d.Lang, d.Cache.Lang
 	case "script":
@@ -643,7 +645,10 @@ func docMatchesAll(d Document, val, mode string) bool {
 	if listMatches(d.Title, d.Cache.Title, val, mode, "title") || listMatches(d.Author, d.Cache.Author, val, mode, "author") {
 		return true
 	}
-	if listMatches(d.Editor, d.Cache.Editor, val, mode, "editor") || listMatches(d.Lang, d.Cache.Lang, val, mode, "lang") {
+	if listMatches(d.Creator, d.Cache.Creator, val, mode, "creator") || listMatches(d.Contributor, d.Cache.Contributor, val, mode, "contributor") {
+		return true
+	}
+	if listMatches(d.Lang, d.Cache.Lang, val, mode, "lang") {
 		return true
 	}
 	return listMatches(d.Script, d.Cache.Script, val, mode, "script")
@@ -687,8 +692,9 @@ func matchDocument(doc Document, qStr string) SearchResult {
 		Title: cloneList(doc.Title), Summary: doc.Summary,
 		RepoID: doc.RepoID, RepoName: doc.RepoName, Hand: doc.Hand,
 		Translation: doc.Translation, Bibliography: doc.Bibliography,
-		Author: cloneList(doc.Author), Editor: cloneList(doc.Editor),
-		Lang: cloneList(doc.Lang), Script: cloneList(doc.Script),
+		Author: cloneList(doc.Author), Creator: cloneList(doc.Creator),
+		Contributor: cloneList(doc.Contributor),
+		Lang:        cloneList(doc.Lang), Script: cloneList(doc.Script),
 	}
 	if qStr == "" {
 		return res
@@ -761,8 +767,10 @@ func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	processListTerms(res.Title, doc.Title, doc.Cache.Title, termsForFields(terms, "title"), "title")
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_ident"), "author_ident", 0)
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
-	processListTermsParity(res.Editor, doc.Editor, doc.Cache.Editor, termsForFields(terms, "editor", "editor_ident"), "editor_ident", 0)
-	processListTermsParity(res.Editor, doc.Editor, doc.Cache.Editor, termsForFields(terms, "editor", "editor_name"), "editor_name", 1)
+	processListTermsParity(res.Creator, doc.Creator, doc.Cache.Creator, termsForFields(terms, "creator", "creator_ident"), "creator_ident", 0)
+	processListTermsParity(res.Creator, doc.Creator, doc.Cache.Creator, termsForFields(terms, "creator", "creator_name"), "creator_name", 1)
+	processListTermsParity(res.Contributor, doc.Contributor, doc.Cache.Contributor, termsForFields(terms, "contributor", "contributor_ident"), "contributor_ident", 0)
+	processListTermsParity(res.Contributor, doc.Contributor, doc.Cache.Contributor, termsForFields(terms, "contributor", "contributor_name"), "contributor_name", 1)
 	processListTermsParity(res.Lang, doc.Lang, doc.Cache.Lang, termsForFields(terms, "lang", "lang_ident"), "lang_ident", 0)
 	processListTermsParity(res.Lang, doc.Lang, doc.Cache.Lang, termsForFields(terms, "lang", "lang_name"), "lang_name", 1)
 	processListTermsParity(res.Script, doc.Script, doc.Cache.Script, termsForFields(terms, "script", "script_ident"), "script_ident", 0)

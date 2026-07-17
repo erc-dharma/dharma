@@ -41,14 +41,6 @@ search form below can be used for filtering results. For help on the query synta
 </div>
 % endif
 
-<div id="search-body">
-
-% if error
-<div class="error">
-{{error}}
-</div>
-% endif
-
 % if error
 % else
 <div class="search-controls">
@@ -270,20 +262,20 @@ search form below can be used for filtering results. For help on the query synta
 </fieldset>
 % endif
 
-% set items = facets.get("editor")
+% set items = facets.get("creator")
 % if items:
 <fieldset class="facet-group">
     <legend>Editors</legend>
     <ul class="facet-list">
     % for item in items:
         <li>
-            <input type="checkbox" id="editor-{{item['ident']}}" name="editor" value="{{item['ident']}}"
-                {{ 'checked' if item['ident'] in filters.get('editor', []) else '' }}
+            <input type="checkbox" id="creator-{{item['ident']}}" name="creator" value="{{item['ident']}}"
+                {{ 'checked' if item['ident'] in filters.get('creator', []) else '' }}
 		% if not item['ident']
 		disabled
 		% endif
 		>
-            <label for="editor-{{item['ident']}}">
+            <label for="creator-{{item['ident']}}">
                 {{item['name']}} <span class="facet-count">({{item['count']}})</span>
             </label>
         </li>

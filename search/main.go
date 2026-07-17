@@ -64,7 +64,8 @@ type DocCache struct {
 	Bibliography *TransformCache
 	Title        []*TransformCache
 	Author       []*TransformCache
-	Editor       []*TransformCache
+	Creator      []*TransformCache
+	Contributor  []*TransformCache
 	Lang         []*TransformCache
 	Script       []*TransformCache
 }
@@ -81,7 +82,8 @@ type Document struct {
 	Translation  string
 	Bibliography string
 	Author       []string
-	Editor       []string
+	Creator      []string
+	Contributor  []string
 	Lang         []string
 	Script       []string
 	Cache        *DocCache
@@ -99,7 +101,8 @@ type SearchResult struct {
 	Translation  string   `json:"translation"`
 	Bibliography string   `json:"bibliography"`
 	Author       []string `json:"author"`
-	Editor       []string `json:"editor"`
+	Creator      []string `json:"creator"`
+	Contributor  []string `json:"contributor"`
 	Lang         []string `json:"lang"`
 	Script       []string `json:"script"`
 	Source       string   `json:"source"`
@@ -115,18 +118,18 @@ type FacetResult struct {
 
 // FacetsResponse groups the facet arrays to be serialized in the JSON payload.
 type FacetsResponse struct {
-	Lang   []FacetResult `json:"lang"`
-	Script []FacetResult `json:"script"`
-	Editor []FacetResult `json:"editor"`
-	Repo   []FacetResult `json:"repo"`
+	Lang    []FacetResult `json:"lang"`
+	Script  []FacetResult `json:"script"`
+	Creator []FacetResult `json:"creator"`
+	Repo    []FacetResult `json:"repo"`
 }
 
 // FacetCollector acts as an internal accumulator during the corpus traversal.
 type FacetCollector struct {
-	Lang   map[string]*FacetResult
-	Script map[string]*FacetResult
-	Editor map[string]*FacetResult
-	Repo   map[string]*FacetResult
+	Lang    map[string]*FacetResult
+	Script  map[string]*FacetResult
+	Creator map[string]*FacetResult
+	Repo    map[string]*FacetResult
 }
 
 // SearchResponse wraps the full result set, including metadata, facets and matches.
@@ -351,7 +354,7 @@ func parseRequest(r *http.Request) (string, int, int, string, []string, bool, ma
 // parseFilters extracts selected facet arrays from the URL to drive the evaluation engine.
 func parseFilters(r *http.Request) map[string][]string {
 	filters := make(map[string][]string)
-	categories := []string{"lang", "script", "editor", "repo"}
+	categories := []string{"lang", "script", "creator", "repo"}
 	for _, cat := range categories {
 		if vals, ok := r.URL.Query()[cat]; ok {
 			filters[cat] = filterEmptyStrings(vals)
@@ -393,10 +396,10 @@ func parsePretty(pParam string) bool {
 // newFacetCollector initializes collector instances to prevent panics during aggregation.
 func newFacetCollector() *FacetCollector {
 	return &FacetCollector{
-		Lang:   make(map[string]*FacetResult),
-		Script: make(map[string]*FacetResult),
-		Editor: make(map[string]*FacetResult),
-		Repo:   make(map[string]*FacetResult),
+		Lang:    make(map[string]*FacetResult),
+		Script:  make(map[string]*FacetResult),
+		Creator: make(map[string]*FacetResult),
+		Repo:    make(map[string]*FacetResult),
 	}
 }
 
@@ -445,7 +448,10 @@ func syncCorpus(tx *sql.Tx) error {
 
 // fetchDocumentMetas retrieves lightweight identification for all documents.
 func fetchDocumentMetas(tx *sql.Tx) ([]DocMeta, error) {
-	rows, err := tx.Query("select ident, updated_at from documents_search order by ident")
+	// Below, the cast(updated_at as integer) is necessary because the
+	// SQLite driver assumes that values with type TIMESTAMP are strings
+	// instead of integers, but we do use integers for type TIMESTAMP.
+	rows, err := tx.Query("select ident, cast(updated_at as integer) from documents_search order by ident")
 	if err != nil {
 		return nil, err
 	}
@@ -546,7 +552,7 @@ func fetchSpecificDocuments(tx *sql.Tx, idents []string) ([]Document, error) {
 		placeholders[i] = "?"
 		args[i] = id
 	}
-	query := "select ident, logical, title, summary, repo_id, repo_name, hand, translation, bibliography, author, editor, lang, script from documents_search where ident in (" + strings.Join(placeholders, ",") + ")"
+	query := "select ident, logical, title, summary, repo_id, repo_name, hand, translation, bibliography, author, creator, contributor, lang, script from documents_search where ident in (" + strings.Join(placeholders, ",") + ")"
 	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -563,8 +569,8 @@ func fetchDocuments(tx *sql.Tx) ([]Document, error) {
 	}
 	rows, err := tx.Query(`select
 		ident, logical, title, summary, repo_id, repo_name, hand,
-		translation, bibliography, author, editor, lang, script
-		from documents_search order by ident`)
+		translation, bibliography, author, creator, contributor,
+		lang, script from documents_search order by ident`)
 	if err != nil {
 		return nil, err
 	}
@@ -594,9 +600,9 @@ func scanRows(rows *sql.Rows, count int) ([]Document, error) {
 
 // scanOne deserializes rows safely by handling sql.NullString for empty columns.
 func scanOne(rows *sql.Rows) (Document, error) {
-	var ident, logStr, titleJson, sum, rid, rname, hand, authJson, edJson, langJson, scrJson string
+	var ident, logStr, titleJson, sum, rid, rname, hand, authJson, creatorJson, contribJson, langJson, scrJson string
 	var transNull, biblioNull sql.NullString
-	err := rows.Scan(&ident, &logStr, &titleJson, &sum, &rid, &rname, &hand, &transNull, &biblioNull, &authJson, &edJson, &langJson, &scrJson)
+	err := rows.Scan(&ident, &logStr, &titleJson, &sum, &rid, &rname, &hand, &transNull, &biblioNull, &authJson, &creatorJson, &contribJson, &langJson, &scrJson)
 	if err != nil {
 		return Document{}, err
 	}
@@ -604,8 +610,9 @@ func scanOne(rows *sql.Rows) (Document, error) {
 		Ident: ident, Logical: logStr, Title: parseList(titleJson),
 		Summary: sum, RepoID: rid, RepoName: rname, Hand: hand,
 		Translation: transNull.String, Bibliography: biblioNull.String,
-		Author: parseList(authJson), Editor: parseList(edJson),
-		Lang: parseList(langJson), Script: parseList(scrJson),
+		Author: parseList(authJson), Creator: parseList(creatorJson),
+		Contributor: parseList(contribJson),
+		Lang:        parseList(langJson), Script: parseList(scrJson),
 	}
 	doc.Cache = buildDocCache(&doc)
 	return doc, nil
@@ -624,7 +631,8 @@ func buildDocCache(d *Document) *DocCache {
 	c.Bibliography = initTransformCache("bibliography")
 	c.Title = initListCache("title", len(d.Title))
 	c.Author = initListCache("author", len(d.Author))
-	c.Editor = initListCache("editor", len(d.Editor))
+	c.Creator = initListCache("creator", len(d.Creator))
+	c.Contributor = initListCache("contributor", len(d.Contributor))
 	c.Lang = initListCache("lang", len(d.Lang))
 	c.Script = initListCache("script", len(d.Script))
 	return c
@@ -756,8 +764,10 @@ func assignExtraField(mMap map[string]interface{}, m SearchResult, f string) {
 	switch f {
 	case "author":
 		mMap["author"] = m.Author
-	case "editor":
-		mMap["editor"] = m.Editor
+	case "creator":
+		mMap["creator"] = m.Creator
+	case "contributor":
+		mMap["contributor"] = m.Contributor
 	case "lang":
 		mMap["lang"] = m.Lang
 	case "script":

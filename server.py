@@ -622,7 +622,7 @@ def show_catalog():
 
 	# Extract dynamic facet filters from the URL (handles multiple values per key)
 	filters = {}
-	for cat in ["lang", "script", "editor", "repo"]:
+	for cat in ["lang", "script", "creator", "repo"]:
 		vals = flask.request.args.getlist(cat)
 		if vals:
 			# Remove empty strings to prevent false hits
