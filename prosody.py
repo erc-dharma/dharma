@@ -181,6 +181,8 @@ def parse_list_rec(item, bib_entries, langs):
 		entry = bib_entries.get(ref)
 		if not entry:
 			entry = biblio.lookup_entry(ref)
+			if not entry:
+				continue
 			bib_entries[ref] = entry
 		syms = ""
 		for note in fetch_notes(bibl):
