@@ -1857,6 +1857,18 @@ def _gather_people(nodes):
 		_append_unique_name(ret, None, name)
 	return ret
 
+def _rtrim_title(t):
+	ss = t.strings()
+	while ss:
+		s = ss.pop()
+		text = s.data.rstrip()
+		if len(text) == 0:
+			continue
+		if text.endswith("."):
+			text = text.rstrip(".")
+			s.data = text
+		break
+
 # We only expect this to appear at /TEI/teiHeader/fileDesc/titleStmt (and a
 # single occurrence).
 @_handler("titleStmt")
@@ -1869,7 +1881,9 @@ def _parse_titleStmt(p, stmt):
 	for title in stmt.find("title"):
 		p.push(tree.Tree())
 		p.dispatch(title)
-		p.document.title.append(p.pop())
+		ret = p.pop()
+		_rtrim_title(ret)
+		p.document.title.append(ret)
 	# Author of the text (only for critical editions).
 	authors = stmt.find("author")
 	# Editor(s) of the text.
