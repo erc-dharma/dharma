@@ -1013,3 +1013,22 @@ img {
 	padding-left: 0;       /* Remove default native list padding-left */
 	margin: 0;             /* Remove default margins */
 }
+
+/* Logos on the landing page */
+
+.logo-group {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	align-content: space-between;
+	justify-content: center;
+	flex-direction: row;
+	gap: 2em;
+	padding: 1.5em;
+}
+.logo-group img {
+	/* Ensure it scales down to fit the viewport and avoids horizontal scroll */
+	max-width: 100%;
+	/* Maintain the aspect ratio when the image scales down */
+	height: auto;
+}
