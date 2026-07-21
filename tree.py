@@ -970,13 +970,6 @@ class String(Node, collections.UserString):
 	`String` nodes behave like normal `str` objects, but they can also be
 	edited in-place with the following methods."""
 
-	def clear(self):
-		"Sets this `String` to the empty string."
-		if self.data == "":
-			return
-		self.location = None
-		self.data = ""
-
 	def __hash__(self):
 		return id(self)
 
@@ -986,33 +979,6 @@ class String(Node, collections.UserString):
 
 	def strings(self):
 		return [self]
-
-	def append(self, data):
-		"Adds text at the end of this `String`."
-		if not data:
-			return
-		self.location = None
-		self.data += data
-
-	def prepend(self, data):
-		"Adds text at the beginning of this `String`."
-		if not data:
-			return
-		self.location = None
-		self.data = data + self.data
-
-	def insert(self, index, data):
-		"Adds text at the given index of this `String`."
-		if not data:
-			return
-		self.location = None
-		if index < 0:
-			index += len(self.data)
-			if index < 0:
-				index = 0
-		elif index > len(self.data):
-			index = len(self.data)
-		self.data = self.data[:index] + data + self.data[index:]
 
 	def text(self, **kwargs):
 		data = str(self.data) # casting is necessary for String
