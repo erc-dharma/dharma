@@ -1294,12 +1294,6 @@
                     </attList>
                 </elementSpec>
                 <elementSpec ident="authority" module="header" mode="change">
-                    <content>
-                        <alternate maxOccurs="unbounded">
-                            <elementRef key="note"/>
-                            <textNode/>
-                        </alternate>
-                    </content>
                     <attList>
                         <attDef ident="ana" mode="delete"/>
                         <attDef ident="cert" mode="delete"/>
@@ -4724,9 +4718,6 @@
                     </attList>
                 </elementSpec>
                 <elementSpec ident="licence" module="header" mode="change">
-                    <content>
-                        <elementRef key="p" maxOccurs="unbounded"/>
-                    </content>
                     <attList>
                         <attDef ident="rend" mode="delete"/>
                         <attDef ident="style" mode="delete"/>
