@@ -1,5 +1,4 @@
 """This module is used to produce snippets in search results."""
-# TODO this uses much code from render.py, should refactor
 
 import sys, collections, urllib.parse
 from dharma import tree
@@ -155,12 +154,12 @@ def render_hand(self, node):
 @handler("commentary")
 def render_section(self, node):
 	self.heading_level += 1
-	# XXX not necessarily correct! should use the actual @xml:lang
-	# everywhere.
-	lang = "en"
+	# When generating the HTML <div> for the edition, we explicitly set the
+	# language to "und" to prevent inappropriate hyphenation in the browser.
 	if node.name == "edition":
-		lang = "und"
-	self.push("div", class_=node.name, lang=lang)
+		self.push("div", class_=node.name, lang="und")
+	else:
+		self.push("div", class_=node.name)
 	self.dispatch_children(node)
 	self.join()
 	self.heading_level -= 1
@@ -178,10 +177,8 @@ def render_logical_display(self, node):
 def render_translation(self, node):
 	if node["match"] != "true":
 		return
-	# TODO lang is not necessarily correct, should use the original
-	# @xml:lang.
 	self.heading_level += 1
-	self.push("div", class_=node.name, lang="en")
+	self.push("div", class_=node.name)
 	self.dispatch_children(node)
 	setattr(self.document, node.name, self.pop())
 	self.heading_level -= 1
