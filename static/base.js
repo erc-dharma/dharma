@@ -627,7 +627,7 @@ function loadSearchUrl(url) {
 function updateSearchResults(form) {
 	// Gather checked facets and build the complete query string
 	const urlParams = new URLSearchParams(window.location.search);
-	const facetCategories = ['lang', 'script', 'editor', 'repo'];
+	const facetCategories = ['lang', 'script', 'creator', 'repo'];
 	facetCategories.forEach(cat => urlParams.delete(cat));
 	urlParams.delete('p');
 	const formData = new FormData(form);
