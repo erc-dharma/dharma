@@ -5,7 +5,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"sort"
 	"strings"
@@ -153,12 +152,7 @@ func sortDocs(docs []Document, sortBy string) {
 
 // myCompareString employs deep collation algorithms to execute culturally aware sorting.
 func myCompareString(c *collate.Collator, a, b string) int {
-	var buf collate.Buffer
-	kA := c.KeyFromString(&buf, a)
-	kB := c.KeyFromString(&buf, b)
-	ret := bytes.Compare(kA, kB)
-	buf.Reset()
-	return ret
+	return c.CompareString(a, b)
 }
 
 // compareDocs falls back to strict identifier matching if elements miss title definitions.
