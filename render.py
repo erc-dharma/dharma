@@ -423,7 +423,7 @@ def _render_citation(self, node):
 @_handler("*")
 def _render_tag(self, node):
 	assert isinstance(node, tree.Tag)
-	logging.debug(f"render: UNKNOWN: {node.name}")
+	logging.debug(f"{__file__}: UNKNOWN: {node.name}")
 
 class Document:
 

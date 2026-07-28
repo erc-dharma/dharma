@@ -317,13 +317,14 @@ def render_omission(self, node):
 @handler("note")
 @handler("head")
 @handler("scripts")
+@handler("citations")
 def just_ignore(self, node):
 	pass
 
 @handler("*")
 def render_tag(self, node):
 	assert isinstance(node, tree.Tag)
-	print(f"render: UNKNOWN: {node.name}", file=sys.stderr)
+	print(f"{__file__} UNKNOWN: {node.name}", file=sys.stderr)
 
 class Document:
 
