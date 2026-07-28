@@ -1747,9 +1747,6 @@ def _parse_title(p, title):
 def _parse_quote(p, q):
 	if q["rend"] == "block":
 		p.push(tree.Tag("quote"))
-		# XXX <quote> cannot appear within a <p> in HTML!
-		# and idem for <cit> below.
-		# https://html.spec.whatwg.org/#elements-3
 		p.dispatch_children(q)
 		p.join()
 	else:
