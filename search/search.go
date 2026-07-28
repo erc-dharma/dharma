@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"sort"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"golang.org/x/text/collate"
@@ -16,6 +17,9 @@ import (
 )
 
 var titleCollator *collate.Collator
+
+// Mutex added to protect the non-thread-safe Collator during concurrent HTTP requests.
+var titleCollatorMu sync.Mutex
 
 func init() {
 	titleCollator = collate.New(language.Make("en-u-ka-shifted"))
@@ -192,7 +196,7 @@ func paginateDocs(docs []Document, off, lim int) []Document {
 }
 
 // buildResults constructs visual extraction arrays corresponding to matched query elements.
-func buildResults(docs []Document, q string) []SearchResult {
+func buildResults(docs []Document, q *QueryNode) []SearchResult {
 	results := make([]SearchResult, 0, len(docs))
 	for _, doc := range docs {
 		results = append(results, matchDocument(doc, q))
@@ -208,18 +212,14 @@ func parseQuery(qStr string) QueryNode {
 }
 
 // filterDocs processes the query and filters documents cross-evaluating facet constraints.
-func filterDocs(qStr string, filters map[string][]string) ([]Document, *FacetsResponse) {
+func filterDocs(q *QueryNode, filters map[string][]string) ([]Document, *FacetsResponse) {
 	mu.RLock()
 	snap := corpus
 	mu.RUnlock()
 	col := newFacetCollector()
-	var q QueryNode
-	if qStr != "" {
-		q = parseQuery(qStr)
-	}
 	var docs []Document
 	for _, doc := range snap {
-		if qStr == "" || matchQuery(doc, q) {
+		if q == nil || matchQuery(doc, q) {
 			evaluateDocFacets(&docs, col, doc, filters)
 		}
 	}
@@ -345,26 +345,29 @@ func limitFacets(facets []FacetResult, limit int) []FacetResult {
 }
 
 // matchQuery descends syntax elements recursively calling the requisite logic structures.
-func matchQuery(doc Document, q QueryNode) bool {
+func matchQuery(doc Document, q *QueryNode) bool {
+	if q == nil {
+		return true
+	}
 	switch q.Op {
 	case "and":
 		return evalAnd(doc, q.Args)
 	case "or":
 		return evalOr(doc, q.Args)
 	case "not":
-		return !matchQuery(doc, *q.Arg)
+		return !matchQuery(doc, q.Arg)
 	case "field":
 		if q.Arg != nil {
 			return matchScopedField(doc, q)
 		}
-		return matchField(doc, q.Field, q.Value, q.Mode)
+		return matchField(doc, q)
 	}
 	return true
 }
 
 // matchScopedField resolves specific column demands by inspecting the JSON schema type.
 // It dynamically delegates the query to the appropriate evaluation branch.
-func matchScopedField(d Document, q QueryNode) bool {
+func matchScopedField(d Document, q *QueryNode) bool {
 	field := resolveFieldName(q.Field)
 	meta, exists := SearchSchema.Fields[field]
 	if !exists {
@@ -432,16 +435,16 @@ func getStringField(d Document, dbCol string) (string, *TransformCache) {
 }
 
 // matchScopedSingle isolates strict comparisons when user restricts query variables tightly.
-func matchScopedSingle(d Document, q QueryNode, dbColumn string) bool {
+func matchScopedSingle(d Document, q *QueryNode, dbColumn string) bool {
 	if dbColumn == "repo" {
-		return matchContextQuery([]string{d.RepoID, d.RepoName}, []*TransformCache{d.Cache.RepoID, d.Cache.RepoName}, *q.Arg, dbColumn)
+		return matchContextQuery([]string{d.RepoID, d.RepoName}, []*TransformCache{d.Cache.RepoID, d.Cache.RepoName}, q.Arg, dbColumn)
 	}
 	val, cache := getStringField(d, dbColumn)
-	return matchContextQuery([]string{val}, []*TransformCache{cache}, *q.Arg, dbColumn)
+	return matchContextQuery([]string{val}, []*TransformCache{cache}, q.Arg, dbColumn)
 }
 
 // matchScopedList scans every slice component against target terms sequentially until breaking.
-func matchScopedList(d Document, q QueryNode, dbColumn string) bool {
+func matchScopedList(d Document, q *QueryNode, dbColumn string) bool {
 	if dbColumn != "title" {
 		return false
 	}
@@ -450,7 +453,7 @@ func matchScopedList(d Document, q QueryNode, dbColumn string) bool {
 		if d.Cache.Title != nil && i < len(d.Cache.Title) {
 			c = d.Cache.Title[i]
 		}
-		if matchContextQuery([]string{item}, []*TransformCache{c}, *q.Arg, dbColumn) {
+		if matchContextQuery([]string{item}, []*TransformCache{c}, q.Arg, dbColumn) {
 			return true
 		}
 	}
@@ -458,49 +461,57 @@ func matchScopedList(d Document, q QueryNode, dbColumn string) bool {
 }
 
 // matchScopedPeople verifies constraints while considering identifier parity directly from schema.
-func matchScopedPeople(d Document, q QueryNode, dbColumn string, parity int) bool {
+func matchScopedPeople(d Document, q *QueryNode, dbColumn string, parity int) bool {
 	list, caches := getPeopleList(d, dbColumn)
 	for i := 0; i < len(list); i += 2 {
 		if i+1 >= len(list) {
 			break
 		}
-		var idC, nameC *TransformCache
-		if caches != nil {
-			if i < len(caches) {
-				idC = caches[i]
-			}
-			if i+1 < len(caches) {
-				nameC = caches[i+1]
-			}
-		}
-		if parity == 0 {
-			if matchContextQuery([]string{list[i]}, []*TransformCache{idC}, *q.Arg, q.Field) {
-				return true
-			}
-			continue
-		}
-		if parity == 1 {
-			if matchContextQuery([]string{"", list[i+1]}, []*TransformCache{nil, nameC}, *q.Arg, q.Field) {
-				return true
-			}
-			continue
-		}
-		if matchContextQuery([]string{list[i], list[i+1]}, []*TransformCache{idC, nameC}, *q.Arg, q.Field) {
+		idC, nameC := getPeopleCaches(caches, i)
+		if evaluatePeopleParity(list, idC, nameC, q, i, parity) {
 			return true
 		}
 	}
 	return false
 }
 
+// getPeopleCaches safely extracts cache pointers for a specific people index.
+func getPeopleCaches(caches []*TransformCache, i int) (*TransformCache, *TransformCache) {
+	var idC, nameC *TransformCache
+	if caches != nil {
+		if i < len(caches) {
+			idC = caches[i]
+		}
+		if i+1 < len(caches) {
+			nameC = caches[i+1]
+		}
+	}
+	return idC, nameC
+}
+
+// evaluatePeopleParity checks people attributes against the query respecting parity rules.
+func evaluatePeopleParity(list []string, idC, nameC *TransformCache, q *QueryNode, i, parity int) bool {
+	if parity == 0 {
+		return matchContextQuery([]string{list[i]}, []*TransformCache{idC}, q.Arg, q.Field)
+	}
+	if parity == 1 {
+		return matchContextQuery([]string{"", list[i+1]}, []*TransformCache{nil, nameC}, q.Arg, q.Field)
+	}
+	return matchContextQuery([]string{list[i], list[i+1]}, []*TransformCache{idC, nameC}, q.Arg, q.Field)
+}
+
 // matchContextQuery evaluates structural sub-tree commands respecting the underlying boolean layout.
-func matchContextQuery(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
+func matchContextQuery(row []string, caches []*TransformCache, q *QueryNode, defaultField string) bool {
+	if q == nil {
+		return true
+	}
 	switch q.Op {
 	case "and":
 		return evalContextAnd(row, caches, q, defaultField)
 	case "or":
 		return evalContextOr(row, caches, q, defaultField)
 	case "not":
-		return !matchContextQuery(row, caches, *q.Arg, defaultField)
+		return !matchContextQuery(row, caches, q.Arg, defaultField)
 	case "field":
 		return evalContextField(row, caches, q, defaultField)
 	}
@@ -508,9 +519,9 @@ func matchContextQuery(row []string, caches []*TransformCache, q QueryNode, defa
 }
 
 // evalContextAnd iterates through logical child blocks strictly evaluating true conditions.
-func evalContextAnd(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
-	for _, arg := range q.Args {
-		if !matchContextQuery(row, caches, arg, defaultField) {
+func evalContextAnd(row []string, caches []*TransformCache, q *QueryNode, defaultField string) bool {
+	for i := range q.Args {
+		if !matchContextQuery(row, caches, &q.Args[i], defaultField) {
 			return false
 		}
 	}
@@ -518,9 +529,9 @@ func evalContextAnd(row []string, caches []*TransformCache, q QueryNode, default
 }
 
 // evalContextOr finds at least one logical child condition fulfilling the primary goal.
-func evalContextOr(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
-	for _, arg := range q.Args {
-		if matchContextQuery(row, caches, arg, defaultField) {
+func evalContextOr(row []string, caches []*TransformCache, q *QueryNode, defaultField string) bool {
+	for i := range q.Args {
+		if matchContextQuery(row, caches, &q.Args[i], defaultField) {
 			return true
 		}
 	}
@@ -528,7 +539,7 @@ func evalContextOr(row []string, caches []*TransformCache, q QueryNode, defaultF
 }
 
 // evalContextField determines string location offsets when fields employ variable structures.
-func evalContextField(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
+func evalContextField(row []string, caches []*TransformCache, q *QueryNode, defaultField string) bool {
 	field := strings.ReplaceAll(q.Field, ".", "_")
 	col := -1
 	if strings.HasSuffix(field, "ident") || field == "ident" || strings.HasSuffix(field, "id") {
@@ -544,13 +555,13 @@ func evalContextField(row []string, caches []*TransformCache, q QueryNode, defau
 		if caches != nil && col < len(caches) {
 			c = caches[col]
 		}
-		return containsMatcher(c, row[col], q.Value, q.Mode, defaultField)
+		return containsMatcher(c, row[col], q, defaultField)
 	}
 	return false
 }
 
 // evalContextFieldAll attempts matches dynamically against all valid metadata target boundaries.
-func evalContextFieldAll(row []string, caches []*TransformCache, q QueryNode, defaultField string) bool {
+func evalContextFieldAll(row []string, caches []*TransformCache, q *QueryNode, defaultField string) bool {
 	limit := len(row)
 	if limit > 2 {
 		limit = 2
@@ -560,7 +571,7 @@ func evalContextFieldAll(row []string, caches []*TransformCache, q QueryNode, de
 		if caches != nil && j < len(caches) {
 			c = caches[j]
 		}
-		if containsMatcher(c, row[j], q.Value, q.Mode, defaultField) {
+		if containsMatcher(c, row[j], q, defaultField) {
 			return true
 		}
 	}
@@ -569,8 +580,8 @@ func evalContextFieldAll(row []string, caches []*TransformCache, q QueryNode, de
 
 // evalAnd aggregates logical constraints guaranteeing all expressions succeed globally.
 func evalAnd(d Document, args []QueryNode) bool {
-	for _, arg := range args {
-		if !matchQuery(d, arg) {
+	for i := range args {
+		if !matchQuery(d, &args[i]) {
 			return false
 		}
 	}
@@ -579,8 +590,8 @@ func evalAnd(d Document, args []QueryNode) bool {
 
 // evalOr tests alternative branches searching for the first validated block constraint.
 func evalOr(d Document, args []QueryNode) bool {
-	for _, arg := range args {
-		if matchQuery(d, arg) {
+	for i := range args {
+		if matchQuery(d, &args[i]) {
 			return true
 		}
 	}
@@ -589,7 +600,8 @@ func evalOr(d Document, args []QueryNode) bool {
 
 // containsMatcher normalizes incoming strings to execute character comparisons identically.
 // Delegates to the Glob algorithm if wildcard characters are detected.
-func containsMatcher(cache *TransformCache, text, term, mode, field string) bool {
+func containsMatcher(cache *TransformCache, text string, q *QueryNode, field string) bool {
+	mode := q.Mode
 	if mode == "" {
 		if meta, ok := SearchSchema.Fields[field]; ok && meta.DefaultMode != "" {
 			mode = meta.DefaultMode
@@ -598,88 +610,95 @@ func containsMatcher(cache *TransformCache, text, term, mode, field string) bool
 		}
 	}
 	transText := cache.get(text, mode)
-	if !strings.ContainsAny(term, "*?") {
-		return strings.Contains(transText, transform(term, mode))
+	pc := q.Precomp[mode]
+	if !pc.IsGlob {
+		return strings.Contains(transText, pc.Transformed)
 	}
-	pattern := compileGlobPattern(term, mode)
-	_, _, ok := findFirstGlobMatch(pattern, transText, 0)
+	_, _, ok := findFirstGlobMatch(pc.Pattern, transText, 0)
 	return ok
 }
 
 // matchField routes structural queries to corresponding column interpretation branches.
-func matchField(doc Document, field, val, mode string) bool {
-	field = resolveFieldName(field)
+func matchField(doc Document, q *QueryNode) bool {
+	field := resolveFieldName(q.Field)
 	meta, exists := SearchSchema.Fields[field]
 	if !exists {
-		return docMatchesAll(doc, val, mode)
+		return docMatchesAll(doc, q)
 	}
 	if meta.Type == "fieldset" {
-		for _, subField := range meta.ExpandTo {
-			// On extrait le nom du sous-champ (ex: "creator.ident" -> "ident")
-			parts := strings.Split(subField, ".")
-			subFieldName := parts[len(parts)-1]
-
-			// On récupère les métadonnées du sous-champ pour valider
-			if subMeta, ok := SearchSchema.Fields[subFieldName]; ok {
-				vStr, c := getStringField(doc, subMeta.DbColumn)
-				if containsMatcher(c, vStr, val, mode, subMeta.DbColumn) {
-					return true
-				}
-			}
-		}
-		return false
+		return matchFieldSet(doc, meta, q)
 	}
 	if meta.Type == "string" && !isPeopleColumn(meta.DbColumn) {
 		vStr, c := getStringField(doc, meta.DbColumn)
-		return containsMatcher(c, vStr, val, mode, meta.DbColumn)
+		return containsMatcher(c, vStr, q, meta.DbColumn)
 	}
 	if meta.Type == "list" && meta.DbColumn == "title" {
-		return listMatches(doc.Title, doc.Cache.Title, val, mode, meta.DbColumn)
+		return listMatches(doc.Title, doc.Cache.Title, q, meta.DbColumn)
 	}
 	if isPeopleColumn(meta.DbColumn) {
-		list, caches := getPeopleList(doc, meta.DbColumn)
-		if meta.Type == "string" {
-			return listMatchesParity(list, caches, val, mode, meta.DbColumn, meta.Parity)
-		}
-		return listMatches(list, caches, val, mode, meta.DbColumn)
+		return matchPeopleList(doc, meta, q)
 	}
-	return docMatchesAll(doc, val, mode)
+	return docMatchesAll(doc, q)
+}
+
+// matchFieldSet expands subset fields and evaluates the query against them.
+func matchFieldSet(doc Document, meta FieldMeta, q *QueryNode) bool {
+	for _, subField := range meta.ExpandTo {
+		parts := strings.Split(subField, ".")
+		subFieldName := parts[len(parts)-1]
+		if subMeta, ok := SearchSchema.Fields[subFieldName]; ok {
+			vStr, c := getStringField(doc, subMeta.DbColumn)
+			if containsMatcher(c, vStr, q, subMeta.DbColumn) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// matchPeopleList evaluates queries against arrays of people attributes.
+func matchPeopleList(doc Document, meta FieldMeta, q *QueryNode) bool {
+	list, caches := getPeopleList(doc, meta.DbColumn)
+	if meta.Type == "string" {
+		return listMatchesParity(list, caches, q, meta.DbColumn, meta.Parity)
+	}
+	return listMatches(list, caches, q, meta.DbColumn)
 }
 
 // docMatchesAll evaluates global requests simultaneously seeking validation anywhere.
-func docMatchesAll(d Document, val, mode string) bool {
-	if containsMatcher(d.Cache.Logical, d.Logical, val, mode, "logical") || containsMatcher(d.Cache.Ident, d.Ident, val, mode, "ident") {
+func docMatchesAll(d Document, q *QueryNode) bool {
+	if containsMatcher(d.Cache.Logical, d.Logical, q, "logical") || containsMatcher(d.Cache.Ident, d.Ident, q, "ident") {
 		return true
 	}
-	if containsMatcher(d.Cache.Summary, d.Summary, val, mode, "summary") || containsMatcher(d.Cache.RepoID, d.RepoID, val, mode, "repo_id") {
+	if containsMatcher(d.Cache.Summary, d.Summary, q, "summary") || containsMatcher(d.Cache.RepoID, d.RepoID, q, "repo_id") {
 		return true
 	}
-	if containsMatcher(d.Cache.Translation, d.Translation, val, mode, "translation") || containsMatcher(d.Cache.Bibliography, d.Bibliography, val, mode, "bibliography") {
+	if containsMatcher(d.Cache.Translation, d.Translation, q, "translation") || containsMatcher(d.Cache.Bibliography, d.Bibliography, q, "bibliography") {
 		return true
 	}
-	if containsMatcher(d.Cache.RepoName, d.RepoName, val, mode, "repo_name") || containsMatcher(d.Cache.Hand, d.Hand, val, mode, "hand") {
+	if containsMatcher(d.Cache.RepoName, d.RepoName, q, "repo_name") || containsMatcher(d.Cache.Hand, d.Hand, q, "hand") {
 		return true
 	}
-	if listMatches(d.Title, d.Cache.Title, val, mode, "title") || listMatches(d.Author, d.Cache.Author, val, mode, "author") {
+	if listMatches(d.Title, d.Cache.Title, q, "title") || listMatches(d.Author, d.Cache.Author, q, "author") {
 		return true
 	}
-	if listMatches(d.Creator, d.Cache.Creator, val, mode, "creator") || listMatches(d.Contributor, d.Cache.Contributor, val, mode, "contributor") {
+	if listMatches(d.Creator, d.Cache.Creator, q, "creator") || listMatches(d.Contributor, d.Cache.Contributor, q, "contributor") {
 		return true
 	}
-	if listMatches(d.Lang, d.Cache.Lang, val, mode, "lang") {
+	if listMatches(d.Lang, d.Cache.Lang, q, "lang") {
 		return true
 	}
-	return listMatches(d.Script, d.Cache.Script, val, mode, "script")
+	return listMatches(d.Script, d.Cache.Script, q, "script")
 }
 
 // listMatches compares target patterns over array slices avoiding redundant searches.
-func listMatches(list []string, caches []*TransformCache, q, mode, field string) bool {
+func listMatches(list []string, caches []*TransformCache, q *QueryNode, field string) bool {
 	for i, item := range list {
 		var c *TransformCache
 		if caches != nil && i < len(caches) {
 			c = caches[i]
 		}
-		if containsMatcher(c, item, q, mode, field) {
+		if containsMatcher(c, item, q, field) {
 			return true
 		}
 	}
@@ -687,7 +706,7 @@ func listMatches(list []string, caches []*TransformCache, q, mode, field string)
 }
 
 // listMatchesParity inspects arrays respecting odd or even offset allocations specifically.
-func listMatchesParity(list []string, caches []*TransformCache, q, mode, field string, parity int) bool {
+func listMatchesParity(list []string, caches []*TransformCache, q *QueryNode, field string, parity int) bool {
 	for i, item := range list {
 		if parity != -1 && i%2 != parity {
 			continue
@@ -696,7 +715,7 @@ func listMatchesParity(list []string, caches []*TransformCache, q, mode, field s
 		if caches != nil && i < len(caches) {
 			c = caches[i]
 		}
-		if containsMatcher(c, item, q, mode, field) {
+		if containsMatcher(c, item, q, field) {
 			return true
 		}
 	}
@@ -704,7 +723,7 @@ func listMatchesParity(list []string, caches []*TransformCache, q, mode, field s
 }
 
 // matchDocument clones attributes producing response bodies ready for hit highlighting.
-func matchDocument(doc Document, qStr string) SearchResult {
+func matchDocument(doc Document, q *QueryNode) SearchResult {
 	res := SearchResult{
 		Ident: doc.Ident, Logical: doc.Logical,
 		Title: cloneList(doc.Title), Summary: doc.Summary,
@@ -714,38 +733,44 @@ func matchDocument(doc Document, qStr string) SearchResult {
 		Contributor: cloneList(doc.Contributor),
 		Lang:        cloneList(doc.Lang), Script: cloneList(doc.Script),
 	}
-	if qStr == "" {
+	if q == nil {
 		return res
 	}
-	applyHighlights(&res, doc, qStr)
+	applyHighlights(&res, doc, q)
 	return res
 }
 
 // extractTerms navigates nested AST layers assembling comprehensive search filters.
-func extractTerms(q QueryNode) []QueryTerm {
+func extractTerms(q *QueryNode) []QueryTerm {
 	return primitiveExtractTerms(q)
 }
 
 // primitiveExtractTerms breaks logical statements into primitive strings recursively processing.
-func primitiveExtractTerms(q QueryNode) []QueryTerm {
+func primitiveExtractTerms(q *QueryNode) []QueryTerm {
+	if q == nil {
+		return nil
+	}
 	if q.Op == "field" {
-		if q.Arg != nil {
-			return primitiveExtractTerms(*q.Arg)
-		}
-		return []QueryTerm{{Field: q.Field, Value: q.Value, Mode: q.Mode}}
+		return extractFieldTerm(q)
 	}
 	var terms []QueryTerm
 	if q.Op == "and" || q.Op == "or" {
-		for _, arg := range q.Args {
-			terms = append(terms, primitiveExtractTerms(arg)...)
+		for i := range q.Args {
+			terms = append(terms, primitiveExtractTerms(&q.Args[i])...)
 		}
 	}
 	return terms
 }
 
-// termsForFields retrieves relevant evaluation criteria corresponding strictly explicitly.
-// Dans search.go
+// extractFieldTerm handles the leaf nodes of the query AST.
+func extractFieldTerm(q *QueryNode) []QueryTerm {
+	if q.Arg != nil {
+		return primitiveExtractTerms(q.Arg)
+	}
+	return []QueryTerm{{Field: q.Field, Value: q.Value, Mode: q.Mode, Precomp: q.Precomp}}
+}
 
+// termsForFields retrieves relevant evaluation criteria corresponding strictly explicitly.
 func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
 	var filtered []QueryTerm
 	for _, t := range terms {
@@ -753,13 +778,8 @@ func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
 			filtered = append(filtered, t)
 			continue
 		}
-
-		// 1. D'abord, on résout l'alias (ex: "editor.ident" -> "creator.ident")
 		resolvedField := resolveFieldName(t.Field)
-
-		// 2. Ensuite, on normalise (remplacement des points par des underscores)
 		normField := strings.ReplaceAll(resolvedField, ".", "_")
-
 		for _, f := range fields {
 			if normField == f {
 				filtered = append(filtered, t)
@@ -771,8 +791,7 @@ func termsForFields(terms []QueryTerm, fields ...string) []QueryTerm {
 }
 
 // applyHighlights orchestrates character replacement establishing visual feedback cleanly.
-func applyHighlights(res *SearchResult, doc Document, qStr string) {
-	q := parseQuery(qStr)
+func applyHighlights(res *SearchResult, doc Document, q *QueryNode) {
 	terms := extractTerms(q)
 	if len(terms) == 0 {
 		return
@@ -791,6 +810,11 @@ func highlightFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	processFieldTerms(doc.Cache.Translation, &res.Translation, doc.Translation, termsForFields(terms, "translation", "trans"), "translation")
 	processFieldTerms(doc.Cache.Bibliography, &res.Bibliography, doc.Bibliography, termsForFields(terms, "bibliography", "bibl"), "bibliography")
 	processListTerms(res.Title, doc.Title, doc.Cache.Title, termsForFields(terms, "title"), "title")
+	highlightPeopleFields(res, doc, terms)
+}
+
+// highlightPeopleFields applies hit markers specifically to person-related arrays.
+func highlightPeopleFields(res *SearchResult, doc Document, terms []QueryTerm) {
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_ident"), "author_ident", 0)
 	processListTermsParity(res.Author, doc.Author, doc.Cache.Author, termsForFields(terms, "author", "author_name"), "author_name", 1)
 	processListTermsParity(res.Creator, doc.Creator, doc.Cache.Creator, termsForFields(terms, "creator", "creator_ident"), "creator_ident", 0)
@@ -814,7 +838,7 @@ func cloneList(src []string) []string {
 func processFieldTerms(cache *TransformCache, target *string, source string, terms []QueryTerm, fieldName string) bool {
 	var allIntervals [][2]int
 	for _, term := range terms {
-		allIntervals = append(allIntervals, findOccurrences(cache, source, term.Value, term.Mode, fieldName)...)
+		allIntervals = append(allIntervals, findOccurrences(cache, source, term, fieldName)...)
 	}
 	if len(allIntervals) > 0 {
 		*target = injectMarkers(source, allIntervals)
@@ -861,7 +885,8 @@ type StringMapper func(string) (string, []int)
 
 // findOccurrences correlates normalized bytes converting coordinates identifying origins globally.
 // Identifies start and end indices for highlighting via Glob if necessary.
-func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2]int {
+func findOccurrences(cache *TransformCache, text string, term QueryTerm, field string) [][2]int {
+	mode := term.Mode
 	if mode == "" {
 		if meta, ok := SearchSchema.Fields[field]; ok && meta.DefaultMode != "" {
 			mode = meta.DefaultMode
@@ -870,20 +895,20 @@ func findOccurrences(cache *TransformCache, text, term, mode, field string) [][2
 		}
 	}
 	mapper := func(s string) (string, []int) { return transformWithBounds(s, mode) }
-	if !strings.ContainsAny(term, "*?") {
-		tText, tTerm := cache.get(text, mode), transform(term, mode)
-		if !strings.Contains(tText, tTerm) {
+	pc := term.Precomp[mode]
+	if !pc.IsGlob {
+		tText := cache.get(text, mode)
+		if !strings.Contains(tText, pc.Transformed) {
 			return nil
 		}
-		return findOccurrencesWithMapping(text, term, mapper)
+		return findOccurrencesWithMapping(text, pc.Transformed, mapper)
 	}
-	return findGlobOccurrences(mapper, text, term, mode)
+	return findGlobOccurrences(mapper, text, pc.Pattern)
 }
 
 // findGlobOccurrences loops through glob matches to extract boundaries.
-func findGlobOccurrences(mapper StringMapper, text, term, mode string) [][2]int {
+func findGlobOccurrences(mapper StringMapper, text string, pattern []byte) [][2]int {
 	transText, bounds := mapper(text)
-	pattern := compileGlobPattern(term, mode)
 	var matches [][2]int
 	start := 0
 	for {
@@ -900,9 +925,8 @@ func findGlobOccurrences(mapper StringMapper, text, term, mode string) [][2]int 
 }
 
 // findOccurrencesWithMapping maps translated indices calculating genuine length constraints robustly.
-func findOccurrencesWithMapping(text, term string, mapper StringMapper) [][2]int {
+func findOccurrencesWithMapping(text, transTerm string, mapper StringMapper) [][2]int {
 	transText, bounds := mapper(text)
-	transTerm, _ := mapper(term)
 	var matches [][2]int
 	termLen := len(transTerm)
 	if termLen == 0 {
@@ -984,4 +1008,40 @@ func processPoint(p Point, depth int, sb *strings.Builder) int {
 		sb.WriteString(MarkerEnd)
 	}
 	return newDepth
+}
+
+// precomputeAST traverses the query node to cache transformations and glob patterns.
+func precomputeAST(q *QueryNode) {
+	if q == nil {
+		return
+	}
+	if q.Op == "field" {
+		computeNodeModes(q)
+	}
+	for i := range q.Args {
+		precomputeAST(&q.Args[i])
+	}
+	if q.Arg != nil {
+		precomputeAST(q.Arg)
+	}
+}
+
+// computeNodeModes prepares transformations for all valid schema modes.
+func computeNodeModes(q *QueryNode) {
+	q.Precomp = make(map[string]PrecomputedTerm)
+	modes := []string{q.Mode}
+	if q.Mode == "" {
+		modes = SearchSchema.Modes
+		if len(modes) == 0 {
+			modes = []string{"forma", "formb", "formc"}
+		}
+	}
+	for _, mode := range modes {
+		pt := PrecomputedTerm{Transformed: transform(q.Value, mode)}
+		if strings.ContainsAny(q.Value, "*?") {
+			pt.IsGlob = true
+			pt.Pattern = compileGlobPattern(q.Value, mode)
+		}
+		q.Precomp[mode] = pt
+	}
 }

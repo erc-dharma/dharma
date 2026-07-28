@@ -145,23 +145,32 @@ type SearchResponse struct {
 	Matches     interface{} `json:"matches"`
 }
 
+// PrecomputedTerm holds pre-transformed strings and patterns to avoid redundant work.
+type PrecomputedTerm struct {
+	Transformed string
+	Pattern     []byte
+	IsGlob      bool
+}
+
 // QueryNode represents a single branch or leaf in the parsed AST.
 type QueryNode struct {
-	Op    string      `json:"op"`
-	Args  []QueryNode `json:"args,omitempty"`
-	Arg   *QueryNode  `json:"arg,omitempty"`
-	Field string      `json:"field,omitempty"`
-	Value string      `json:"value,omitempty"`
-	Mode  string      `json:"mode,omitempty"`
-	X     int         `json:"x,omitempty"`
-	Y     int         `json:"y,omitempty"`
+	Op      string                     `json:"op"`
+	Args    []QueryNode                `json:"args,omitempty"`
+	Arg     *QueryNode                 `json:"arg,omitempty"`
+	Field   string                     `json:"field,omitempty"`
+	Value   string                     `json:"value,omitempty"`
+	Mode    string                     `json:"mode,omitempty"`
+	X       int                        `json:"x,omitempty"`
+	Y       int                        `json:"y,omitempty"`
+	Precomp map[string]PrecomputedTerm `json:"-"`
 }
 
 // QueryTerm defines a flattened evaluation criteria extracted from the AST.
 type QueryTerm struct {
-	Field string
-	Value string
-	Mode  string
+	Field   string
+	Value   string
+	Mode    string
+	Precomp map[string]PrecomputedTerm
 }
 
 // DocMeta holds lightweight metadata for synchronization comparisons.
@@ -286,7 +295,7 @@ func handleMatch(w http.ResponseWriter, r *http.Request) {
 }
 
 // processMatch retrieves a single document and enriches it with source properties.
-func processMatch(w http.ResponseWriter, ident, q string, fields []string, pretty bool) {
+func processMatch(w http.ResponseWriter, ident, qStr string, fields []string, pretty bool) {
 	tx, err := db.Begin()
 	if err != nil {
 		http.Error(w, "DB error", http.StatusInternalServerError)
@@ -302,12 +311,18 @@ func processMatch(w http.ResponseWriter, ident, q string, fields []string, prett
 		http.Error(w, "Document not found", http.StatusNotFound)
 		return
 	}
-	res := matchDocument(*targetDoc, q)
+	var qNode *QueryNode
+	if qStr != "" {
+		parsed := parseQuery(qStr)
+		precomputeAST(&parsed)
+		qNode = &parsed
+	}
+	res := matchDocument(*targetDoc, qNode)
 	fetchOriginalTEI(tx, ident, &res)
 	results := []SearchResult{res}
 	enrichMatches(tx, results, []Document{*targetDoc}, fields)
 	lastUp := fetchLastUpdated(tx)
-	sendResponse(w, 1, 0, 1, "ident", fields, results, q, pretty, nil, lastUp)
+	sendResponse(w, 1, 0, 1, "ident", fields, results, qStr, pretty, nil, lastUp)
 }
 
 // fetchOriginalTEI injects original unparsed XML payload into the response structure.
@@ -421,15 +436,21 @@ func processRequest(w http.ResponseWriter, q string, off, lim int, sortBy string
 }
 
 // performSearch executes the search and compiles results evaluating dynamic facet parameters.
-func performSearch(w http.ResponseWriter, tx *sql.Tx, q string, off, lim int, sortBy string, fields []string, pretty bool, filters map[string][]string) {
-	allDocs, facets := filterDocs(q, filters)
+func performSearch(w http.ResponseWriter, tx *sql.Tx, qStr string, off, lim int, sortBy string, fields []string, pretty bool, filters map[string][]string) {
+	var qNode *QueryNode
+	if qStr != "" {
+		parsed := parseQuery(qStr)
+		precomputeAST(&parsed)
+		qNode = &parsed
+	}
+	allDocs, facets := filterDocs(qNode, filters)
 	sortDocs(allDocs, sortBy)
 	total := len(allDocs)
 	pageDocs := paginateDocs(allDocs, off, lim)
-	results := buildResults(pageDocs, q)
+	results := buildResults(pageDocs, qNode)
 	enrichMatches(tx, results, pageDocs, fields)
 	lastUp := fetchLastUpdated(tx)
-	sendResponse(w, total, off, lim, sortBy, fields, results, q, pretty, facets, lastUp)
+	sendResponse(w, total, off, lim, sortBy, fields, results, qStr, pretty, facets, lastUp)
 }
 
 // syncCorpus compares db state flag to decide if corpus should be refreshed in memory.
