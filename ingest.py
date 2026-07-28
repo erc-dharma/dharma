@@ -1648,23 +1648,6 @@ def _parse_l(p, l):
 
 # < lists
 
-"""
-XXX special type for manu?
-
-INSII2400053
-
-réduire les espaces entre ce qui précède et suit du para + entre les items
-(pas paragraphe "purs", mais sauts de lignes).
-
-<p><list><item>...</list></p>
-
-<p>bla bla bla <list><item>...</item></list> bla bla bla</p>
-
-<p>bla bla bla <list><item>...</item></list></p>
-
-<p><list><item>...</item></list> bla bla bla</p>
-"""
-
 # In HTML, we cannot have <p><ul>...</ul></p>, the <ul> or <ol> must be outside
 # of <p>, so we need to generate a compatible representation. OTOH, HTML allows
 # <dl> within <p>, so no special treatment is needed in this case. Still, it
