@@ -1751,11 +1751,33 @@ def _parse_quote(p, q):
 		p.join()
 	else:
 		p.append("“")
-		# XXX should fix up space here
 		p.push(tree.Tag("span"))
 		p.dispatch_children(q)
+		_trim(p.top)
 		p.join()
 		p.append("”")
+
+def _strings_except_notes(root: tree.Branch):
+	ret = []
+	for node in root:
+		match node:
+			case tree.String():
+				ret.append(node)
+			case tree.Tag() if node.name != "note":
+				ret.extend(_strings_except_notes(node))
+	return ret
+
+
+def _trim(node):
+	ss = _strings_except_notes(node)
+	for s in ss:
+		s.data = s.data.lstrip()
+		if s.data:
+			break
+	for s in reversed(ss):
+		s.data = s.data.rstrip()
+		if s.data:
+			break
 
 @_handler("cit")
 def _parse_cit(p, cit):
@@ -1837,8 +1859,8 @@ def _gather_people(nodes):
 		_append_unique_name(ret, None, name)
 	return ret
 
-def _rtrim_title(t):
-	ss = t.strings()
+def _rtrim_title(t: tree.Branch):
+	ss = _strings_except_notes(t)
 	while ss:
 		s = ss.pop()
 		text = s.data.rstrip()
