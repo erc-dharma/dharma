@@ -1137,7 +1137,7 @@ class _Parser:
 			# Need to save and restore the location because we set
 			# it to None when the string is modified
 			loc = parent[-1].location
-			parent[-1].append(data)
+			parent[-1].data += data
 			parent[-1].location = loc
 		else:
 			self.make_node(String, data)
