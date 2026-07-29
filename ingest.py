@@ -274,9 +274,11 @@ class _Parser(tree.Serializer):
 				pattern = tree.parse_string(pattern)
 			return pattern, description, entry_id
 
-	def within_tip(self, yes_or_no: bool):
-		#assert self._within_tip is not yes_or_no
-		self._within_tip = yes_or_no
+	def within_tip(self, yes_or_no: bool | None = None):
+		if yes_or_no is not None:
+			assert self._within_tip is not yes_or_no
+			self._within_tip = yes_or_no
+		return self._within_tip
 
 	def dispatch(self, node):
 		if node in self.visited:
@@ -563,20 +565,21 @@ def _parse_supplied(p, supplied):
 
 def _emit_supplied(p, supplied, tip, brackets):
 	ldelim, rdelim = brackets
-	p.within_tip(True)
-	p.push(tree.Tree())
-	# XXX must omit <note> in all cases where we construct a tooltip
-	p.append(copy.copy(tip))
-	if supplied["cert"] == "low":
-		p.append(" (low certainty)")
-	match supplied["evidence"]:
-		case "parallel":
-			p.append("; restoration based on parallel")
-		case "previouseditor":
-			p.append("; restoration based on previous edition (not assessable)")
-	tip = p.pop().xml()
-	p.within_tip(False)
-	p.push(tree.Tag("span", class_="supplied", tip=tip))
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="supplied", tip=tip))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		p.append(copy.copy(tip))
+		if supplied["cert"] == "low":
+			p.append(" (low certainty)")
+		match supplied["evidence"]:
+			case "parallel":
+				p.append("; restoration based on parallel")
+			case "previouseditor":
+				p.append("; restoration based on previous edition (not assessable)")
+		p.push(tree.Tag("span", class_="supplied", tip=p.pop().xml()))
+		p.within_tip(False)
 	p.append_surround(ldelim)
 	p.dispatch_children(supplied)
 	if supplied["cert"] == "low":
@@ -598,21 +601,23 @@ _add_place_tbl = {
 }
 @_handler("add")
 def _parse_add(p, node, deleted=None):
-	p.within_tip(True)
-	p.push(tree.Tree())
-	tip = _add_place_tbl.get(node["place"], _add_place_tbl["unspecified"])
-	p.append(tip)
-	if deleted:
-		p.append(" (overwritten text: ")
-		p.push(tree.Tag("span", class_="del"))
-		p.append("⟦")
-		p.dispatch_children(deleted)
-		p.append("⟧")
-		p.join()
-		p.append(")")
-	tip = p.pop().xml()
-	p.within_tip(False)
-	p.push(tree.Tag("span", class_="add", tip=tip))
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="add"))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		tip = _add_place_tbl.get(node["place"], _add_place_tbl["unspecified"])
+		p.append(tip)
+		if deleted:
+			p.append(" (overwritten text: ")
+			p.push(tree.Tag("span", class_="del"))
+			p.append("⟦")
+			p.dispatch_children(deleted)
+			p.append("⟧")
+			p.join()
+			p.append(")")
+		p.push(tree.Tag("span", class_="add", tip=p.pop().xml()))
+		p.within_tip(False)
 	p.append_surround("⟨⟨")
 	p.dispatch_children(node)
 	p.append_surround("⟩⟩")
@@ -627,21 +632,23 @@ _del_rend_tbl = {
 }
 @_handler("del")
 def _parse_del(p, node, added=None):
-	p.within_tip(True)
-	p.push(tree.Tree())
-	tip = _del_rend_tbl.get(node["rend"], _del_rend_tbl["other"])
-	p.append(copy.copy(tip))
-	if added:
-		p.append(" (replacement text: ")
-		p.push(tree.Tag("span", class_="add"))
-		p.append("⟨⟨")
-		p.dispatch_children(added)
-		p.append("⟩⟩")
-		p.join()
-		p.append(")")
-	tip = p.pop().xml()
-	p.within_tip(False)
-	p.push(tree.Tag("span", class_="del", tip=tip))
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="del"))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		tip = _del_rend_tbl.get(node["rend"], _del_rend_tbl["other"])
+		p.append(copy.copy(tip))
+		if added:
+			p.append(" (replacement text: ")
+			p.push(tree.Tag("span", class_="add"))
+			p.append("⟨⟨")
+			p.dispatch_children(added)
+			p.append("⟩⟩")
+			p.join()
+			p.append(")")
+		p.push(tree.Tag("span", class_="del", tip=p.pop().xml()))
+		p.within_tip(False)
 	p.append_surround("⟦")
 	p.dispatch_children(node)
 	p.append_surround("⟧")
@@ -660,19 +667,22 @@ def _parse_subst(p, subst):
 
 @_handler("sic")
 def _parse_sic(p, sic, corr=None):
-	p.within_tip(True)
-	p.push(tree.Tree())
-	p.append("Incorrect text")
-	if corr:
-		p.append(" (emendation: ")
-		p.push(tree.Tag("span", class_="corr"))
-		p.append("⟨")
-		p.dispatch_children(corr)
-		p.append("⟩")
-		p.join()
-		p.append(")")
-	p.push(tree.Tag("span", class_="sic", tip=p.pop().xml()))
-	p.within_tip(False)
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="sic"))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		p.append("Incorrect text")
+		if corr:
+			p.append(" (emendation: ")
+			p.push(tree.Tag("span", class_="corr"))
+			p.append("⟨")
+			p.dispatch_children(corr)
+			p.append("⟩")
+			p.join()
+			p.append(")")
+		p.push(tree.Tag("span", class_="sic", tip=p.pop().xml()))
+		p.within_tip(False)
 	p.append_surround("¿")
 	p.dispatch_children(sic)
 	p.append_surround("?")
@@ -680,19 +690,22 @@ def _parse_sic(p, sic, corr=None):
 
 @_handler("corr")
 def _parse_corr(p, corr, sic=None):
-	p.within_tip(True)
-	p.push(tree.Tree())
-	p.append("Emended text")
-	if sic:
-		p.append(" (original: ")
-		p.push(tree.Tag("span", class_="sic"))
-		p.append("¿")
-		p.dispatch_children(sic)
-		p.append("?")
-		p.join()
-		p.append(")")
-	p.push(tree.Tag("span", class_="corr", tip=p.pop().xml()))
-	p.within_tip(False)
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="corr"))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		p.append("Emended text")
+		if sic:
+			p.append(" (original: ")
+			p.push(tree.Tag("span", class_="sic"))
+			p.append("¿")
+			p.dispatch_children(sic)
+			p.append("?")
+			p.join()
+			p.append(")")
+		p.push(tree.Tag("span", class_="corr", tip=p.pop().xml()))
+		p.within_tip(False)
 	p.append_surround("⟨")
 	p.dispatch_children(corr)
 	p.append_surround("⟩")
@@ -700,19 +713,22 @@ def _parse_corr(p, corr, sic=None):
 
 @_handler("orig")
 def _parse_orig(p, orig, reg=None):
-	p.within_tip(True)
-	p.push(tree.Tree())
-	p.append("Non-standard text")
-	if reg:
-		p.append(" (standardisation: ")
-		p.push(tree.Tag("span", class_="reg"))
-		p.append("⟨")
-		p.dispatch_children(reg)
-		p.append("⟩")
-		p.join()
-		p.append(")")
-	p.push(tree.Tag("span", class_="orig", tip=p.pop().xml()))
-	p.within_tip(False)
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="orig"))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		p.append("Non-standard text")
+		if reg:
+			p.append(" (standardisation: ")
+			p.push(tree.Tag("span", class_="reg"))
+			p.append("⟨")
+			p.dispatch_children(reg)
+			p.append("⟩")
+			p.join()
+			p.append(")")
+		p.push(tree.Tag("span", class_="orig", tip=p.pop().xml()))
+		p.within_tip(False)
 	p.append_surround("¡")
 	p.dispatch_children(orig)
 	p.append_surround("!")
@@ -720,19 +736,22 @@ def _parse_orig(p, orig, reg=None):
 
 @_handler("reg")
 def _parse_reg(p, reg, orig=None):
-	p.within_tip(True)
-	p.push(tree.Tree())
-	p.append("Standardised text")
-	if orig:
-		p.append(" (original: ")
-		p.push(tree.Tag("span", class_="orig"))
-		p.append_display("¡")
-		p.dispatch_children(orig)
-		p.append_display("!")
-		p.join()
-		p.append(")")
-	p.push(tree.Tag("span", class_="reg", tip=p.pop().xml()))
-	p.within_tip(False)
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="reg"))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		p.append("Standardised text")
+		if orig:
+			p.append(" (original: ")
+			p.push(tree.Tag("span", class_="orig"))
+			p.append_display("¡")
+			p.dispatch_children(orig)
+			p.append_display("!")
+			p.join()
+			p.append(")")
+		p.push(tree.Tag("span", class_="reg", tip=p.pop().xml()))
+		p.within_tip(False)
 	p.append_surround("⟨")
 	p.dispatch_children(reg)
 	p.append_surround("⟩")
@@ -740,20 +759,23 @@ def _parse_reg(p, reg, orig=None):
 
 @_handler("unclear")
 def _parse_unclear(p, node, standalone=True):
-	p.within_tip(True)
-	p.push(tree.Tree())
-	if node["cert"] == "low":
-		p.append("Tentative reading")
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="unclear"))
 	else:
-		p.append("Unclear text")
-	if node["reason"] == "eccentric_ductus":
-		p.append(" (")
-		p.push(tree.Tag("span", class_="italics"))
-		p.append("eccentric_ductus")
-		p.join()
-		p.append(")")
-	p.push(tree.Tag("span", class_="unclear", tip=p.pop().xml()))
-	p.within_tip(False)
+		p.within_tip(True)
+		p.push(tree.Tree())
+		if node["cert"] == "low":
+			p.append("Tentative reading")
+		else:
+			p.append("Unclear text")
+		if node["reason"] == "eccentric_ductus":
+			p.append(" (")
+			p.push(tree.Tag("span", class_="italics"))
+			p.append("eccentric_ductus")
+			p.join()
+			p.append(")")
+		p.push(tree.Tag("span", class_="unclear", tip=p.pop().xml()))
+		p.within_tip(False)
 	if standalone:
 		p.append_surround("(")
 	p.dispatch_children(node)
@@ -1160,25 +1182,28 @@ def _parse_expan(p, node):
 					yield from iter_abbr_without_am(child)
 			case tree.String():
 				yield cur
-	p.within_tip(True)
-	p.push(tree.Tree())
-	p.append("Abbreviation (contracted form: ")
-	p.push(tree.Tag("span", class_="abbr-contracted"))
-	for abbr in node.find("abbr"):
-		p.append(abbr.text())
-	p.join()
-	p.append("; expanded form: ")
-	p.push(tree.Tag("span", class_="abbr-expanded"))
-	for child in node.find("*[name() = 'abbr' or name() = 'ex']"):
-		if child.name == "ex":
-			p.append(child.text())
-			continue
-		for s in iter_abbr_without_am(child):
-			p.append(s.copy())
-	p.join()
-	p.append(")")
-	p.push(tree.Tag("span", class_="abbr-full", tip=p.pop().xml()))
-	p.within_tip(False)
+	if p.within_tip():
+		p.push(tree.Tag("span", class_="abbr-full"))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		p.append("Abbreviation (contracted form: ")
+		p.push(tree.Tag("span", class_="abbr-contracted"))
+		for abbr in node.find("abbr"):
+			p.append(abbr.text())
+		p.join()
+		p.append("; expanded form: ")
+		p.push(tree.Tag("span", class_="abbr-expanded"))
+		for child in node.find("*[name() = 'abbr' or name() = 'ex']"):
+			if child.name == "ex":
+				p.append(child.text())
+				continue
+			for s in iter_abbr_without_am(child):
+				p.append(s.copy())
+		p.join()
+		p.append(")")
+		p.push(tree.Tag("span", class_="abbr-full", tip=p.pop().xml()))
+		p.within_tip(False)
 	p.dispatch_children(node)
 	p.join()
 
@@ -1658,18 +1683,21 @@ def _append_meter_description(p, met):
 
 @_handler("l")
 def _parse_l(p, l):
-	p.within_tip(True)
-	p.push(tree.Tree())
-	if (real := l["real"]):
-		p.append("Irregular meter: ")
-		_append_meter_description(p, real)
-		if (met := l["met"]):
-			p.append("; based on ")
-			_append_meter_description(p, met)
-	elif (met := l["met"]):
-		p.append("Meter: ")
-	p.push(tree.Tag("verse-line", n=_get_n(l), tip=p.pop().xml()))
-	p.within_tip(False)
+	if p.within_tip():
+		p.push(tree.Tag("verse-line", n=_get_n(l)))
+	else:
+		p.within_tip(True)
+		p.push(tree.Tree())
+		if (real := l["real"]):
+			p.append("Irregular meter: ")
+			_append_meter_description(p, real)
+			if (met := l["met"]):
+				p.append("; based on ")
+				_append_meter_description(p, met)
+		elif (met := l["met"]):
+			p.append("Meter: ")
+		p.push(tree.Tag("verse-line", n=_get_n(l), tip=p.pop().xml()))
+		p.within_tip(False)
 	p.dispatch_children(l)
 	p.join()
 
