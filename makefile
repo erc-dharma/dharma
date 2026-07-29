@@ -71,7 +71,7 @@ status:
 	sudo systemctl status 'dharma.*'
 
 follow:
-	sudo journalctl -fu 'dharma.change'
+	sudo journalctl -fu 'dharma.change' -n 1000
 
 .PHONY: start stop status follow
 
