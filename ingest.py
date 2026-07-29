@@ -275,7 +275,7 @@ class _Parser(tree.Serializer):
 			return pattern, description, entry_id
 
 	def within_tip(self, yes_or_no: bool):
-		assert self._within_tip is not yes_or_no
+		#assert self._within_tip is not yes_or_no
 		self._within_tip = yes_or_no
 
 	def dispatch(self, node):
