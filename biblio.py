@@ -101,54 +101,84 @@ def zotero_deleted(latest_version):
 	assert new_version >= latest_version
 	return r.json().get("items", [])
 
-def insert_entry(db, entry):
-	db.execute("delete from biblio where key = ?", (entry["key"],))
-	db.execute("""insert or replace into biblio_data(key, json)
-		values(?, ?)""", (entry["key"], entry))
+def refresh_short_title(db, short_title):
+	# Fetches the most recent valid record from biblio_data to replace any missing or deleted entry.
+	if not short_title:
+		return
+	db.execute("delete from biblio where short_title = ?", (short_title,))
 	# Zotero adds a .data.deleted=1 flag to entries marked as duplicates.
 	# The entry is not deleted until some trashbin is emptied.
 	# See https://github.com/erc-dharma/project-documentation/issues/311
 	# for details.
-	if entry["data"].get("deleted"):
+	row = db.execute("""select json from biblio_data
+		where short_title = ?
+		and json ->> '$.data.deleted' is null
+		order by version desc limit 1""", (short_title,)).fetchone()
+	if not row:
 		return
-	short_title = entry["data"].get("shortTitle")
-	if not short_title:
-		return
+	entry = row[0]
+	if isinstance(entry, str):
+		import json
+		entry = json.loads(entry)
 	sort_key = make_sort_key(entry["data"])
 	if not sort_key:
 		return
-	db.execute("""insert or replace into biblio(short_title, key, sort_key,
-		data) values(?, ?, ?, ?)""", (short_title, entry["key"],
-		sort_key, entry["data"]))
+	db.execute("""insert into biblio(short_title, key, sort_key, data)
+		values(?, ?, ?, ?)""", (short_title, entry["key"], sort_key, entry["data"]))
+
+def insert_entry(db, entry):
+	# Retrieves the old short_title to update it if it changed.
+	row = db.execute("""select short_title from biblio_data
+		where key = ?""", (entry["key"],)).fetchone()
+	old_short_title = row[0] if row else None
+	db.execute("delete from biblio where key = ?", (entry["key"],))
+	db.execute("""insert or replace into biblio_data(key, json)
+		values(?, ?)""", (entry["key"], entry))
+	short_title = entry["data"].get("shortTitle")
+	# Triggers a refresh for the old and new short_title to ensure the correct entry is projected.
+	if old_short_title and old_short_title != short_title:
+		refresh_short_title(db, old_short_title)
+	if short_title:
+		refresh_short_title(db, short_title)
+
+def reset_biblio(db):
+	# Empty out the biblio, in case the version number has been
+	# changed manually and reset to 0.
+	db.execute("delete from biblio")
+	db.execute("delete from biblio_data")
+
+def process_deletions(db, min_version):
+	# Processes hard deletions from Zotero and restores any stranded entries.
+	modified = False
+	for key in zotero_deleted(min_version):
+		row = db.execute("""select short_title from biblio_data
+			where key = ?""", (key,)).fetchone()
+		db.execute("delete from biblio where key = ?", (key,))
+		db.execute("delete from biblio_data where key = ?", (key,))
+		if row and row[0]:
+			refresh_short_title(db, row[0])
+		modified = True
+	return modified
 
 def update() -> bool:
 	"""Updates the bibliography. Returns a boolean indicating whether the
 	bibliography was modified."""
-	modified = False
 	db = common.db("texts")
-	(min_version,) = db.execute("""select value from metadata
+	(min_ver,) = db.execute("""select value from metadata
 		where key = 'biblio_latest_version'""").fetchone()
-	if min_version <= 0:
-		min_version = 0
-		# Empty out the biblio, in case the version number has been
-		# changed manually and reset to 0.
-		db.execute("delete from biblio")
-		db.execute("delete from biblio_data")
-		modified = True
+	modified = min_ver <= 0
+	if modified:
+		reset_biblio(db)
 	ret = []
-	for entry in zotero_modified(min_version, ret):
+	for entry in zotero_modified(max(min_ver, 0), ret):
 		insert_entry(db, entry)
 		modified = True
-	assert len(ret) == 1
-	max_version = ret.pop()
-	for key in zotero_deleted(min_version):
-		db.execute("delete from biblio where key = ?", (key,))
-		db.execute("delete from biblio_data where key = ?", (key,))
+	max_ver = ret.pop()
+	if process_deletions(db, max(min_ver, 0)):
 		modified = True
 	db.execute("""update metadata set value = ?
-	    where key = 'biblio_latest_version'""", (max_version,))
-	db.execute("""replace into metadata
-	    values('last_updated', strftime('%s', 'now'))""")
+		where key = 'biblio_latest_version'""", (max_ver,))
+	db.execute("replace into metadata values('last_updated', strftime('%s', 'now'))")
 	return modified
 
 anonymous = "No name"
