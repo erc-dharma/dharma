@@ -6,9 +6,9 @@ from bs4 import BeautifulSoup # pip install bs4
 # HTML parser _and also_ a serialization method that does the appropriate thing
 # for self-closing tags.
 
-from dharma import common, change, parallels, catalog, validate, ingest, tree
+from dharma import common, change, parallels, validate, ingest, tree
 from dharma import biblio, texts, editorial, prosody, render, languages
-from dharma import enrich, search, snippets, glyphs
+from dharma import enrich, search, snippets, glyphs, sii
 from dharma.query import InvalidQuery
 
 # TODO Should use the w3c validator API https://validator.w3.org/docs/api.html
@@ -604,6 +604,19 @@ def handle_github():
 	repo = js["repository"]["name"]
 	change.notify(repo)
 	return ""
+
+@app.get("/south-indian-inscriptions")
+def display_sii_volumes_list():
+	volumes = sii.enumerate_volumes()
+	return flask.render_template("sii_volumes_list.tpl", volumes=volumes)
+
+@app.get("/south-indian-inscriptions/<volume>")
+@common.transaction("texts")
+def display_sii_volume(volume):
+	title, body, bookmarks = sii.process_volume(volume)
+	if title is None:
+		return flask.abort(404)
+	return flask.render_template("sii.tpl", title=title, body=body, bookmarks=bookmarks)
 
 # Legacy
 @app.get("/texts")

@@ -1439,7 +1439,7 @@ def _parse_g_numeral(p, node):
 
 GAIJI_PLACEHOLDER = "■"
 
-def _make_gaiji(g):
+def make_gaiji(g):
 	is_placeholder = False
 	if g["type"] in ("punctuation", "connector", "ideogram", "alphabetic", "symbol",
 		""):
@@ -1500,7 +1500,7 @@ def _make_gaiji(g):
 # g[not @type='numeral']
 @_handler("g")
 def _parse_g(p, node):
-	text, is_placeholder, tip = _make_gaiji(node)
+	text, is_placeholder, tip = make_gaiji(node)
 	p.push("split")
 	p.push("display")
 	if is_placeholder:
