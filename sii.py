@@ -320,7 +320,7 @@ def pad_ins_num(x):
 
 def enumerate_volumes():
 	volumes = []
-	for name in os.listdir(ROOT):
+	for name in sorted(os.listdir(ROOT)):
 		volume, part = re.fullmatch(r"0*([0-9]+)(?:-0*([0-9]+))?\.xml", name).groups()
 		volume = int(volume)
 		part = part and int(part) or 0
