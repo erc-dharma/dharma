@@ -982,7 +982,7 @@
             <attDef ident="select" mode="delete"/>
             <attDef ident="source" mode="delete"/>
             <attDef ident="style" mode="delete"/>
-            
+
             <attDef ident="synch" mode="delete"/>
             <attDef ident="type" mode="change">
               <valList type="closed" mode="change">
@@ -2392,9 +2392,9 @@
               </valList>
             </attDef>
             <attDef ident="rendition" mode="delete"/>
-            
+
             <attDef ident="select" mode="delete"/>
-            
+
             <attDef ident="style" mode="delete"/>
             <attDef ident="subtype" mode="delete"/>
             <attDef ident="synch" mode="delete"/>
@@ -2457,7 +2457,7 @@
             <attDef ident="xml:id" mode="delete"/>
             <attDef ident="xml:lang" mode="delete"/>
             <attDef ident="xml:space" mode="delete"/>
-            
+
           </attList>
         </elementSpec>
         <elementSpec ident="p" module="core" mode="change">
@@ -3023,7 +3023,7 @@
             <constraint>
               <sch:rule context="tei:title[@type='original']">
                 <sch:assert test="@xml:lang">@xml:lang is mandatory with title[@type='original']</sch:assert>
-                
+
               </sch:rule>
             </constraint>
           </constraintSpec>
@@ -3156,7 +3156,7 @@
               <valItem mode="change" ident="eccentric_ductus"><desc versionDate="2021-02-01" xml:lang="en">
             indicates illegibility due to an unusual, awkward, or
             incompetent execution of a glyph or glyphs
-            
+
           </desc></valItem></valList>
             </attDef>
           </attList>
@@ -4260,11 +4260,13 @@
               <valList mode="replace" type="closed">
                 <valItem ident="pc"/>
                 <valItem ident="ac"/>
+                <valItem ident="conj"/>
                 <valItem ident="retained"/>
                 <valItem ident="rejected"/>
                 <valItem ident="unmetrical"/>
                 <valItem ident="silemn"/>
                 <valItem ident="emn"/>
+                <valItem ident="norm"/>
               </valList>
             </attDef>
           </attList>
