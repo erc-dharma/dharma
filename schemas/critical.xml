@@ -4050,6 +4050,7 @@
                 <valItem ident="conj"/>
                 <valItem ident="norm"/>
                 <valItem ident="silemn"/>
+                <valItem ident="silconj"/>
                 <valItem ident="note"/>
                 <valItem ident="omitted_elsewhere"/>
                 <valItem ident="lost_elsewhere"/>
@@ -4182,6 +4183,7 @@
                 <valItem ident="conj"/>
                 <valItem ident="norm"/>
                 <valItem ident="silemn"/>
+                <valItem ident="silconj"/>
               </valList>
             </attDef>
             <attDef ident="rend" mode="change">
@@ -4265,6 +4267,7 @@
                 <valItem ident="rejected"/>
                 <valItem ident="unmetrical"/>
                 <valItem ident="silemn"/>
+                <valItem ident="silconj"/>
                 <valItem ident="emn"/>
                 <valItem ident="norm"/>
               </valList>
