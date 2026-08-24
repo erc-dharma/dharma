@@ -20508,6 +20508,7 @@ encoding method is used.  It supplies a  string containing a canonical reference
                 <valItem ident="conj"/>
                 <valItem ident="norm"/>
                 <valItem ident="silemn"/>
+                <valItem ident="silconj"/>
                 <valItem ident="note"/>
                 <valItem ident="omitted_elsewhere"/>
                 <valItem ident="lost_elsewhere"/>
@@ -20582,6 +20583,7 @@ encoding method is used.  It supplies a  string containing a canonical reference
                 <valItem ident="conj"/>
                 <valItem ident="norm"/>
                 <valItem ident="silemn"/>
+                <valItem ident="silconj"/>
               </valList>
             </attDef><attDef ident="rend" mode="change">
               <valList type="closed" mode="change">
@@ -20695,7 +20697,7 @@ detail refers.</desc>
       <desc versionDate="2007-01-21" xml:lang="it">indica la sigla o le sigle relative ai testimoni ai quali si riferiscono i dettagli.</desc>
       <datatype maxOccurs="unbounded"><dataRef key="teidata.pointer"/></datatype>
     </attDef><attDef ident="type" mode="change" rend="change" usage="opt"><desc versionDate="2005-01-14" xml:lang="en">describes the type of information given about the witness.</desc><desc versionDate="2007-12-20" xml:lang="ko">비교 대상 텍스트에 관해 제시된 정보의 유형을 기술한다.</desc><desc versionDate="2007-05-02" xml:lang="zh-TW">版本的資訊種類。</desc><desc versionDate="2008-04-05" xml:lang="ja">当該文献に関する情報の種類を示す。</desc><desc versionDate="2007-06-12" xml:lang="fr">décrit le type de renseignement donné sur
-					le témoin.</desc><desc versionDate="2007-05-04" xml:lang="es">describe el tipo de información dada sobre los testimonios.</desc><desc versionDate="2007-01-21" xml:lang="it">descrive il tipo di informazione fornita in merito al testimone.</desc><datatype><dataRef key="teidata.enumerated"/></datatype><valList type="closed"><valItem ident="pc"/><valItem ident="ac"/><valItem ident="conj"/><valItem ident="retained"/><valItem ident="rejected"/><valItem ident="unmetrical"/><valItem ident="silemn"/><valItem ident="emn"/><valItem ident="norm"/></valList></attDef></attList><exemplum xml:lang="en">
+					le témoin.</desc><desc versionDate="2007-05-04" xml:lang="es">describe el tipo de información dada sobre los testimonios.</desc><desc versionDate="2007-01-21" xml:lang="it">descrive il tipo di informazione fornita in merito al testimone.</desc><datatype><dataRef key="teidata.enumerated"/></datatype><valList type="closed"><valItem ident="pc"/><valItem ident="ac"/><valItem ident="conj"/><valItem ident="retained"/><valItem ident="rejected"/><valItem ident="unmetrical"/><valItem ident="silemn"/><valItem ident="silconj"/><valItem ident="emn"/><valItem ident="norm"/></valList></attDef></attList><exemplum xml:lang="en">
     <egXML xmlns="http://www.tei-c.org/ns/Examples" xml:id="gi-witDetail-egXML-fm">
       <app type="substantive">
         <lem xml:id="W026x" wit="#El #HG">Experience</lem>
