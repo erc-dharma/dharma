@@ -196,14 +196,12 @@ func lexReduced(encoded string) (int, rune) {
 	Plongschwa = [\uE00E];
 
 	* { return 1, 0 }
-	// Ignore all diacritics (except for the distinctions ṛ/r ḷ/l).
+	// Ignore all diacritics.
 	// Treat aspirated and unaspirated as equivalent.
 	// Treat nasals as equivalent (this isn't great though).
 	"a" | "ā" { return cursor, 'a' }
 	"i" | "ī" { return cursor, 'i' }
 	"u" | "ū" { return cursor, 'u' }
-	"ṛ" | "ṝ" { return cursor, 'ṛ' }
-	"ḷ" | "ḹ" { return cursor, 'ḷ' }
 	"e" { return cursor, 'e' }
 	Pai { return cursor, Pai }
 	"o" { return cursor, 'o' }
@@ -215,12 +213,11 @@ func lexReduced(encoded string) (int, rune) {
 	"ṭ" | P_th | "ḍ" | P_dh | "t" | Pth | "d" | Pdh | "ṭṭ" | "ṭ" P_th | "ḍḍ" | "ḍ" P_dh | "tt" | "t" Pth | "dd" | "d" Pdh { return cursor, 't' }
 	"p" | Pph | "b" | Pbh | "pp" | "p" Pph | "bb" | "b" Pbh { return cursor, 'p' }
 	"y" | "yy" { return cursor, 'y' }
-	"r" | "rr" { return cursor, 'r' }
-	"l" | "ll" { return cursor, 'l' }
+	("ṛ" | "ṝ" | "r") ("ṛ" | "ṝ" | "r")? { return cursor, 'r' }
+	("ḷ" | "ḹ" | "l") ("ḷ" | "ḹ" | "l")? { return cursor, 'l' }
 	"v" | "vv" { return cursor, 'v' }
 	"ś" | "ṣ" | "s" { return cursor, 's' }
 	"ə" | Plongschwa { return cursor, 'ə' }
-	// Fallback to exactly one byte to avoid fatal panics.
 	[^] {
 		r, size := utf8.DecodeRuneInString(encoded)
 		return size, r
