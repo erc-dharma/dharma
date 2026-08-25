@@ -1,4 +1,4 @@
-import sys, os, re
+import sys, os, re, collections, unicodedata
 from dharma import tree, common, ingest
 
 ROOT = common.path_of("repos/south-indian-inscriptions/SII_A_raw/2mastercopy/volumes")
@@ -302,6 +302,78 @@ def _process_section(root, vol_no, part_no, section_no):
 		ins_no = ins["n"].rsplit(":")[-1]
 		ins_id = _inscription_id(vol_no, section_no, ins_no)
 		ins["ident"] = ins_id
+		lang, script_info = language_and_script_of(ins)
+		if lang == "tel" or lang == "kan":
+			for sn in strings(ins):
+				s = sn.data
+				s = s.replace("¨r", "r")
+				s = s.replace("n®", "N")
+				if sn.data != s:
+					sn.replace_with(s)
+		if (editions := ins.find("edition")):
+			for edition in editions:
+				fix_lines(edition)
+
+def iter_strings(node, ignore_notes=False):
+	match node:
+		case tree.String():
+			yield node
+		case tree.Tag() if ignore_notes and node.name == "note":
+			pass
+		case tree.Tag() if node.name == "ce":
+			pass
+		case tree.Tag() | tree.Tree():
+			for kid in node:
+				yield from iter_strings(kid, ignore_notes=True)
+
+def strings(node):
+	return list(iter_strings(node))
+
+def strings_in(root):
+	for node in root:
+		match node:
+			case tree.String():
+				yield node
+			case tree.Tag():
+				yield from strings_in(node)
+			case _:
+				pass
+
+def fix_initials(node, initial):
+	for sn in strings(node):
+		i = 0
+		s = sn.data
+		while i < len(s):
+			if initial and is_vowel(s[i]):
+				s = s[:i] + s[i].upper() + s[i + 1:]
+				initial = False
+			elif initial and i + 1 < len(s) and s[i] == "\N{middle dot}" and is_vowel(s[i + 1]):
+				s = s[:i] + s[i + 1].upper() + s[i + 2:]
+				initial = False
+			elif s[i] == " ":
+				initial = True
+			else:
+				initial = False
+			i += 1
+		if sn.data != s:
+			sn.replace_with(s)
+
+def fix_lines(edition):
+	brk = True
+	for l in edition.find("l"):
+		fix_initials(l, brk)
+		ss = strings(l)
+		brk = True
+		while ss:
+			s = ss.pop()
+			if s.isspace():
+				continue
+			if s.data.rstrip().endswith("-"):
+				brk = False
+			break
+
+def is_vowel(c):
+	return unicodedata.normalize("NFD", c.lower())[0] in "aeiou"
 
 def _inscription_id(vol_no, section_no, ins_no):
 	if "-" in ins_no:
@@ -317,6 +389,89 @@ def pad_ins_num(x):
 		i += 1
 	num, letters = int(x[:i]), x[i:]
 	return f"{num:04}{letters}"
+
+def language_and_script_of(ins):
+	ins = ins.copy()
+	for ce in ins.find("//ce"):
+		ce.delete()
+	for note in ins.find("//note"):
+		note.delete()
+	langs_freqs = collections.defaultdict(int)
+	langs_freqs[None] = -1
+	scripts_freqs = collections.defaultdict(int)
+	scripts_freqs[None] = -1
+	for l in ins.find("//l"):
+		for node in strings_in(l):
+			length = sum(not c.isspace() for c in node.data)
+			lang = script = None
+			while not lang or not script:
+				node = node.parent
+				if node is l:
+					break
+				if not lang:
+					lang = languages.get(node.name)
+				if not script:
+					script = scripts.get(node.name)
+			langs_freqs[lang] += length
+			scripts_freqs[script] += length
+	lang = max(langs_freqs, key=lambda k: langs_freqs[k])
+	if ins["lang"]:
+		lang = ins["lang"]
+		assert len(lang) == 3
+	script = max(scripts_freqs, key=lambda k: scripts_freqs[k]) or (None, None)
+	return lang, script
+
+scripts = {
+	"arab": ("arabic", None),
+	"brtr": ("brāhmī", "late"), # Only one inscription
+	"de": ("nāgarī", None),
+	"detr": ("nāgarī", None),
+	"dutch": ("latin", None),
+	"eng": ("latin", None),
+	"gr": ("grantha", "vernacular"),
+	"greek": ("greek", None),
+	"ka": ("kannada", None),
+	"katr": ("kannada", None),
+	"lat": ("latin", None),
+	"malayalam": ("malayalam", None),
+	"pers": ("persian", None),
+	"pr": ("brāhmī", None),
+	"prtr": ("brāhmī", None),
+	"simtr": ("siṃhala", None),
+	"skttr": ("brāhmī", None), # Only one inscription
+	"ta": ("tamil", "vernacular"),
+	"te": ("telugu", "vernacular"),
+	"tetr": ("telugu", "vernacular"),
+	"urdu": ("urdu", None),
+}
+
+languages = {
+	"arab": "ara",
+	"brtr": None,
+	"de": None,
+	"detr": None,
+	"dutch": "nld",
+	"eng": "eng",
+	"gr": None,
+	"greek": "grk",
+	"ka": "kan",
+	"katr": "kan",
+	"lat": "lat",
+	"malayalam": "mal",
+	"pers": "per",
+	"pr": "pra",
+	"prtr": "pra",
+	"simtr": "sin",
+	"skttr": "san",
+	"ta": "tam",
+	"te": "tel",
+	"tetr": "tel",
+	"urdu": "urd",
+}
+
+scripts_ignore = {}
+for tag, infos in scripts.items():
+	scripts_ignore.setdefault(infos, set()).add(tag)
 
 def enumerate_volumes():
 	volumes = []
