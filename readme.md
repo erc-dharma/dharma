@@ -1,6 +1,6 @@
 # dharma
 
-This is the newest code for the DHARMA project.
+This is the code for the DHARMA application.
 
 ## Dependencies
 
@@ -124,3 +124,38 @@ started (or restarted) and stopped with:
 
 	make start
 	make stop
+
+## Search System
+
+The search system is written partly in Go, partly in Python. We use Go because
+it is fast enough to do this kind of stuff while also being simple enough to
+read and debug. All the code related to the search system (both the Python code
+and the Go code) is written with Gemini.
+
+The search system works by converting both texts and queries to a few simplified
+representations, before doing the actual matching. These transformations are
+performed with a number of re2c lexers. When documents (more precisely, their
+fields) are transformed to a given simplified representation, the result is
+cached, because these transformations are rather slow to perform. The cache is
+emptied and subsequently rebuilt when we detect a modification to the database.
+
+Now some possible improvements.
+
+Problem with the current approach for search: we need to keep in-memory several
+versions of each edition. It might be better (albeit maybe slower) to use a
+single representation for the editions, and to transform the user query to a
+regular expression that would match what we want (turning e.g. "amṛta" into
+"am[rṛ]ta") and that would then be evaluated against the simplified text. But
+doing that requires manipulating automata, so we would need to use or write a
+library for that.
+
+Currently, in the search system, the Go code is fast enough, but the Python code
+is rather slow because of all the XML parsing and generation. The Python code
+should thus be reworked.
+
+We could use the TRE library or equivalent to allow fuzzy search (with the
+Levenshtein distance). Would be useful for Indic languages that we cannot parse.
+
+We could use the dharmamitra.org parser for processing Sanskrit (but only
+Sanskrit). This would allow us to use a traditional search engine architecture
+and other useful applications.

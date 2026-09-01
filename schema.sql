@@ -39,7 +39,7 @@ create table if not exists metadata(
 	value any
 );
 -- 'last_updated' is a timestamp updated after each write transaction. The value
--- is only meant for display on the Website.
+-- is used by the search code to figure out if the database was updated.
 insert or ignore into metadata values('last_updated', 0);
 -- To update the bibliography, we need to pull from zotero.org all records whose
 -- version is > biblio_latest_version. We might already have such items in the
