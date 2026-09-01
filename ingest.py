@@ -1037,7 +1037,6 @@ _fw_places = {
 @_handler("fw")
 def _parse_fw(p, fw):
 	p.push(tree.Tag("span", class_="fw", tip="Foliation"))
-	# XXX need different formatting for phys/log/full
 	p.append("⟨")
 	if (place := fw["place"]):
 		# If the value is not in our table, keep it, even
@@ -1139,7 +1138,7 @@ def _parse_space(p, space):
 			tip = f"large {type} space (about {quant} {unit}s wide)"
 		text *= quant
 	p.push(tree.Tag("span", class_="space", tip=common.sentence_case(tip)))
-	p.append(text) # XXX must only be made visible in physical and full, not in logical
+	p.append(text)
 	p.join()
 
 # <abbreviations
@@ -1170,7 +1169,6 @@ def _parse_am(p, am):
 
 # We expect:
 #	<expan>((<abbr>(text|<am>...</am>)</abbr>)|(<ex>...</ex>))+</expan>
-# XXX This is not good (can't deal with <note>, etc.). Need to straighten this out.
 @_handler("expan")
 def _parse_expan(p, node):
 	def iter_abbr_without_am(cur):
@@ -1215,7 +1213,6 @@ def _parse_other_seg(p, seg):
 	# <seg met="+++-++"><gap reason="lost" quantity="6" unit="character"/></seg>
 	# In this case, use the same tooltip we would use for <gap>, but display
 	# the meter instead of ****, etc.
-	# XXX what about search? For now let's just convert prosodic pattern
 	met = seg["met"]
 	if not met:
 		return _parse_seg(p, seg)
@@ -1259,10 +1256,6 @@ def _parse_seg(p, seg):
 		p.join()
 	p.join()
 
-# XXX TODO for gaps, the search representation should be a sequence of some
-# special placeholder character (if @unit='character')
-
-# XXX not general enough; might be better to take into account the langguage instead
 @_handler("div[@type='translation']//gap[@reason='ellipsis']")
 def _handle_gap_ellipsis(p, gap):
 	p.push(tree.Tag("span", tip="Untranslated segment"))
@@ -1335,7 +1328,6 @@ def _parse_gap(p, gap) -> tuple[str, str, str, str]:
 		tip = "Unknown number of %s %s" % (reason, common.numberize(unit, +333))
 	return phys_repl or repl, repl, search_repl, tip
 
-# XXX not refactored
 # @unit="component" is for character components like vowel markers, etc.
 # @unit="character" is for akṣaras
 # EGD: The EpiDoc element <gap/> ff (full section 5.4)
@@ -2044,7 +2036,7 @@ def _gather_biblio(p):
 		# entries, possibly with different sigla, page ranges, etc.,
 		# even though this is forbidden by the schema. If this happens,
 		# we will just display the duplicates, but we should also take
-		# care not to generate duplicate anchors in the HTML. XXX not done so far
+		# care not to generate duplicate anchors in the HTML.
 		if short_title not in p.bib_entries:
 			entry = biblio.lookup_entry(short_title)
 			p.bib_entries[short_title] = entry
