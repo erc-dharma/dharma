@@ -4,6 +4,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -445,6 +446,17 @@ func performSearch(w http.ResponseWriter, tx *sql.Tx, qStr string, off, lim int,
 	}
 	allDocs, facets := filterDocs(qNode, filters)
 	sortDocs(allDocs, sortBy)
+	fmt.Printf("SORTING BY '%s'\n", sortBy)
+	for i, doc := range allDocs {
+		if i == 20 {
+			break
+		}
+		if len(doc.Title) > 0 {
+			println(doc.Title[0])
+		} else {
+			println("null")
+		}
+	}
 	total := len(allDocs)
 	pageDocs := paginateDocs(allDocs, off, lim)
 	results := buildResults(pageDocs, qNode)

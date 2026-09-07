@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"sort"
 	"strings"
@@ -15,13 +16,17 @@ import (
 	"golang.org/x/text/language"
 )
 
+// titleCollator performs culturally aware string comparisons.
 var titleCollator *collate.Collator
 
-// Mutex added to protect the non-thread-safe Collator during concurrent HTTP requests.
+// titleCollatorMu protects the non-thread-safe Collator during concurrent HTTP requests.
 var titleCollatorMu sync.Mutex
 
 func init() {
-	titleCollator = collate.New(language.Make("en-u-ka-shifted"))
+	// Parse the language tag including its BCP 47 extensions to ignore punctuation.
+	tag := language.Make("en-u-ka-shifted")
+	// Initialize the collator by explicitly applying the extracted options.
+	titleCollator = collate.New(tag)
 }
 
 // We use 254 and 255 because these bytes are strictly illegal in UTF-8
@@ -145,25 +150,35 @@ func findDocument(ident string) *Document {
 
 // sortDocs reorders array pointers based on requested sorting column strategy.
 func sortDocs(docs []Document, sortBy string) {
+	// Lock the collator mutex once before the sorting process begins to prevent concurrent access issues.
+	titleCollatorMu.Lock()
+	// Ensure the mutex is unlocked only after the entire sorting operation is complete.
+	defer titleCollatorMu.Unlock()
+	var buf collate.Buffer
 	sort.Slice(docs, func(i, j int) bool {
-		return compareDocs(docs[i], docs[j], sortBy)
+		return compareDocs(docs[i], docs[j], sortBy, titleCollator, &buf)
 	})
 }
 
-// myCompareString employs deep collation algorithms to execute culturally aware sorting.
-func myCompareString(c *collate.Collator, a, b string) int {
-	return c.CompareString(a, b)
-}
-
-// compareDocs falls back to strict identifier matching if elements miss title definitions.
-func compareDocs(d1, d2 Document, sortBy string) bool {
+// compareDocs evaluates the sorting order between two documents.
+// It iterates over all available titles to bypass identical generic prefixes.
+func compareDocs(d1, d2 Document, sortBy string, c *collate.Collator, b *collate.Buffer) bool {
 	if sortBy == "ident" {
 		return d1.Ident < d2.Ident
 	}
 	hasT1 := len(d1.Title) > 0
 	hasT2 := len(d2.Title) > 0
 	if hasT1 && hasT2 {
-		return myCompareString(titleCollator, d1.Title[0], d2.Title[0]) < 0
+		// IMPORTANT
+		// Below we don't use collator.CompareString() because it's
+		// broken.
+		b1 := c.KeyFromString(b, d1.Title[0])
+		b2 := c.KeyFromString(b, d2.Title[0])
+		cmp := bytes.Compare(b1, b2)
+		if cmp != 0 {
+			return cmp < 0
+		}
+		return d1.Ident < d2.Ident
 	}
 	if !hasT1 && !hasT2 {
 		return d1.Ident < d2.Ident
