@@ -6,26 +6,7 @@ Prosodic Patterns
 
 % block body
 
-<h2>{{data["notation"]["heading"]}}</h2>
-
-<table>
-<thead>
-<tr>
-	<th></th>
-	<th>XML</th>
-	<th>Prosody</th>
-</tr>
-</thead>
-<tbody>
-% for description, xml_notation, prosody in data["notation"]["items"]:
-<tr>
-	<td>{{description}}</td>
-	<td><code>{{xml_notation}}</code></td>
-	<td>{{prosody}}</td>
-</tr>
-% endfor
-</tbody>
-</table>
+{{data["front"].html()}}
 
 % for list in data["lists"]:
 <h2>{{list["heading"]}}</h2>

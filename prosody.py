@@ -52,20 +52,32 @@ def is_pattern(p: str) -> bool:
 	return len(p) > 0 and all(c in pattern_chars for c in p)
 
 def parse_front(xml):
-	table = xml.first("//front//table")
-	heading = table.first("head").text()
-	rows = []
-	for row in table.find("row[not @role='label']"):
-		cells = row.find("cell")
-		assert len(cells) == 3
-		description, xml_notation, prosody = [c.text() for c in cells]
-		if not prosody:
-			prosody = xml_notation
-		rows.append((description, xml_notation, prosody))
-	return {
-		"heading": heading,
-		"items": rows,
-	}
+	front = xml.first("//front").copy()
+	t = front.tree
+	front.unwrap()
+	for head in t.find(".//head"):
+		head.name = "h2"
+	for p in t.find(".//p[table]"):
+		p.unwrap()
+	for table in t.find(".//table"):
+		head = table.first("row[@role='label']")
+		if head:
+			del head["role"]
+			head.name = "tr"
+			for cell in head.find("cell"):
+				cell.name = "th"
+			thead = tree.Tag("thead")
+			head.replace_with(thead)
+			thead.append(head)
+			head = thead
+		tbody = tree.Tag("tbody")
+		for row in table.find("row"):
+			row.name = "tr"
+			for cell in row.find("cell"):
+				cell.name = "td"
+			tbody.append(row)
+		table.append(tbody)
+	return t
 
 bibl_units = set(biblio.cited_range_units)
 
@@ -124,8 +136,8 @@ def parse_list_rec(item, bib_entries, langs):
 		"syllables": None,
 		"class": None,
 		"names": [],
-		"xml": None,
-		"prosody": None,
+		"ascii": None,
+		"classical": None,
 		"gana": None,
 		"notes": [],
 		"bibliography": {
@@ -160,17 +172,17 @@ def parse_list_rec(item, bib_entries, langs):
 			continue
 		lang = get_lang(langs, name["lang"].split("-")[0] or "und")
 		rec["names"].append((text, lang))
-	# <seg type="xml">----+-+---+-+---=/++++-+-+---+-+---=</seg>
-	# <seg type="prosody">⏑⏑⏑⏑–⏑–⏑⏑⏑–⏑||–⏑⏑⏑⏓/––––⏑–⏑–⏑⏑⏑–⏑–⏑⏑⏑⏓</seg>
+	# <seg type="ascii">----+-+---+-+---=/++++-+-+---+-+---=</seg>
+	# <seg type="classical">⏑⏑⏑⏑–⏑–⏑⏑⏑–⏑||–⏑⏑⏑⏓/––––⏑–⏑–⏑⏑⏑–⏑–⏑⏑⏑⏓</seg>
 	# <seg type="gana">na-ja-bha-ja-bha-la-ga/ma-ra-ja-sa-ja-sa</seg>
-	for type in ("xml", "prosody", "gana"):
+	for type in ("ascii", "classical", "gana"):
 		seg = item.first(f"seg[@type='{type}']")
 		if not seg:
 			continue
 		seg = seg.text()
 		if not seg or seg == "no data available":
 			continue
-		if type == "prosody":
+		if type == "classical":
 			seg = render_pattern(seg).html()
 		rec[type] = seg
 	symbols = iter(latex_note_symbols)
@@ -213,11 +225,11 @@ def make_name_index(lists):
 			item_id += 1
 			item["id"] = item_id
 			pattern = description = None
-			if item["prosody"]:
-				pattern = item["prosody"]
-			elif item["xml"]:
-				pattern = f'<span class="xml">{html.escape(item["xml"])}</span>'
-			elif item["gana"]:
+			if item.get("classical"):
+				pattern = item["classical"]
+			elif item.get("ascii"):
+				pattern = f'<span class="xml">{html.escape(item["ascii"])}</span>'
+			elif item.get("gana"):
 				pattern = html.escape(item["gana"])
 			if not pattern and item["notes"]:
 				description = html.escape(item["notes"][0]["text"])
@@ -235,7 +247,7 @@ def parse_prosody():
 	f = db.load_file("DHARMA_prosodicPatterns_v01")
 	xml = tree.parse(f)
 	ret = {
-		"notation": parse_front(xml),
+		"front": parse_front(xml),
 		"lists": [],
 	}
 	langs = {}
