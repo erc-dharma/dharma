@@ -51,6 +51,17 @@ pattern_chars = set(chr(c) for c in pattern_tbl) | set("0123456789|/")
 def is_pattern(p: str) -> bool:
 	return len(p) > 0 and all(c in pattern_chars for c in p)
 
+def parse_back(xml):
+	back = xml.first("//back")
+	if not back:
+		return
+	back = back.copy()
+	t = back.tree
+	back.unwrap()
+	for head in t.find(".//head"):
+		head.name = "h2"
+	return t
+
 def parse_front(xml):
 	front = xml.first("//front").copy()
 	t = front.tree
@@ -245,9 +256,11 @@ def make_name_index(lists):
 def parse_prosody():
 	db = common.db("texts")
 	f = db.load_file("DHARMA_prosodicPatterns_v01")
+	f = "repos/project-documentation/DHARMA_prosodicPatterns_v01.xml"
 	xml = tree.parse(f)
 	ret = {
 		"front": parse_front(xml),
+		"back": parse_back(xml),
 		"lists": [],
 	}
 	langs = {}
