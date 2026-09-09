@@ -256,7 +256,6 @@ def make_name_index(lists):
 def parse_prosody():
 	db = common.db("texts")
 	f = db.load_file("DHARMA_prosodicPatterns_v01")
-	f = "repos/project-documentation/DHARMA_prosodicPatterns_v01.xml"
 	xml = tree.parse(f)
 	ret = {
 		"front": parse_front(xml),
