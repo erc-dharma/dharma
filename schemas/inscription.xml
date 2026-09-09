@@ -5542,7 +5542,6 @@
                     </attList>
                 </elementSpec>
                 <elementSpec ident="principal" mode="delete"/>
-                <elementSpec ident="funder" mode="delete"/>
                 <elementSpec ident="sponsor" mode="delete"/>
                 <elementSpec ident="spoken" mode="delete"/>
                 <elementSpec ident="signatures" mode="delete"/>

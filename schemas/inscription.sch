@@ -727,9 +727,9 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text> When used on a schema description element (like <xsl:text/>
+            <svrl:text> When used on a schema description element (like &lt;<xsl:text/>
                <xsl:value-of select="name(.)"/>
-               <xsl:text/>), the @source attribute should have only 1 value. (This one has <xsl:text/>
+               <xsl:text/>&gt;), the @source attribute should have only 1 value. (This one has <xsl:text/>
                <xsl:value-of select="count($srcs)"/>
                <xsl:text/>.)</svrl:text>
          </svrl:successful-report>
@@ -756,9 +756,9 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>@targetLang should only be used on <xsl:text/>
+               <svrl:text>@targetLang should only be used on &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/> if @target is specified.</svrl:text>
+                  <xsl:text/>&gt; if @target is specified.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -787,9 +787,9 @@
                </xsl:attribute>
                <svrl:text> The element indicated by @spanTo (<xsl:text/>
                   <xsl:value-of select="@spanTo"/>
-                  <xsl:text/>) must follow the current <xsl:text/>
+                  <xsl:text/>) must follow the current &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/> element</svrl:text>
+                  <xsl:text/>&gt; element.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -806,10 +806,10 @@
       <svrl:fired-rule xmlns:svrl="http://purl.oclc.org/dsdl/svrl" context="tei:*[@schemeVersion]"/>
       <!--ASSERT -->
       <xsl:choose>
-         <xsl:when test="@scheme and not(@scheme = 'free')"/>
+         <xsl:when test="@scheme and not(@scheme eq 'free')"/>
          <xsl:otherwise>
             <svrl:failed-assert xmlns:svrl="http://purl.oclc.org/dsdl/svrl"
-                                test="@scheme and not(@scheme = 'free')">
+                                test="@scheme and not(@scheme eq 'free')">
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
@@ -836,9 +836,9 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>The <xsl:text/>
+               <svrl:text> The &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/> element should not be categorized in detail with @subtype unless also categorized in general with @type</svrl:text>
+                  <xsl:text/>&gt; element should not be categorized in detail with @subtype unless also categorized in general with @type.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -862,9 +862,9 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text> @calendar indicates one or more systems or calendars to which the date represented by the content of this element belongs, but this <xsl:text/>
+               <svrl:text> @calendar indicates one or more systems or calendars to which the date represented by the content of this element belongs, but this &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/> element has no textual content.</svrl:text>
+                  <xsl:text/>&gt; element has no textual content.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -931,7 +931,7 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text> Abstract model violation: Paragraphs may not occur inside other paragraphs or ab elements.</svrl:text>
+            <svrl:text> Abstract model violation: Paragraphs may not occur inside other paragraphs or &lt;ab&gt; elements.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M19"/>
@@ -954,7 +954,7 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text> Abstract model violation: Metrical lines may not contain higher-level structural elements such as div, p, or ab, unless p is a child of figure or note, or is a descendant of floatingText.</svrl:text>
+               <svrl:text> Abstract model violation: Metrical lines (&lt;l&gt; elements) may not contain higher-level structural elements such as &lt;div&gt;, &lt;p&gt;, or &lt;ab&gt;, unless &lt;p&gt; is a child of &lt;figure&gt; or &lt;note&gt;, or is a descendant of &lt;floatingText&gt;.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1001,7 +1001,7 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text>When target= is present, neither from= nor to= should be.</svrl:text>
+            <svrl:text>When @target is present, neither @from nor @to should be.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M22"/>
@@ -1023,9 +1023,9 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>When from= is present, the to= attribute of <xsl:text/>
+               <svrl:text>When @from is present, the @to attribute of &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/> is required.</svrl:text>
+                  <xsl:text/>&gt; is required.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1048,9 +1048,9 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>When to= is present, the from= attribute of <xsl:text/>
+               <svrl:text>When @to is present, the @from attribute of &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/> is required.</svrl:text>
+                  <xsl:text/>&gt; is required.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1112,9 +1112,9 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text>Only one of the attributes @target and @cRef may be supplied on <xsl:text/>
+            <svrl:text>Only one of the attributes @target and @cRef may be supplied on &lt;<xsl:text/>
                <xsl:value-of select="name(.)"/>
-               <xsl:text/>.</svrl:text>
+               <xsl:text/>&gt;.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M26"/>
@@ -1134,9 +1134,9 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text>Only one of the attributes @target and @cRef may be supplied on <xsl:text/>
+            <svrl:text>Only one of the attributes @target and @cRef may be supplied on &lt;<xsl:text/>
                <xsl:value-of select="name(.)"/>
-               <xsl:text/>.</svrl:text>
+               <xsl:text/>&gt;.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M27"/>
@@ -1159,7 +1159,7 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>The content of a "gloss" list should include a sequence of one or more pairs of a label element followed by an item element</svrl:text>
+               <svrl:text> The content of a "gloss" list should include a sequence of one or more pairs of a &lt;label&gt; element followed by an &lt;item&gt; element.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1355,7 +1355,7 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text>Abstract model violation: Lines may not contain lines or lg elements.</svrl:text>
+            <svrl:text>Abstract model violation: Metrical lines (&lt;l&gt; elements) may not contain &lt;l&gt; or &lt;lg&gt; elements.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M35"/>
@@ -1402,7 +1402,7 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>An lg element must contain at least one child l, lg, or gap element.</svrl:text>
+               <svrl:text>An &lt;lg&gt; element must contain at least one child &lt;l&gt;, &lt;lg&gt;, or &lt;gap&gt; element.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1449,9 +1449,9 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>An XPath in @match on the outer <xsl:text/>
+               <svrl:text>An XPath in @match on the outer &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/> must start with '/'.</svrl:text>
+                  <xsl:text/>&gt; must start with '/'.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1478,9 +1478,9 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>An XPath in @match must not start with '/' except on the outer <xsl:text/>
+               <svrl:text>An XPath in @match must not start with '/' except on the outer &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/>.</svrl:text>
+                  <xsl:text/>&gt;.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1504,7 +1504,7 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text> Abstract model violation: Metrical lines may not contain higher-level structural elements such as div, unless div is a descendant of floatingText.</svrl:text>
+               <svrl:text> Abstract model violation: Metrical lines (&lt;l&gt; elements) may not contain higher-level structural elements such as &lt;div&gt;, unless &lt;div&gt; is a descendant of &lt;floatingText&gt;.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1526,7 +1526,7 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text> Abstract model violation: p and ab may not contain higher-level structural elements such as div, unless div is a descendant of floatingText.</svrl:text>
+            <svrl:text> Abstract model violation: &lt;p&gt; and &lt;ab&gt; may not contain higher-level structural elements such as &lt;div&gt;, unless &lt;div&gt; is a descendant of &lt;floatingText&gt;.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M42"/>
@@ -1550,7 +1550,7 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text> A facsimile element represents a text with images, thus transcribed text should not be present within it.</svrl:text>
+            <svrl:text> A &lt;facsimile&gt; element represents a text with images, thus transcribed text should not be present within it.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M43"/>
@@ -1594,10 +1594,9 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text>
-                  <xsl:text/>
+               <svrl:text> &lt;<xsl:text/>
                   <xsl:value-of select="name(.)"/>
-                  <xsl:text/> must have at least one child add and at least one child del or surplus</svrl:text>
+                  <xsl:text/>&gt; must have at least one child &lt;add&gt; and at least one child &lt;del&gt; or &lt;surplus&gt;.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1705,7 +1704,7 @@
                <xsl:attribute name="location">
                   <xsl:apply-templates select="." mode="schematron-select-full-path"/>
                </xsl:attribute>
-               <svrl:text> Abstract model violation: Metrical lines may not contain higher-level divisions such as p or ab, unless ab is a child of figure or note, or is a descendant of floatingText.</svrl:text>
+               <svrl:text> Abstract model violation: Metrical lines (&lt;l&gt; elements) may not contain higher-level divisions such as &lt;p&gt; or &lt;ab&gt;, unless &lt;ab&gt; is a child of &lt;figure&gt; or &lt;note&gt;, or is a descendant of &lt;floatingText&gt;.</svrl:text>
             </svrl:failed-assert>
          </xsl:otherwise>
       </xsl:choose>
@@ -1772,11 +1771,11 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text> Only one <xsl:text/>
+            <svrl:text> Only one &lt;<xsl:text/>
                <xsl:value-of select="name(.)"/>
-               <xsl:text/> is allowed as a child of <xsl:text/>
+               <xsl:text/>&gt; is allowed as a child of &lt;<xsl:text/>
                <xsl:value-of select="name(..)"/>
-               <xsl:text/>.</svrl:text>
+               <xsl:text/>&gt;.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M52"/>
@@ -1797,7 +1796,7 @@
             <xsl:attribute name="location">
                <xsl:apply-templates select="." mode="schematron-select-full-path"/>
             </xsl:attribute>
-            <svrl:text>An msIdentifier must contain either a repository or location.</svrl:text>
+            <svrl:text>An &lt;msIdentifier&gt; must contain either a &lt;repository&gt; or &lt;location&gt;.</svrl:text>
          </svrl:successful-report>
       </xsl:if>
       <xsl:apply-templates select="*" mode="M53"/>
