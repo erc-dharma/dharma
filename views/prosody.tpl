@@ -36,15 +36,15 @@ Prosodic Patterns
 % endif
 </div>
 <div class="card-body">
-% if item["xml"] or item["prosody"] or item["gana"]:
+% if item["ascii"] or item["classical"] or item["gana"]:
 <div class="card-data">
-	% if item["xml"]:
+	% if item["ascii"]:
 	<div>XML</div>
-	<div><code>{{item["xml"]}}</code></div>
+	<div><code>{{item["ascii"]}}</code></div>
 	% endif
-	% if item["prosody"]:
+	% if item["classical"]:
 	<div>Prosody</div>
-	<div>{{item["prosody"]}}</div>
+	<div>{{item["classical"]}}</div>
 	% endif
 	% if item["gana"]:
 	<div>Gaṇa</div>
