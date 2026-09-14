@@ -137,7 +137,7 @@ func lexPrefix(text string) (int, string, bool) {
 	"ṣ" | "Ṣ" { return cursor, "ṣ", false }
 	"s" | "S" { return cursor, "s", false }
 	"h" | "H" { return cursor, "h", false }
-	"ə" | "Ə" | "ә" | "Ә" { return cursor, "ə", false }
+	"ə" | "Ə" | "ә" | "Ә" | "ǝ" | "Ǝ" { return cursor, "ə", false }
 	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, string(rune(Plongschwa)), false }
 	[^] {
 		r, _ := utf8.DecodeRuneInString(text[:cursor])
@@ -333,7 +333,7 @@ func lexNormalPrefix(text string) (int, string, bool) {
 	"l̥" | "L̥"{ return cursor, "ḷ", false }
 	"l̥̄" | "L̥̄" { return cursor, "ḹ", false }
 	"ә" | "Ә" { return cursor, "ə", false }
-	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" { return cursor, string(Plongschwa), false }
+	"ə̄" | "Ə̄" | "ә̄" | "Ә̄" | "ǝ" | "Ǝ" { return cursor, string(Plongschwa), false }
 	"ṁ" | "Ṁ" | "ṃ" | "Ṃ" | "m̐" | "M̐" | "m̃" | "M̃" { return cursor, "ṃ", false }
 	"ḥ" | "Ḥ" | "ḫ" | "Ḫ" | "ẖ" | "H̱" { return cursor, "ḥ", false }
 	// Fallback to Unicode case folding of the current full rune.
