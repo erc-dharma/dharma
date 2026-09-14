@@ -90,12 +90,20 @@ valid_combinations = set("""
 \N{LATIN SMALL LETTER N}\N{COMBINING BREVE}
 """.strip().splitlines())
 
+BAD_SCHWA = {
+	"\N{CYRILLIC SMALL LETTER SCHWA}",
+	"\N{CYRILLIC CAPITAL LETTER SCHWA}",
+	"\N{LATIN SMALL LETTER TURNED E}",
+	"\N{LATIN CAPITAL LETTER REVERSED E}"
+}
 def is_valid(g):
 	if len(g) == 1:
 		# Andrea always uses this for some reason
-		if g[0] == "\N{CYRILLIC SMALL LETTER SCHWA}":
-			return True
-		return not char_name(g[0]).startswith("CYRILLIC ")
+		if g[0] in BAD_SCHWA:
+			return False
+		if char_name(g[0]).startswith("CYRILLIC "):
+			return False
+		return True
 	return script(g) or g in valid_combinations
 
 def validate(s):
