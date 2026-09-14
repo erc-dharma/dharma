@@ -6,7 +6,7 @@ Search
 
 % block body
 
-<p>This interface allows you to look for texts in the DHARMA collection. The
+<p>This interface allows you to look for text editions or strings of text in the database. The
 search form below can be used for filtering results. For help on the query syntax, see <a href="/search-help">here</a>.</p>
 
 % if last_updated:
