@@ -85,7 +85,7 @@
     <body>
       <p>Validation Schema to go with DHARMA Encoding guide for Critical Editions</p>
       <schemaSpec ident="DHARMA_CritEdSchema_v01" start="TEI" prefix="tei_" docLang="en" targetLang="en">
-        <moduleRef key="header" except="abstract appInfo application cRefPattern calendar calendarDesc catDesc catRef category citeData citeStructure classCode classDecl conversion correspAction correspContext correspDesc creation distributor edition extent geoDecl listChange namespace quotation refState refsDecl rendition segmentation seriesStmt sponsor stdVals styleDefDecl tagUsage tagsDecl taxonomy unitDecl unitDef xenoData funder principal"/>
+        <moduleRef key="header" except="abstract appInfo application cRefPattern calendar calendarDesc catDesc catRef category citeData citeStructure classCode classDecl conversion correspAction correspContext correspDesc creation distributor edition extent geoDecl listChange namespace quotation refState refsDecl rendition segmentation seriesStmt sponsor stdVals styleDefDecl tagUsage tagsDecl taxonomy unitDecl unitDef xenoData principal"/>
         <moduleRef key="linking" except="alt altGrp annotation joinGrp link linkGrp listAnnotation standOff timeline when"/>
         <moduleRef key="core" except="addrLine address analytic biblScope binaryObject cb distinct divGen ellipsis email emph gb graphic headItem headLabel index measureGrp media meeting mentioned noteGrp postBox postCode rb relatedItem rs rt ruby series soCalled street teiCorpus time unit editor rs"/>
         <moduleRef key="tei"/>
@@ -5328,7 +5328,6 @@
           </attList>
         </elementSpec>
         <elementSpec ident="principal" mode="delete"/>
-        <elementSpec ident="funder" mode="delete"/>
         <elementSpec ident="sponsor" mode="delete"/>
       <elementSpec ident="fw" mode="change">
         <attList>
