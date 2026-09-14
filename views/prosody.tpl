@@ -39,11 +39,11 @@ Prosodic Patterns
 % if item["ascii"] or item["classical"] or item["gana"]:
 <div class="card-data">
 	% if item["ascii"]:
-	<div>XML</div>
+	<div>ASCII</div>
 	<div><code>{{item["ascii"]}}</code></div>
 	% endif
 	% if item["classical"]:
-	<div>Prosody</div>
+	<div>Classical</div>
 	<div>{{item["classical"]}}</div>
 	% endif
 	% if item["gana"]:
