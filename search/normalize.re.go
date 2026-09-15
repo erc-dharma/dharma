@@ -208,7 +208,7 @@ func lexReduced(encoded string) (int, rune) {
 	Pau { return cursor, Pau }
 	"ḥ" | "h" { return cursor, 'h' }
 	"k" | Pkh | "g" | Pgh | "kk" | "k" Pkh | "gg" | "g" Pgh { return cursor, 'k' }
-	"ṃ" | "ṅ" | "ñ" | "ṇ" | "n" | "m" | "ṅṅ" | "ññ" | "ṇṇ" | "nn" | "mm" { return cursor, 'n' }
+	"ṃ" | "ṅ" | "ñ" | "ṇ" | "n" | "m" | "ṅṅ" | "ññ" | "ṇṇ" | "nn" | "mm" | "ṉ" | "ṉṉ" { return cursor, 'n' }
 	"c" | Pch | "j" | Pjh | "cc" | "c" Pch | "jj" | "j" Pjh { return cursor, 'c' }
 	"ṭ" | P_th | "ḍ" | P_dh | "t" | Pth | "d" | Pdh | "ṭṭ" | "ṭ" P_th | "ḍḍ" | "ḍ" P_dh | "tt" | "t" Pth | "dd" | "d" Pdh { return cursor, 't' }
 	"p" | Pph | "b" | Pbh | "pp" | "p" Pph | "bb" | "b" Pbh { return cursor, 'p' }
