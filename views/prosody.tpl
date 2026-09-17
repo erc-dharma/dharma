@@ -22,7 +22,7 @@ Prosodic Patterns
 % endif
 
 % if item["class"]:
-<i>{{item["class"][0]}}</i> class ({{item["class"][1]}})
+<i>{{item["class"][0]}}</i> class ({{item["class"][1][1]}})
 % endif
 
 % if item["names"]:
