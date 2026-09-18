@@ -508,17 +508,17 @@ def _parse_num(p, num):
 	if num["value"] and num["value"] == num.text() and not num["cert"] == "low":
 		tip = "" # Pointless to add a tooltip in this case.
 	elif num["value"]:
-		tip = f"Numeral {num['value']}"
+		tip = f"Number {num['value']}"
 	elif num["atLeast"] and num["atMost"]:
-		tip = f"Numeral between {num['atLeast']} and {num['atMost']} inclusive"
+		tip = f"Number between {num['atLeast']} and {num['atMost']} inclusive"
 	elif num["atLeast"]:
-		tip = f"Numeral greater than or equal to {num['atLeast']}"
+		tip = f"Number greater than or equal to {num['atLeast']}"
 	elif num["atMost"]:
-		tip = f"Numeral smaller than or equal to {num['atMost']}"
+		tip = f"Number smaller than or equal to {num['atMost']}"
 	elif num.text().isdigit() and not num["cert"] == "low":
 		tip = "" # Pointless to add a tooltip in this case.
 	else:
-		tip = "Numeral"
+		tip = "Number"
 	if num["cert"] == "low":
 		tip += " (low certainty)"
 	p.push(tree.Tag("span", class_="num", tip=tip or None))
