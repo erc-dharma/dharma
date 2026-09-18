@@ -130,8 +130,8 @@ class Database:
 			(file.name, file.repo, file.path, file.mtime, *file.last_modified, file.data))
 		for git_name in file.owners:
 			self.execute("""
-				insert or ignore into owners(name, git_name)
-				values(?, ?)""", (file.name, git_name))
+				insert or ignore into owners(name, git_name, repo)
+				values(?, ?, ?)""", (file.name, git_name, file.repo))
 
 	def load_file(self, name):
 		# Delegate file loading to the texts.File class method to avoid circular imports and duplication

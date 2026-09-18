@@ -66,7 +66,7 @@ class File:
 		db = common.db("texts")
 		row = db.execute("""
 			select files.name as name,
-				repo, path, mtime,
+				files.repo, path, mtime,
 				last_modified_commit, last_modified, data,
 				json_group_array(owners.git_name) as file_owners
 			from files join owners on files.name = owners.name

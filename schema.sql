@@ -76,6 +76,15 @@ create table if not exists repos(
 		or typeof(code_hash) = 'text' and length(code_hash) = 2 * 20)
 );
 
+create trigger if not exists repos_delete before delete on repos
+begin
+	delete from biblio_cited where repo = old.repo;
+	delete from documents_search where repo_id = old.repo;
+	delete from documents where repo = old.repo;
+	delete from owners where repo = old.repo;
+	delete from files where repo = old.repo;
+end;
+
 -- We need this to trigger the first update in change.py
 insert or ignore into repos(repo, textual, title)
 	values('project-documentation', false, 'Project documentation');
@@ -128,8 +137,10 @@ create table if not exists files(
 create table if not exists owners(
 	name text check(typeof(name) = 'text' and length(name) > 0),
 	git_name text check(typeof(git_name) = 'text' and length(git_name) > 0),
+	repo text check(typeof(repo) = 'text' and length(repo) > 0),
 	primary key(name, git_name),
 	foreign key(name) references files(name)
+	foreign key(repo) references repos(repo)
 );
 create index if not exists owners_index on owners(git_name);
 
@@ -600,10 +611,12 @@ create view if not exists biblio_by_tag(tag, key) as
 -- existing entry. This is why we don't have a foreign key on short_title.
 create table if not exists biblio_cited(
 	ident text check(typeof(ident) = 'text' and length(ident) > 0),
-	short_title text,
+	short_title text
 		check(typeof(short_title) = 'text' and length(short_title) > 0),
+	repo text check(typeof(repo) = 'text' and length(repo) > 0),
 	primary key(ident, short_title),
-	foreign key(ident) references files(name)
+	foreign key(ident) references files(name),
+	foreign key(repo) references repos(repo)
 );
 
 create view if not exists repos_display(repo, title, repo_prod, people,
