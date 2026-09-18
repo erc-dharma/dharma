@@ -28,7 +28,7 @@
    <li class="submenu">
       <a href="#">About <i class="fa-solid fa-caret-down"></i></a>
       <ul class="hidden">
-         <li><a href="/about">About this resource and the DHARMA project</a></li>
+         <li><a href="/about">DHARMA and DHARMALEKHA</a></li>
          <li><a href="/documentation">Documentation</a></li>
          <li><a href="/contributors">Contributors</a></li>
          <li><a href="/repositories">Repositories</a></li>
