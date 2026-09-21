@@ -73,6 +73,9 @@ def scripts_hierarchy_to_html() -> tree.Tag:
 				children.append(child)
 				stack.append((child, child_row))
 			node.append(children)
+	# Remove the root of the tree for display.
+	root = root.first("li/ul") or tree.Tag("ul")
+	assert isinstance(root, tree.Tag)
 	return root
 
 
