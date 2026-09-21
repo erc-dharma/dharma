@@ -44,6 +44,7 @@ type SchemaConfig struct {
 var SearchSchema SchemaConfig
 
 // TransformCache stores normalized string states to prevent redundant processing.
+// Added formD fields to cache exact string matches for identifier fields.
 type TransformCache struct {
 	formA     string
 	onceFormA sync.Once
@@ -51,6 +52,8 @@ type TransformCache struct {
 	onceFormB sync.Once
 	formC     string
 	onceFormC sync.Once
+	formD     string
+	onceFormD sync.Once
 }
 
 // DocCache holds pointers to transformation caches for a single document.
@@ -470,9 +473,6 @@ func syncCorpus(tx *sql.Tx) error {
 
 // fetchDocumentMetas retrieves lightweight identification for all documents.
 func fetchDocumentMetas(tx *sql.Tx) ([]DocMeta, error) {
-	// Below, the cast(updated_at as integer) is necessary because the
-	// SQLite driver assumes that values with type TIMESTAMP are strings
-	// instead of integers, but we do use integers for type TIMESTAMP.
 	rows, err := tx.Query("select ident, cast(updated_at as integer) from documents_search order by ident")
 	if err != nil {
 		return nil, err
@@ -802,29 +802,20 @@ func assignExtraField(mMap map[string]interface{}, m SearchResult, f string) {
 }
 
 func resolveFieldName(field string) string {
-	// 1. Cas exact : le champ existe tel quel
 	if _, ok := SearchSchema.Fields[field]; ok {
 		return field
 	}
-
-	// 2. Cas des alias avec notation pointée (ex: editor.ident)
-	// On sépare le champ en deux parties : préfixe et suffixe
 	if strings.Contains(field, ".") {
 		parts := strings.SplitN(field, ".", 2)
 		prefix, suffix := parts[0], parts[1]
-
-		// On cherche si le préfixe possède un alias
 		for canonicalName, meta := range SearchSchema.Fields {
 			for _, alias := range meta.Aliases {
 				if alias == prefix {
-					// On reconstruit le nom canonique : creator + . + ident
 					return canonicalName + "." + suffix
 				}
 			}
 		}
 	}
-
-	// 3. Cas standard : alias de champ simple (ex: editor -> creator)
 	for canonicalName, meta := range SearchSchema.Fields {
 		for _, alias := range meta.Aliases {
 			if alias == field {

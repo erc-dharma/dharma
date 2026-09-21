@@ -7,35 +7,34 @@ with open(common.path_of("search.json"), "r") as f:
 	SEARCH_SCHEMA = json.load(f)
 
 class InvalidQuery(Exception):
-
 	pass
 
 def get_valid_fields():
-    fields = set()
+	fields = set()
+	valid_modes = set(SEARCH_SCHEMA.get("modes", []))
+	valid_modes.add("formd")
 
-    # On parcourt le dictionnaire des champs
-    for field_name, meta in SEARCH_SCHEMA["fields"].items():
-        # 1. Ajouter le nom du champ de base (ex: "creator")
-        fields.add(field_name)
+	# Add a field and its mode combinations to the valid fields set to improve the "did you mean" suggestions.
+	def add_field_and_modes(name):
+		fields.add(name)
+		prefix = f"{name}." if name else "."
+		for mode in valid_modes:
+			fields.add(f"{prefix}{mode}")
 
-        # 2. Ajouter les alias directs (ex: "editor")
-        aliases = meta.get("aliases", [])
-        fields.update(aliases)
-
-        # 3. Gérer l'expansion (ex: "creator.ident")
-        if "expand_to" in meta:
-            for sub_field in meta["expand_to"]:
-                # Ajouter le sous-champ (ex: "creator.ident")
-                fields.add(sub_field)
-
-                # 4. Générer les alias des sous-champs (ex: "editor.ident")
-                # On récupère le suffixe après le point (ex: "ident")
-                if "." in sub_field:
-                    suffix = sub_field.split(".", 1)[1]
-                    for alias in aliases:
-                        fields.add(f"{alias}.{suffix}")
-
-    return fields
+	# On parcourt le dictionnaire des champs
+	for field_name, meta in SEARCH_SCHEMA["fields"].items():
+		add_field_and_modes(field_name)
+		aliases = meta.get("aliases", [])
+		for alias in aliases:
+			add_field_and_modes(alias)
+		if "expand_to" in meta:
+			for sub_field in meta["expand_to"]:
+				add_field_and_modes(sub_field)
+				if "." in sub_field:
+					suffix = sub_field.split(".", 1)[1]
+					for alias in aliases:
+						add_field_and_modes(f"{alias}.{suffix}")
+	return fields
 
 VALID_FIELDS = get_valid_fields()
 

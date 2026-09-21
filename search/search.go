@@ -120,6 +120,7 @@ func findFirstGlobMatch(pattern []byte, name string, start int) (int, int, bool)
 
 // get retrieves cached normalizations to avoid repeated processing of string bytes.
 // The formc mode has been introduced to cache the prefix mapping directly, which isolates graphemes without phonological reduction.
+// Intercept formd to cache exact match representation.
 func (c *TransformCache) get(text, mode string) string {
 	if c == nil {
 		return transform(text, mode)
@@ -131,6 +132,10 @@ func (c *TransformCache) get(text, mode string) string {
 	if mode == "formc" {
 		c.onceFormC.Do(func() { c.formC = transform(text, "formc") })
 		return c.formC
+	}
+	if mode == "formd" {
+		c.onceFormD.Do(func() { c.formD = transform(text, "formd") })
+		return c.formD
 	}
 	c.onceFormA.Do(func() { c.formA = transform(text, "forma") })
 	return c.formA
@@ -609,6 +614,7 @@ func evalOr(d Document, args []QueryNode) bool {
 
 // containsMatcher normalizes incoming strings to execute character comparisons identically.
 // Delegates to the Glob algorithm if wildcard characters are detected.
+// For formd, bypass contains and glob to perform an absolute equality check.
 func containsMatcher(cache *TransformCache, text string, q *QueryNode, field string) bool {
 	mode := q.Mode
 	if mode == "" {
@@ -620,6 +626,9 @@ func containsMatcher(cache *TransformCache, text string, q *QueryNode, field str
 	}
 	transText := cache.get(text, mode)
 	pc := q.Precomp[mode]
+	if mode == "formd" {
+		return transText == pc.Transformed
+	}
 	if !pc.IsGlob {
 		return strings.Contains(transText, pc.Transformed)
 	}
@@ -1036,13 +1045,14 @@ func precomputeAST(q *QueryNode) {
 }
 
 // computeNodeModes prepares transformations for all valid schema modes.
+// Include formd in default schema modes for comprehensive evaluation.
 func computeNodeModes(q *QueryNode) {
 	q.Precomp = make(map[string]PrecomputedTerm)
 	modes := []string{q.Mode}
 	if q.Mode == "" {
 		modes = SearchSchema.Modes
 		if len(modes) == 0 {
-			modes = []string{"forma", "formb", "formc"}
+			modes = []string{"forma", "formb", "formc", "formd"}
 		}
 	}
 	for _, mode := range modes {

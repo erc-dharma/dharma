@@ -438,6 +438,7 @@ func transformPrefixWithBounds(text string) (string, []int) {
 
 // transform acts as a fast text dispatcher ignoring positional metadata.
 // It is intended for boolean evaluation matrices.
+// Formd returns the unmodified string for exact equality matching.
 func transform(text string, mode string) string {
 	if mode == "formb" {
 		return transformNormalized(text)
@@ -445,11 +446,15 @@ func transform(text string, mode string) string {
 	if mode == "formc" {
 		return transformPrefix(text)
 	}
+	if mode == "formd" {
+		return text
+	}
 	return transformNormal(text)
 }
 
 // transformWithBounds computes structural offsets alongside textual mapping.
 // It is strictly reserved for the final highlight processing layer.
+// Formd maintains exact 1:1 byte coordinate mapping.
 func transformWithBounds(text string, mode string) (string, []int) {
 	if mode == "formb" {
 		return transformNormalizedWithBounds(text)
@@ -457,5 +462,22 @@ func transformWithBounds(text string, mode string) (string, []int) {
 	if mode == "formc" {
 		return transformPrefixWithBounds(text)
 	}
+	if mode == "formd" {
+		return transformIdentityWithBounds(text)
+	}
 	return transformNormalWithBounds(text)
+}
+
+// transformIdentityWithBounds maps the exact string bounds without modifications.
+// This allows exact field matching to correctly highlight results.
+func transformIdentityWithBounds(text string) (string, []int) {
+	var bounds []int
+	for i := 0; i < len(text); {
+		_, size := utf8.DecodeRuneInString(text[i:])
+		for j := 0; j < size; j++ {
+			bounds = append(bounds, i, i+size)
+		}
+		i += size
+	}
+	return text, bounds
 }
