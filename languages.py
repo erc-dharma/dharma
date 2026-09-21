@@ -28,7 +28,7 @@ Goals for languages/scripts:
 * need to indicate, in the generated html, that portion X is in a given
   language, for better hyphenation in the browser
 * need to tell the user which languages are used in the edition; in this
-  context, should omit source_other for scripts and langs.
+  context, should omit source_unspecified for scripts and langs.
 * need to tell which languages are used anywhere in the file
 * In addition, should have stats (number of chars, of clusters, etc.) for each
   lang, script, pair of script+lang. But might be easier to gather stats like
@@ -116,7 +116,7 @@ def _extract_language_ident(node) -> str | None:
 		on langs_list.id = langs_by_code.id
 	where langs_by_code.code = ? or langs_by_code.code = ?
 	order by langs_by_code.id desc
-	""", (lang, lang + "_other")).fetchone() or (None,)
+	""", (lang, lang + "_unspecified")).fetchone() or (None,)
 	return lang
 
 def _extract_script_ident(node) -> str | None:
@@ -137,7 +137,7 @@ def _extract_script_ident(node) -> str | None:
 		on scripts_list.id = scripts_by_code.id
 	where scripts_by_code.code = ? or scripts_by_code.code = ?
 	order by scripts_list.id desc
-	""", (script, script + "_other")).fetchone() or (None,)
+	""", (script, script + "_unspecified")).fetchone() or (None,)
 	return script
 
 def _extract_language_info(node, parent_lang: Descriptor) -> Descriptor:
@@ -166,7 +166,7 @@ def _extract_language_info(node, parent_lang: Descriptor) -> Descriptor:
 		elif inherit:
 			script_id = parent_lang.script
 		else:
-			script_id = "script_other"
+			script_id = "script_unspecified"
 	return Descriptor(lang_id, script_id)
 
 ##################### For annotating internal documents ########################
@@ -367,7 +367,7 @@ def _patch_scripts(script):
 	search, we want all assigned scripts to be leaves. Thus, for the
 	internal representation, we create complementary categories in such a
 	way that all branches have a complementary leaf. For "arabic", we thus
-	have two subcategories "jawi" and "arabic_other"; the latter is used
+	have two subcategories "jawi" and "arabic_unspecified"; the latter is used
 	when the user indicated "arabic", so that the identifier "arabic"
 	remains available for search and does mean "anything in arabic, whether
 	jawi or not".
@@ -375,9 +375,9 @@ def _patch_scripts(script):
 	if not script["children"]:
 		return
 	compl = {
-		"ids": [sid + "_other" for sid in script["ids"]],
-		"name": script["name"] + " (other)",
-		"inverted_name": script["inverted_name"] + " (other)",
+		"ids": [sid + "_unspecified" for sid in script["ids"]],
+		"name": script["name"] + " (unspecified)",
+		"inverted_name": script["inverted_name"] + " (unspecified)",
 		"children": [],
 	}
 	compl["id"] = compl["ids"][0]

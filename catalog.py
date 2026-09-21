@@ -21,7 +21,7 @@ def make_document_record(doc: tree.Tree):
 	scripts = []
 	for node in doc.find("/document/scripts/script/identifier"):
 		scripts.append(node.text())
-	rec["scripts"] = scripts if scripts else ["script_other"]
+	rec["scripts"] = scripts if scripts else ["script_unspecified"]
 	creators = []
 	for node in doc.find(f"/document/creator/identifier"):
 		creators.append(node.text())
@@ -49,7 +49,7 @@ def _extract_catalog_data(file: texts.File):
 		doc.append(tree.Tag("document"))
 		data = {
 			"langs": ["und"],
-			"scripts": ["script_other"],
+			"scripts": ["script_unspecified"],
 			"editors": [],
 		}
 	data.update({"name": file.name, "repo": file.repo, "status": file.status})

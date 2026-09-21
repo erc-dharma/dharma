@@ -100,8 +100,8 @@ def _extract_edition_languages(root: tree.Tag | None):
 			langs.setdefault(lang, set()).add(script)
 			scripts.add(script)
 	else:
-		langs["und"] = {"script_other"}
-		scripts.add("script_other")
+		langs["und"] = {"script_unspecified"}
+		scripts.add("script_unspecified")
 	# Fetch the corresponding names.
 	db = common.db("texts")
 	lang_names = {}
