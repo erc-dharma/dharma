@@ -268,7 +268,7 @@ PIPE_BUF = 512
 NEXT_FULL_UPDATE = time.time()
 
 # Force a full update every FORCE_UPDATE_DELTA seconds.
-FORCE_UPDATE_DELTA = 4 * 60 * 60
+FORCE_UPDATE_DELTA = 12 * 60 * 60
 
 # In the worst case, if we're not fast enough to handle any update events, we
 # just end up running forced full updates continuously. We check if a full
