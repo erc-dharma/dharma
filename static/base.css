@@ -667,6 +667,9 @@ dl.list > dd {
 .abbr {
   color: brown; }
 
+.abbr-expansion {
+  color: blue; }
+
 .sic {
   color: red; }
 

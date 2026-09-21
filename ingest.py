@@ -1156,16 +1156,36 @@ def _parse_ex(p, node):
 	else:
 		tip = "Abbreviation expansion"
 	p.push(tree.Tag("span", class_="abbr-expansion", tip=tip))
-	p.append_surround("(")
+	p.append_surround("⟨")
 	p.dispatch_children(node)
-	p.append_surround(")")
+	p.append_surround("⟩")
+	c = p.pop()
+	p.push("views")
+	p.push("physical")
 	p.join()
+	p.push("logical")
+	p.append(c.copy())
+	p.join()
+	p.push("full")
+	p.append(c)
+	p.join()
+	p.join("views")
 
 @_handler("am")
 def _parse_am(p, am):
 	p.push(tree.Tag("span", class_="abbr-mark", tip="Abbreviation mark"))
 	p.dispatch_children(am)
+	c = p.pop()
+	p.push("views")
+	p.push("physical")
+	p.append(c.copy())
 	p.join()
+	p.push("logical")
+	p.join()
+	p.push("full")
+	p.append(c)
+	p.join()
+	p.join("views")
 
 # We expect:
 #	<expan>((<abbr>(text|<am>...</am>)</abbr>)|(<ex>...</ex>))+</expan>
