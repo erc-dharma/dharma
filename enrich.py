@@ -1493,6 +1493,8 @@ def add_file_info(t: tree.Tree, data: dict):
 	necessarily valid XML and because we want to be able to display it
 	exactly as it was encoded (with comments, spaces, etc.).
 	"""
+	if not data:
+		return
 	# Last modified commit
 	if data.get("last_modified_commit_hash"):
 		commit = tree.Tag("last-modified-commit")
