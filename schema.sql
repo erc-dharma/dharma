@@ -269,12 +269,14 @@ create table if not exists documents_search(
 	lang json check(
 		typeof(lang) = 'text'
 		and json_valid(lang)
-		and json_type(lang) = 'array'),
+		and json_type(lang) = 'array'
+		and json_array_length(lang) >= 2),
 	-- flat list of pairs [script_id, script_name, script2_id, script2_name...].
 	script json check(
 		typeof(script) = 'text'
 		and json_valid(script)
-		and json_type(script) = 'array'),
+		and json_type(script) = 'array'
+		and json_array_length(script) >= 2),
 	source xml check(typeof(source) = 'text' and length(source) > 0),
 	foreign key(ident) references files(name),
 	foreign key(repo_id) references repos(repo)

@@ -99,7 +99,7 @@ def _extract_edition_languages(root: tree.Tag | None):
 		for lang, script in _iter_edition_languages(root):
 			langs.setdefault(lang, set()).add(script)
 			scripts.add(script)
-	else:
+	if not langs:
 		langs["und"] = {"script_unspecified"}
 		scripts.add("script_unspecified")
 	# Fetch the corresponding names.
