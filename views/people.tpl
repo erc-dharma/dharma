@@ -25,16 +25,16 @@ Contributors to this database
 % endif
 
 % if row["texts_prod"]:
-<p>Total texts: <a href="{{url_for('show_catalog', q='editor.ident:%s' % row["dh_id"])}}">{{row["texts_prod"]}}</a></p>
+<p>Total texts: <a href="{{url_for('show_catalog', q='editor.ident.formd:%s' % row["dh_id"])}}">{{row["texts_prod"]}}</a></p>
 % endif
 % if row["repos_prod"]:
 % set repos_prod = from_json(row["repos_prod"])
 <p>{{numberize("Repository", repos_prod | length)}}:
 % for repo_id, repo_name, freq in repos_prod:
 	% if loop.index < loop.length:
-		<span class="repo-id">{{repo_id}}</span> (<a href="{{url_for('show_catalog', q='editor.ident:%s repo.ident:%s' % (row["dh_id"], repo_id))}}">{{freq}}</a>),
+		<span class="repo-id">{{repo_id}}</span> (<a href="{{url_for('show_catalog', q='editor.ident.formd:%s repo.ident.formd:%s' % (row["dh_id"], repo_id))}}">{{freq}}</a>),
 	% else:
-		<span class="repo-id">{{repo_id}}</span> (<a href="{{url_for('show_catalog', q='editor.ident:%s repo.ident:%s' % (row["dh_id"], repo_id))}}">{{freq}}</a>)
+		<span class="repo-id">{{repo_id}}</span> (<a href="{{url_for('show_catalog', q='editor.ident.formd:%s repo.ident.formd:%s' % (row["dh_id"], repo_id))}}">{{freq}}</a>)
 	% endif
 % endfor
 </p>
@@ -44,9 +44,9 @@ Contributors to this database
 <p>{{numberize("Language", langs_prod | length)}}:
 % for lang_id, lang_name, freq in langs_prod:
 	% if loop.index < loop.length:
-		{{lang_name}} (<a href="{{url_for('show_catalog', q='editor.ident:%s lang.ident:%s' % (row["dh_id"], lang_id))}}">{{freq}}</a>),
+		{{lang_name}} (<a href="{{url_for('show_catalog', q='editor.ident.formd:%s lang.ident.formd:%s' % (row["dh_id"], lang_id))}}">{{freq}}</a>),
 	% else:
-		{{lang_name}} (<a href="{{url_for('show_catalog', q='editor.ident:%s lang.ident:%s' % (row["dh_id"], lang_id))}}">{{freq}}</a>)
+		{{lang_name}} (<a href="{{url_for('show_catalog', q='editor.ident.formd:%s lang.ident.formd:%s' % (row["dh_id"], lang_id))}}">{{freq}}</a>)
 	% endif
 % endfor
 </p>
@@ -57,9 +57,9 @@ Contributors to this database
 <p>{{numberize("Script", scripts_prod | length)}}:
 % for script_id, script_name, freq in scripts_prod:
 	% if loop.index < loop.length:
-		{{script_name}} (<a href="{{url_for('show_catalog', q='editor.ident:%s script.ident:%s' % (row["dh_id"], script_id))}}">{{freq}}</a>),
+		{{script_name}} (<a href="{{url_for('show_catalog', q='editor.ident.formd:%s script.ident.formd:%s' % (row["dh_id"], script_id))}}">{{freq}}</a>),
 	% else:
-		{{script_name}} (<a href="{{url_for('show_catalog', q='editor.ident:%s script.ident:%s' % (row["dh_id"], script_id))}}">{{freq}}</a>)
+		{{script_name}} (<a href="{{url_for('show_catalog', q='editor.ident.formd:%s script.ident.formd:%s' % (row["dh_id"], script_id))}}">{{freq}}</a>)
 	% endif
 % endfor
 </p>

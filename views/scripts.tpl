@@ -29,7 +29,7 @@ have the form <span class="monospace">X_other</span>, where <span class="monospa
 <div class="card-body">
 % if row["prod"] is not none:
 <p>
-Total texts: <a href="{{url_for('show_catalog', q='script:' + row['script'])}}">{{row["prod"]}}</a>.
+Total texts: <a href="{{url_for('show_catalog', q='script.ident.formd:' + row['script'])}}">{{row["prod"]}}</a>.
 </p>
 % endif
 
@@ -38,7 +38,7 @@ Total texts: <a href="{{url_for('show_catalog', q='script:' + row['script'])}}">
 Repositories:
 % for repo, repo_prod in from_json(row["repos"]):
    <span class="repo-id">{{repo}}</span>
-   (<a href="{{url_for('show_catalog', q='script.ident:%s repo.ident:%s' % (row["script"], repo))}}">{{repo_prod}}</a>){{loop.index == loop.length and "." or ","}}
+   (<a href="{{url_for('show_catalog', q='script.ident.formd:%s repo.ident.formd:%s' % (row["script"], repo))}}">{{repo_prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
@@ -48,7 +48,7 @@ Repositories:
 Editors:
 % for editor_id, editor, editor_prod in from_json(row["editors"]):
    {{editor}}
-   (<a href="{{url_for('show_catalog', q='script.ident:%s editor.ident:%s' % (row["script"], editor_id))}}">{{editor_prod}}</a>){{loop.index == loop.length and "." or ","}}
+   (<a href="{{url_for('show_catalog', q='script.ident.formd:%s editor.ident.formd:%s' % (row["script"], editor_id))}}">{{editor_prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif

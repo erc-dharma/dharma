@@ -23,7 +23,7 @@ href="https://github.com/erc-dharma">here</a>. The table below does not show the
 <div class="card-body">
 % if repo["repo_prod"] is not none:
 <p>
-Total texts: <a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}}">{{repo["repo_prod"]}}</a>.
+Total texts: <a href="{{url_for('show_catalog', q='repo.ident.formd:' + repo['repo'])}}">{{repo["repo_prod"]}}</a>.
 </p>
 % endif
 % if repo["people"]:
@@ -31,7 +31,7 @@ Total texts: <a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}
 <p>{{numberize('Editor', people)}}:
 % for editor_id, editor, prod in people:
 {{editor}}
-(<a href="{{url_for('show_catalog', q='repo.ident:%s editor.ident:%s' % (repo["repo"], editor_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
+(<a href="{{url_for('show_catalog', q='repo.ident.formd:%s editor.ident.formd:%s' % (repo["repo"], editor_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
@@ -40,7 +40,7 @@ Total texts: <a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}
 <p>{{numberize('Language', langs)}}:
 % for lang_id, lang, prod in langs:
 {{lang}}
-(<a href="{{url_for('show_catalog', q='repo.ident:%s lang.ident:%s' % (repo["repo"], lang_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
+(<a href="{{url_for('show_catalog', q='repo.ident.formd:%s lang.ident.formd:%s' % (repo["repo"], lang_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
@@ -49,7 +49,7 @@ Total texts: <a href="{{url_for('show_catalog', q='repo.ident:' + repo['repo'])}
 <p>{{numberize('Script', scripts)}}:
 % for script_id, script, prod in scripts:
 {{script}}
-(<a href="{{url_for('show_catalog', q='repo.ident:%s script.ident:%s' % (repo["repo"], script_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
+(<a href="{{url_for('show_catalog', q='repo.ident.formd:%s script.ident.formd:%s' % (repo["repo"], script_id))}}">{{prod}}</a>){{loop.index == loop.length and "." or ","}}
 % endfor
 </p>
 % endif
