@@ -182,6 +182,8 @@ def complete_internal(t: tree.Tree):
 def _complete_internal_any(node):
 	if not isinstance(node, tree.Tag):
 		return
+	for child in node:
+		_complete_internal_any(child)
 	langs = set()
 	for child in node:
 		if not isinstance(child, tree.Tag):
@@ -190,8 +192,6 @@ def _complete_internal_any(node):
 			langs.add(lang)
 	if len(langs) == 1 and not node["lang"]:
 		node["lang"] = langs.pop()
-	for child in node:
-		_complete_internal_any(child)
 
 def finish_internal(node: tree.Branch):
 	"""

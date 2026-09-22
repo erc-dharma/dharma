@@ -884,23 +884,35 @@ def _unwrap_for_physical(root: tree.Node):
 				_unwrap_for_physical(node)
 			case "dlist" | "elist" | "quote" | "key" | "value" | "item":
 				_unwrap_for_physical(node)
-				node.unwrap()
+				if node["lang"]:
+					node.name = "physical-span"
+				else:
+					node.unwrap()
 			case "verse":
 				if (head := node.first("stuck-child::head")):
 					head.delete()
 				_unwrap_for_physical(node)
-				node.unwrap()
+				if node["lang"]:
+					node.name = "physical-span"
+				else:
+					node.unwrap()
 			case "source":
 				node.delete()
 			case "para":
 				_unwrap_for_physical(node)
 				node.prepend(" ")
-				node.unwrap()
+				if node["lang"]:
+					node.name = "physical-span"
+				else:
+					node.unwrap()
 			case "verse-line":
 				_unwrap_for_physical(node)
 				if common.to_boolean(node["break"]):
 					node.prepend(" ")
-				node.unwrap()
+				if node["lang"]:
+					node.name = "physical-span"
+				else:
+					node.unwrap()
 			case _:
 				raise Exception(f"unexpected: {node!r}")
 
@@ -913,14 +925,17 @@ def _unwrap_for_physical(root: tree.Node):
 def _wrap_for_physical(root, page=None, line=None):
 	for node in list(root):
 		if not isinstance(node, tree.Tag):
+			lang = root["lang"]
 			if not page:
-				page = tree.Tag("page", lang=root["lang"])
+				page = tree.Tag("page", lang=lang)
 				node.insert_before(page)
 			if not line:
-				line = tree.Tag("line", lang=root["lang"])
+				line = tree.Tag("line", lang=lang)
 				page.append(line)
 			line.append(node)
 			continue
+
+		lang = node["lang"] or root["lang"]
 		match node.name:
 			case "div":
 				page = line = None
@@ -928,7 +943,7 @@ def _wrap_for_physical(root, page=None, line=None):
 			case "head":
 				page = line = None
 			case "npage":
-				page = tree.Tag("page", lang=root["lang"])
+				page = tree.Tag("page", lang=lang)
 				node.insert_before(page)
 				head = tree.Tag("head")
 				head.append(node)
@@ -936,17 +951,17 @@ def _wrap_for_physical(root, page=None, line=None):
 				line = None
 			case "nline":
 				if not page:
-					page = tree.Tag("page")
+					page = tree.Tag("page", lang=lang)
 					node.insert_before(page)
-				line = tree.Tag("line", lang=root["lang"])
+				line = tree.Tag("line", lang=lang)
 				page.append(line)
 				line.append(node)
-			case "ncell" | "span" | "link" | "note" | "views" | "split":
+			case "ncell" | "span" | "link" | "note" | "views" | "split" | "physical-span":
 				if not page:
-					page = tree.Tag("page", lang=root["lang"])
+					page = tree.Tag("page", lang=lang)
 					node.insert_before(page)
 				if not line:
-					line = tree.Tag("line", lang=root["lang"])
+					line = tree.Tag("line", lang=lang)
 					page.append(line)
 				line.append(node)
 			case _:
@@ -1080,6 +1095,8 @@ def _to_physical(t):
 		node.delete()
 	for node in t.find(".//span[@class='reg' and @standalone='false']"):
 		node.delete()
+	for node in t.find(".//physical-span"):
+		node.unwrap()
 
 def _complete_verse_lines(t: tree.Tree):
 	"""Add a hyphen before verse-line elements that have @break='false', and
