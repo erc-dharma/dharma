@@ -183,11 +183,12 @@ type DocMeta struct {
 }
 
 var (
-	corpus          []Document
-	lastDataVersion int
-	lastReloadTime  int64
-	mu              sync.RWMutex
-	db              *sql.DB
+	corpus            []Document
+	lastDataVersion   int
+	lastReloadTime    int64
+	mu                sync.RWMutex
+	db                *sql.DB
+	scriptDescendants map[string]map[string]map[string]bool
 )
 
 // loadSchema reads and parses the JSON configuration file into memory on startup.
@@ -502,6 +503,9 @@ func reloadCorpus(tx *sql.Tx, ver int) error {
 	}
 	if err := mergeCorpus(tx, metas); err != nil {
 		return err
+	}
+	if err := loadScriptHierarchy(tx); err != nil {
+		log.Printf("hierarchy error: %v", err)
 	}
 	lastDataVersion = ver
 	lastReloadTime = time.Now().Unix()
@@ -824,4 +828,70 @@ func resolveFieldName(field string) string {
 		}
 	}
 	return field
+}
+
+// loadScriptHierarchy fetches the transitive closure table from the database to map all parent-child relationships.
+// This allows the search engine to instantly resolve script family queries without recursive database lookups.
+func loadScriptHierarchy(tx *sql.Tx) error {
+	rows, err := tx.Query(`select parent.id, parent.name, child.id, child.name from scripts_closure join scripts_list as parent on scripts_closure.root = parent.rid join scripts_list as child on scripts_closure.rid = child.rid`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	modes := getFallbackModes()
+	newHierarchy := initHierarchyMap(modes)
+	for rows.Next() {
+		if err := processScriptRow(rows, newHierarchy, modes); err != nil {
+			return err
+		}
+	}
+	scriptDescendants = newHierarchy
+	return rows.Err()
+}
+
+// getFallbackModes retrieves configured text transformation modes to ensure hierarchical maps cover all schemas.
+// This guarantees that the cached memory structure accommodates queries processed under standard normalization rules.
+func getFallbackModes() []string {
+	if len(SearchSchema.Modes) > 0 {
+		return SearchSchema.Modes
+	}
+	return []string{"forma", "formb", "formc", "formd"}
+}
+
+// initHierarchyMap allocates maps evaluating parent-child script relationships natively.
+// This constructs the nested layers required to test descendant identifiers efficiently per normalization mode.
+func initHierarchyMap(modes []string) map[string]map[string]map[string]bool {
+	hier := make(map[string]map[string]map[string]bool)
+	for _, m := range modes {
+		hier[m] = make(map[string]map[string]bool)
+	}
+	return hier
+}
+
+// processScriptRow maps a single DB row to corresponding normalized strings inherently.
+// This parses and converts database values to maintain integrity against the string transformation pipelines.
+func processScriptRow(rows *sql.Rows, hier map[string]map[string]map[string]bool, modes []string) error {
+	var pID, cID string
+	var pName, cName sql.NullString
+	if err := rows.Scan(&pID, &pName, &cID, &cName); err != nil {
+		return err
+	}
+	for _, m := range modes {
+		mapRelationship(hier[m], pID, cID, m)
+		if pName.Valid && cName.Valid {
+			mapRelationship(hier[m], pName.String, cName.String, m)
+		}
+	}
+	return nil
+}
+
+// mapRelationship registers a normalized descendant into the parent's hierarchy map.
+// This normalizes both keys so that wildcard or varying case queries still resolve cleanly against the tree.
+func mapRelationship(modeHier map[string]map[string]bool, parent, child, mode string) {
+	pTrans := transform(parent, mode)
+	cTrans := transform(child, mode)
+	if modeHier[pTrans] == nil {
+		modeHier[pTrans] = make(map[string]bool)
+	}
+	modeHier[pTrans][cTrans] = true
 }

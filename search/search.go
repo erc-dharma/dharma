@@ -613,19 +613,14 @@ func evalOr(d Document, args []QueryNode) bool {
 }
 
 // containsMatcher normalizes incoming strings to execute character comparisons identically.
-// Delegates to the Glob algorithm if wildcard characters are detected.
 // For formd, bypass contains and glob to perform an absolute equality check.
 func containsMatcher(cache *TransformCache, text string, q *QueryNode, field string) bool {
-	mode := q.Mode
-	if mode == "" {
-		if meta, ok := SearchSchema.Fields[field]; ok && meta.DefaultMode != "" {
-			mode = meta.DefaultMode
-		} else {
-			mode = "forma"
-		}
-	}
+	mode := resolveMode(q, field)
 	transText := cache.get(text, mode)
 	pc := q.Precomp[mode]
+	if evaluateHierarchy(field, mode, transText, pc.Transformed) {
+		return true
+	}
 	if mode == "formd" {
 		return transText == pc.Transformed
 	}
@@ -634,6 +629,32 @@ func containsMatcher(cache *TransformCache, text string, q *QueryNode, field str
 	}
 	_, _, ok := findFirstGlobMatch(pc.Pattern, transText, 0)
 	return ok
+}
+
+// resolveMode applies default normalization logic whenever queries bypass explicitly defined schemas natively.
+// This provides a fallback form to ensure comparisons function reliably even if the schema is bypassed.
+func resolveMode(q *QueryNode, field string) string {
+	if q.Mode != "" {
+		return q.Mode
+	}
+	if meta, ok := SearchSchema.Fields[field]; ok && meta.DefaultMode != "" {
+		return meta.DefaultMode
+	}
+	return "forma"
+}
+
+// evaluateHierarchy checks if the target document text is a recognized descendant of the queried script term.
+// This guarantees that searching for a broad script family will match documents labeled with its specific sub-scripts.
+func evaluateHierarchy(field, mode, transText, queryText string) bool {
+	if field == "script" || field == "script.ident" || field == "script_ident" || field == "script.name" || field == "script_name" {
+		mu.RLock()
+		hier := scriptDescendants
+		mu.RUnlock()
+		if hier != nil && hier[mode] != nil && hier[mode][queryText] != nil {
+			return hier[mode][queryText][transText]
+		}
+	}
+	return false
 }
 
 // matchField routes structural queries to corresponding column interpretation branches.
