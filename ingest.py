@@ -969,7 +969,8 @@ def _add_lang_to_parents(node: tree.Node):
 	A node has a @lang attribute iff it contains a non-empty string, and
 	only those nodes have a @lang. It is guaranteed that, if a node has a
 	@lang, all its children that are strings are in the given @lang (but
-	descendant strings might be in another language).
+	descendant strings might be in another language). And it is guaranteed
+	that the parent of each text node has the @lang of this text node.
 	"""
 	if isinstance(node, tree.Tree):
 		for child in node: _add_lang_to_parents(child)
