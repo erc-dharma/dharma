@@ -967,13 +967,27 @@ def _add_lang_to_parents(node: tree.Node):
 		for child in node: _add_lang_to_parents(child)
 		return
 	if not isinstance(node, tree.Tag): return
+	has_non_editorial = False
+	for child in node:
+		if isinstance(child, tree.String) and child.isspace():
+			continue
+		if not child.notes.get("editorial", False):
+			has_non_editorial = True
+			break
 	editorial = node.notes.get("editorial", False)
 	lang = None
 	for child in list(node):
 		if isinstance(child, tree.String) and not child.isspace():
-			if child.notes.get("editorial", False): editorial = True
+			child_editorial = child.notes.get("editorial", False)
+			wrap = False
 			if lang is None: lang = child.notes["lang"]
 			elif lang != child.notes["lang"]:
+				wrap = True
+			if child_editorial and has_non_editorial:
+				wrap = True
+			elif child_editorial:
+				editorial = True
+			if wrap:
 				span = tree.Tag("span")
 				child.replace_with(span)
 				span.append(child)

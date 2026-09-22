@@ -121,6 +121,8 @@ def _extract_edition_languages(root: tree.Tag | None):
 			scripts.setdefault(script, set()).add(lang)
 	return langs, scripts, lang_names, script_names
 
+# XXX should extract languages from full, not logical, because logical might be
+# empty while full is not, due to deletion of stuff in logical
 def _add_edition_languages(t: tree.Tree, logical: tree.Tag | None):
 	"""Add language and script use info to the tree.
 
@@ -1427,8 +1429,8 @@ def process(t: tree.Tree):
 			del node["name"]
 	_complete_verse_lines(t)
 	languages.finish_internal(t)
-	# And extract languages from the logical division.
-	root = t.first("/document/edition/logical")
+	# And extract languages from the full division.
+	root = t.first("/document/edition/full")
 	assert root is None or isinstance(root, tree.Tag)
 	_add_edition_languages(t, root)
 
