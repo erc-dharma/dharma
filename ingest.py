@@ -963,18 +963,11 @@ def _milestone_break(node):
 	return common.to_boolean(node["break"], True)
 
 def _add_lang_to_parents(node: tree.Node):
-	"""When this function is done, each node in the subtree might or might
-	not have the attributes @lang and @editorial.
-
-	A node has a @lang attribute iff it contains a non-empty string, and
-	only those nodes have a @lang. It is guaranteed that, if a node has a
-	@lang, all its children that are strings are in the given @lang (but
-	descendant strings might be in another language). And it is guaranteed
-	that the parent of each text node has the @lang of this text node.
-	"""
+	# Recursively add lang info to child nodes if the current node is a Tree
 	if isinstance(node, tree.Tree):
 		for child in node: _add_lang_to_parents(child)
 		return
+	# Return immediately if the node is not a Tag
 	if not isinstance(node, tree.Tag): return
 	has_non_editorial = False
 	for child in node:
@@ -984,7 +977,8 @@ def _add_lang_to_parents(node: tree.Node):
 			has_non_editorial = True
 			break
 	editorial = node.notes.get("editorial", False)
-	lang = None
+	# Retrieve the language directly from the node's internal notes
+	lang = node.notes.get("lang")
 	for child in list(node):
 		if isinstance(child, tree.String) and not child.isspace():
 			child_editorial = child.notes.get("editorial", False)
@@ -1001,8 +995,10 @@ def _add_lang_to_parents(node: tree.Node):
 				child.replace_with(span)
 				span.append(child)
 	if lang:
-		node["lang"] = lang
+		# Force string conversion to create the XML attribute
+		node["lang"] = str(lang)
 		if editorial: node["editorial"] = "true"
+	# Process all children recursively
 	for child in node: _add_lang_to_parents(child)
 
 def _append_milestone_label(p, node, unit):

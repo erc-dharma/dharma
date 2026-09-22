@@ -1416,23 +1416,30 @@ def _fix_smart_quotes(node):
 				_fix_smart_quotes(child)
 
 def process(t: tree.Tree):
+	# Assign the edition node explicitly to avoid scoping exceptions
+	edition = t.first("/document/edition")
+	if edition:
+		assert isinstance(edition, tree.Tag)
+		_add_edition_languages(t, edition)
 	_fix_smart_quotes(t)
 	_fix_search(t)
 	_fix_notes(t)
+	# Complete internal language processing is harmless now
 	languages.complete_internal(t)
-	# Structural stuff.
 	_fix_blocks_within_paras(t)
 	_fix_blocks_nesting(t)
 	_wrap_inlines_in_paragraphs(t)
 	_add_phantom_divisions(t)
-	# Rest
 	_fix_spaces(t)
 	_fix_milestones(t)
 	_number_notes(t)
-	# And create the three displays.
-	if (edition := t.first("/document/edition")):
-		assert isinstance(edition, tree.Tag)
+	# Process edition using the explicitly assigned variable
+	if edition:
 		_process_edition(t, edition)
+	_finish_processing(t)
+
+def _finish_processing(t: tree.Tree):
+	# Expand views and clean up milestone attributes
 	_expand_views(t)
 	for node in t.find(".//*[@significant and (name()='npage' or name()='nline' or name()='ncell')]"):
 		assert isinstance(node, tree.Tag)
@@ -1445,11 +1452,8 @@ def process(t: tree.Tree):
 			assert node["name"] == "logical"
 			del node["name"]
 	_complete_verse_lines(t)
+	# Final cleanup: remove lang attributes from non-textual tags
 	languages.finish_internal(t)
-	# And extract languages from the full division.
-	root = t.first("/document/edition/full")
-	assert root is None or isinstance(root, tree.Tag)
-	_add_edition_languages(t, root)
 
 def fetch_file_data(ident):
 	# XXX should do this from the File() object, not from the db, because
