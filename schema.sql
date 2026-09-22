@@ -266,12 +266,14 @@ create table if not exists documents_search(
 	translation text not null,
 	bibliography text not null,
 	-- flat list of pairs [lang_id, lang_name, lang2_id, lang2_name...].
+	-- There should be at least one language per inscription.
 	lang json check(
 		typeof(lang) = 'text'
 		and json_valid(lang)
 		and json_type(lang) = 'array'
 		and json_array_length(lang) >= 2),
 	-- flat list of pairs [script_id, script_name, script2_id, script2_name...].
+	-- There should be at least one script per inscription.
 	script json check(
 		typeof(script) = 'text'
 		and json_valid(script)

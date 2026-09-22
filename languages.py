@@ -412,7 +412,8 @@ def add_lang_info(node, parent_lang=Descriptor("eng", "latin")):
 	the language) and @rendition (for the script). These two attributes are
 	inherited separately. Thus, if a node does not have a @lang but does
 	have a @rendition, its language will be set to the one of its parent
-	node and its script will be extracted from @rendition. Idem for the reverse.
+	node and its script will be extracted from @rendition. Idem for the
+	reverse.
 
 	There are exceptions to this inheritance rule:
 
@@ -420,7 +421,7 @@ def add_lang_info(node, parent_lang=Descriptor("eng", "latin")):
 	is set to "und" and its script to "latin". Indeed, the EGD says that
 	foreign with @lang is to be used for marking up a piece of text in some
 	indeterminate source language. It is in fact used just for the visual
-	effect.
+	effect (use of italics).
 
 	2) Likewise, if the element is div[@type='edition'] and does not have a
 	@lang, we assign it the language "und" and the script "latin". We know

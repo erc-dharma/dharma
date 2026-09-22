@@ -963,6 +963,14 @@ def _milestone_break(node):
 	return common.to_boolean(node["break"], True)
 
 def _add_lang_to_parents(node: tree.Node):
+	"""When this function is done, each node in the subtree might or might
+	not have the attributes @lang and @editorial.
+
+	A node has a @lang attribute iff it contains a non-empty string, and
+	only those nodes have a @lang. It is guaranteed that, if a node has a
+	@lang, all its children that are strings are in the given @lang (but
+	descendant strings might be in another language).
+	"""
 	if isinstance(node, tree.Tree):
 		for child in node: _add_lang_to_parents(child)
 		return
