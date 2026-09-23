@@ -1277,7 +1277,7 @@ def _parse_seg(p, seg):
 	p.push(tree.Tag("span"))
 	rend = seg["rend"].split()
 	if "pun" in rend:
-		p.push(tree.Tag("span", class_="pun", tip=_XML('Pun (<span class="italics">ślesa</span>').xml()))
+		p.push(tree.Tag("span", class_="pun", tip=_XML('Pun (<span class="italics">ślesa</span>)').xml()))
 		p.append_surround("{")
 	if "check" in rend:
 		p.push(tree.Tag("span", class_="check", tip="To be checked"))
