@@ -698,6 +698,7 @@ def _add_phantom_milestones(doc: tree.Tree, milestones):
 			assert insert[i] is milestones[i]
 		else:
 			mile = _phantom_milestone(unit)
+			mile["lang"] = insert["lang"]
 			insert.insert(i, mile)
 			milestones.insert(i, mile)
 		i += 1
@@ -709,6 +710,7 @@ def _add_phantom_milestones(doc: tree.Tree, milestones):
 				mile = tmp
 			else:
 				tmp = _phantom_milestone("nline")
+				tmp["lang"] = mile["lang"]
 				mile.insert_after(tmp)
 				mile = tmp
 				milestones.insert(i + 1, tmp)
@@ -716,6 +718,7 @@ def _add_phantom_milestones(doc: tree.Tree, milestones):
 				mile = tmp
 			else:
 				tmp = _phantom_milestone("ncell")
+				tmp["lang"] = mile["lang"]
 				mile.insert_after(tmp)
 				mile = tmp
 				milestones.insert(i + 2, tmp)
@@ -725,6 +728,7 @@ def _add_phantom_milestones(doc: tree.Tree, milestones):
 				pass
 			else:
 				tmp = _phantom_milestone("ncell")
+				tmp["lang"] = mile["lang"]
 				mile.insert_after(tmp)
 				milestones.insert(i + 1, tmp)
 			i += 2
@@ -859,16 +863,13 @@ def _fix_milestones_spaces(t: tree.Branch, physical=False):
 # split these elements if needed: a, para
 
 def _unwrap_for_physical(root: tree.Node):
-	"""Unwraps or deletes tags that are not necessary for the physical
-	display.
-	"""
+	# Unwraps or deletes tags that are not necessary for the physical display
 	for node in list(root):
 		if not isinstance(node, tree.Tag):
 			continue
 		match node.name:
 			case "note":
-				# No recursion here, the node is part of the
-				# text.
+				# No recursion here, the node is part of the text
 				pass
 			case "display":
 				_unwrap_for_physical(node)
@@ -878,41 +879,28 @@ def _unwrap_for_physical(root: tree.Node):
 				assert display
 				_unwrap_for_physical(display)
 			case "views":
-				# We deal with this elsewhere.
 				pass
 			case "div" | "head" | "span" | "link" | "npage" | "nline" | "ncell":
 				_unwrap_for_physical(node)
 			case "dlist" | "elist" | "quote" | "key" | "value" | "item":
 				_unwrap_for_physical(node)
-				if node["lang"]:
-					node.name = "physical-span"
-				else:
-					node.unwrap()
+				node.unwrap()
 			case "verse":
 				if (head := node.first("stuck-child::head")):
 					head.delete()
 				_unwrap_for_physical(node)
-				if node["lang"]:
-					node.name = "physical-span"
-				else:
-					node.unwrap()
+				node.unwrap()
 			case "source":
 				node.delete()
 			case "para":
 				_unwrap_for_physical(node)
 				node.prepend(" ")
-				if node["lang"]:
-					node.name = "physical-span"
-				else:
-					node.unwrap()
+				node.unwrap()
 			case "verse-line":
 				_unwrap_for_physical(node)
 				if common.to_boolean(node["break"]):
 					node.prepend(" ")
-				if node["lang"]:
-					node.name = "physical-span"
-				else:
-					node.unwrap()
+				node.unwrap()
 			case _:
 				raise Exception(f"unexpected: {node!r}")
 
@@ -923,6 +911,7 @@ def _unwrap_for_physical(root: tree.Node):
 # page-like milestones. We can't tell what the user means, so do nothing
 # special for now.
 def _wrap_for_physical(root, page=None, line=None):
+	# Group elements into physical pages and lines
 	for node in list(root):
 		if not isinstance(node, tree.Tag):
 			lang = root["lang"]
@@ -934,7 +923,6 @@ def _wrap_for_physical(root, page=None, line=None):
 				page.append(line)
 			line.append(node)
 			continue
-
 		lang = node["lang"] or root["lang"]
 		match node.name:
 			case "div":
@@ -956,7 +944,7 @@ def _wrap_for_physical(root, page=None, line=None):
 				line = tree.Tag("line", lang=lang)
 				page.append(line)
 				line.append(node)
-			case "ncell" | "span" | "link" | "note" | "views" | "split" | "physical-span":
+			case "ncell" | "span" | "link" | "note" | "views" | "split":
 				if not page:
 					page = tree.Tag("page", lang=lang)
 					node.insert_before(page)
@@ -1095,8 +1083,6 @@ def _to_physical(t):
 		node.delete()
 	for node in t.find(".//span[@class='reg' and @standalone='false']"):
 		node.delete()
-	for node in t.find(".//physical-span"):
-		node.unwrap()
 
 def _complete_verse_lines(t: tree.Tree):
 	"""Add a hyphen before verse-line elements that have @break='false', and
@@ -1418,9 +1404,8 @@ def _fix_smart_quotes(node):
 def process(t: tree.Tree):
 	# Assign the edition node explicitly to avoid scoping exceptions
 	edition = t.first("/document/edition")
-	if edition:
-		assert isinstance(edition, tree.Tag)
-		_add_edition_languages(t, edition)
+	assert edition is None or isinstance(edition, tree.Tag)
+	_add_edition_languages(t, edition)
 	_fix_smart_quotes(t)
 	_fix_search(t)
 	_fix_notes(t)

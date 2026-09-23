@@ -1,10 +1,10 @@
 # Schema for the internal representation.
 #
 # The internal representation has two states: 1) the output of the TEI parsing
-# code (in tei.py), which is an approximation of what the output should be and
-# is meant to be temporary (for now); and 2) the output of the patching code (in
-# patch.py), which straightens out the data representation, makes it easier to
-# process programmatically, and also generates the three displays (physical,
+# code (in ingest.py), which is an approximation of what the output should be
+# and is meant to be temporary (for now); and 2) the output of the patching code
+# (in enrich.py), which straightens out the data representation, makes it easier
+# to process programmatically, and also generates the three displays (physical,
 # logical, full) of the edition div.
 #
 # This schema only describes 2), the "actual" internal representation.

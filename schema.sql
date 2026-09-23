@@ -266,19 +266,20 @@ create table if not exists documents_search(
 	translation text not null,
 	bibliography text not null,
 	-- flat list of pairs [lang_id, lang_name, lang2_id, lang2_name...].
-	-- There should be at least one language per inscription.
+	-- For inscriptions that are well-formed XML, the length of the array
+	-- should be >= 2. For invalid inscriptions, it will be = 0.
 	lang json check(
 		typeof(lang) = 'text'
 		and json_valid(lang)
-		and json_type(lang) = 'array'
-		and json_array_length(lang) >= 2),
-	-- flat list of pairs [script_id, script_name, script2_id, script2_name...].
-	-- There should be at least one script per inscription.
+		and json_type(lang) = 'array'),
+	-- flat list of pairs [script_id, script_name, script2_id,
+	-- script2_name...].
+	-- For inscriptions that are well-formed XML, the length of the array
+	-- should be >= 2. For invalid inscriptions, it will be = 0.
 	script json check(
 		typeof(script) = 'text'
 		and json_valid(script)
-		and json_type(script) = 'array'
-		and json_array_length(script) >= 2),
+		and json_type(script) = 'array'),
 	source xml check(typeof(source) = 'text' and length(source) > 0),
 	foreign key(ident) references files(name),
 	foreign key(repo_id) references repos(repo)
