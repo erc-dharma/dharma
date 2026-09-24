@@ -520,8 +520,17 @@ function initDisplayOptions() {
 			display.classList.toggle("hidden")
 		if (source)
 			source.classList.toggle("hidden")
-		if (toc)
-			toc.classList.toggle("hidden")
+		if (toc) {
+			if (node.checked) {
+				toc.style.opacity = "0.5";
+       				toc.style.transition = "opacity 0.3s ease";
+				for (let link of toc.querySelectorAll("a")) {
+					link.classList.toggle("disabled-link")
+				}
+			} else {
+				toc.style.opacity = "1";
+			}
+		}
 	})
 }
 

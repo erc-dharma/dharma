@@ -928,3 +928,7 @@ img {
 /* SII volumes display */
 .sii-volume .pagelike {
   font-size: 1rem; }
+
+a.disabled-link {
+  pointer-events: none;
+  cursor: default; }
