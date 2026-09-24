@@ -80,7 +80,14 @@ def _fix_search(t: tree.Tree):
 def _iter_edition_languages(root: tree.Tag):
 	if root["editorial"] == "true":
 		return
-	if root["lang"]:
+	# Check if the node contains non-whitespace string children.
+	has_text = any(isinstance(c, tree.String) and len(c) > 0 and not c.isspace() for c in root)
+	# Check if the node is a structural leaf (no tag children).
+	# This ensures we extract languages from empty elements like empty textparts.
+	has_tags = any(isinstance(c, tree.Tag) for c in root)
+	is_leaf = not has_tags
+	# Yield the language if the node holds text or is a terminal node.
+	if root["lang"] and (has_text or is_leaf):
 		lang, script = root["lang"].split()
 		yield lang, script
 	for child in root:
