@@ -224,7 +224,8 @@ def _render_apparatus(self, node):
 	self.heading_level += 1
 	self.push(tree.Tag("div", class_="apparatus"))
 	# Heading
-	if (head := node.first("head")):
+	head = node.first("head")
+	if head:
 		_push_heading(self, self.heading_level, class_=["collapsible"])
 		self.dispatch_children(head)
 		self.join() # </head>
