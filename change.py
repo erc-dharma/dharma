@@ -186,10 +186,6 @@ def update_db(repo):
 		where repo = ?""",
 		(changes.commit_hash, changes.commit_date, common.CODE_HASH, changes.repo))
 	for name in changes.delete:
-		db.execute("delete from biblio_cited where ident = ?", (name,))
-		db.execute("delete from documents_search where ident = ?", (name,))
-		db.execute("delete from documents where name = ?", (name,))
-		db.execute("delete from owners where name = ?", (name,))
 		db.execute("delete from files where name = ?", (name,))
 	for todo in ("insert", "update"):
 		todo = getattr(changes, todo)

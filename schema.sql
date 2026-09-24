@@ -131,6 +131,14 @@ create table if not exists files(
 	foreign key(repo) references repos(repo)
 );
 
+create trigger if not exists files_delete before delete on files
+begin
+	delete from biblio_cited where ident = old.name;
+	delete from documents_search where ident = old.name;
+	delete from documents where name = old.name;
+	delete from owners where name = old.name;
+end;
+
 -- For each file, git names of the people who modified it at some point in time.
 -- We thus often have multiple "owners" per file. In any case, we should have at
 -- least one owner per file.
