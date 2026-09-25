@@ -6,7 +6,7 @@ Languages
 
 % block body
 
-<p>The following only displays languages that currently appear in the DHARMA database.</p>
+<p>The following only displays languages that currently appear in the database.</p>
 
 <div class="card-list">
 

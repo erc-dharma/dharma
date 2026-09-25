@@ -15,7 +15,7 @@ have the form <span class="monospace">X_other</span>, where <span class="monospa
 
 <h2>Statistics</h2>
 
-<p>The following only displays scripts that currently appear in the DHARMA database.</p>
+<p>The following only displays scripts that currently appear in the database.</p>
 
 <div class="card-list">
 
