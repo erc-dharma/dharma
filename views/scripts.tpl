@@ -9,7 +9,7 @@ Scripts
 <h2>Scripts hierarchy</h2>
 
 <p>Scripts are arranged in a hierarchy, represented below. Some script identifiers
-have the form <span class="monospace">X_other</span>, where <span class="monospace">X</span> is the identifier of the parent category. They represent the remainder of the parent category.</span></p>
+have the form <span class="monospace">X_unspecified</span>, where <span class="monospace">X</span> is the identifier of the parent category. They represent the remainder of the parent category.</span></p>
 
 {{hierarchy.html() | safe}}
 
