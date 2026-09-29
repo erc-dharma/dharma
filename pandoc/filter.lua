@@ -18,3 +18,20 @@ function Span(el)
 	end
 	return el
 end
+
+function Pandoc(doc)
+	-- Check if the output format matches plain text
+	if FORMAT:match('plain') then
+		local blocks = doc.blocks
+		-- Insert title and author paragraphs at the beginning if present
+		if doc.meta.title then
+			table.insert(blocks, 1, pandoc.Header(1, doc.meta.title))
+		end
+		if doc.meta.author then
+			table.insert(blocks, 2, pandoc.Para(doc.meta.author))
+		end
+		return pandoc.Pandoc(blocks, doc.meta)
+	end
+	-- Return unchanged for other formats
+	return doc
+end

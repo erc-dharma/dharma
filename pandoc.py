@@ -9,10 +9,9 @@ Possibly interesting output formats:
 
         pdf plain docx odt
 
-For generating a docx file: python pandoc.py texts/DHARMA_INSVengiCalukya00034.xml | pandoc -fjson
---lua-filter=pandoc/color.lua --reference-doc=pandoc/reference.docx -o tmp.docx
+For generating a docx file: python pandoc.py texts/DHARMA_INSVengiCalukya00034.xml | pandoc -fjson --lua-filter=pandoc/filter.lua --reference-doc=pandoc/reference.docx -o tmp.docx
 
-For generating a pdf file: python pandoc.py texts/DHARMA_INSVengiCalukya00034.xml | pandoc -fjson -otmp.pdf --lua-filter=pandoc/color.lua --template=pandoc/template2.tex --pdf-engine=lualatex
+For generating a pdf file: python pandoc.py texts/DHARMA_INSVengiCalukya00034.xml | pandoc -fjson -otmp.pdf --lua-filter=pandoc/filter.lua --template=pandoc/template.tex --pdf-engine=lualatex
 """
 
 import sys, collections, re, datetime, html
@@ -89,8 +88,21 @@ def _render_milestone(self, node):
 	_with_color(self, node, "gray")
 
 @_handler("quote")
-def _render_quote(self, node): # XXX check
-	_with_command(self, node, "BlockQuote")
+def _render_quote(self, node):
+	# Initialize the BlockQuote container list.
+	self.push([])
+	# Render the source element as the first paragraph if present.
+	if (source := node.first("source")):
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		self.dispatch_children(source)
+		self.pop()
+		self.append(para)
+	# Dispatch all other child blocks making up the citation content.
+	for child in node:
+		if isinstance(child, tree.Tag) and child.name != "source":
+			self.dispatch(child)
+	self.append({"t": "BlockQuote", "c": self.pop()})
 
 @_handler("edition")
 @_handler("translation")
@@ -112,6 +124,8 @@ def _increase_depth(self, node):
 @_handler("title")
 @_handler("creator")
 @_handler("citations")
+@_handler("summary")
+@_handler("hand")
 def _just_ignore(self, node):
 	pass
 
@@ -120,9 +134,38 @@ def _render_elist(self, node):
 	elist = {"t": "BulletList", "c": []}
 	self.push(elist["c"])
 	for child in node.find("item"):
+		self.push([])
 		self.dispatch_children(child)
+		self.append(self.pop())
 	self.pop()
 	self.append(elist)
+
+# Helper to extract inline elements for the definition key, since Pandoc needs inlines here.
+def _extract_inlines(self, key_node):
+	self.push([])
+	self.dispatch_children(key_node)
+	key_content = self.pop()
+	key_inlines = []
+	for block in key_content:
+		if "c" in block and isinstance(block["c"], list):
+			key_inlines.extend(block["c"])
+		elif block.get("t") in ("Str", "Space"):
+			key_inlines.append(block)
+	return key_inlines
+
+@_handler("dlist")
+def _render_dlist(self, node):
+	# Initialize the DefinitionList Pandoc AST object.
+	dlist = {"t": "DefinitionList", "c": []}
+	# Iterate properly over the child nodes of dlist (alternating key and value tags).
+	children = [child for child in node if isinstance(child, tree.Tag)]
+	for i in range(0, len(children), 2):
+		key_inlines = _extract_inlines(self, children[i])
+		self.push([])
+		self.dispatch_children(children[i+1])
+		value_blocks = self.pop()
+		dlist["c"].append([key_inlines, [value_blocks]])
+	self.append(dlist)
 
 @_handler("verse")
 def _render_verse(self, node):
