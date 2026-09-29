@@ -13,14 +13,14 @@
 <label>Source view
    <input id="toggle-xml-display" type="checkbox">
 </label>
-% if github_download_url:
-<div class="toc-heading">External Link</div>
+
+<div class="toc-heading">Downloads</div>
 <nav>
 <ul>
-<li><a href="{{github_download_url}}"><i class="fa-solid fa-code"></i> XML File</a></li>
+<li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.docx">DOCX format</a></li>
+<li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.txt">Plain text</a></li>
 </ul>
 </nav>
-% endif
 % endblock
 
 % block body

@@ -226,6 +226,14 @@ def _render_tag(self, node):
 	assert isinstance(node, tree.Tag)
 	print(f"render: UNKNOWN: {node.name}", file=sys.stderr)
 
+def _get_pandoc_api_version(dflt=[1, 23, 1]):
+	try:
+		res = subprocess.run(["pandoc", "-t", "json"], input="", capture_output=True, text=True, check=True)
+		ast = json.loads(res.stdout)
+		return ast.get("pandoc-api-version", dflt)
+	except Exception:
+		return dflt
+
 class _Renderer:
 
 	def __init__(self, input):
@@ -234,16 +242,13 @@ class _Renderer:
 		self.heading_level = 0
 		self.visited = set()
 		self.document = {
-			"pandoc-api-version": [1, 23, 1],
+			"pandoc-api-version": _get_pandoc_api_version(),
 			"meta": {},
 			"blocks": [],
 		}
 		self.stack = [self.document["blocks"]]
 		self.set_title()
 		self.set_author()
-		self.push([])
-		self.append_string("Metadata")
-		self.append({"t": "Header", "c": [self.heading_level + 1, ["", [], []], self.pop()]})
 		self.set_identifier()
 		self.set_repository()
 		self.set_modified()

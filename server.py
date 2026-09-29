@@ -1,5 +1,5 @@
 import os, unicodedata, datetime, html, urllib, urllib.parse, ntpath, io
-import unicodedata
+import unicodedata, subprocess
 import flask, werkzeug.security, jinja2 # pip install flask
 from bs4 import BeautifulSoup # pip install bs4
 # TODO Ultimately, we should remove the bs4 dependency, but for this we need a
@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup # pip install bs4
 
 from dharma import common, change, parallels, validate, ingest, tree
 from dharma import biblio, texts, editorial, prosody, render, languages
-from dharma import enrich, search, snippets, glyphs, sii
+from dharma import enrich, search, snippets, glyphs, sii, pandoc
 from dharma.query import InvalidQuery
 
 # TODO Should use the w3c validator API https://validator.w3.org/docs/api.html
@@ -356,6 +356,55 @@ def display_list():
 	texts = [t for (t,) in db.execute("""select name from documents
 		where name glob 'DHARMA_INS*'""")]
 	return flask.render_template("display.tpl", texts=texts)
+
+@app.get("/texts/<dont_care>/<text>.docx")
+@common.transaction("texts")
+def serve_text_docx(dont_care, text):
+	db = common.db("texts")
+	(doc,) = db.execute("select source from documents_search where ident = ?", (text,)).fetchone() or (None,)
+	if not doc:
+		return flask.abort(404)
+	json_data = pandoc.process(tree.parse_string(doc))
+	command = [
+		"pandoc",
+		"-f", "json",
+		"--lua-filter", common.path_of("pandoc/filter.lua"),
+		"--reference-doc", common.path_of("pandoc/reference.docx"),
+		"-t", "docx",
+		"-o", "-"
+	]
+	result = subprocess.run(command, input=common.to_json(json_data).encode(), capture_output=True, check=True)
+	buffer = io.BytesIO(result.stdout)
+	return flask.send_file(
+		buffer,
+		mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		as_attachment=True,
+		download_name=f"{text}.docx"
+	)
+
+@app.get("/texts/<dont_care>/<text>.txt")
+@common.transaction("texts")
+def serve_text_plain(dont_care, text):
+	db = common.db("texts")
+	(doc,) = db.execute("select source from documents_search where ident = ?", (text,)).fetchone() or (None,)
+	if not doc:
+		return flask.abort(404)
+	json_data = pandoc.process(tree.parse_string(doc))
+	command = [
+		"pandoc",
+		"-f", "json",
+		"--lua-filter", common.path_of("pandoc/filter.lua"),
+		"-t", "plain",
+		"-o", "-"
+	]
+	result = subprocess.run(command, input=common.to_json(json_data).encode(), capture_output=True, check=True)
+	buffer = io.BytesIO(result.stdout)
+	return flask.send_file(
+		buffer,
+		mimetype="text/plain",
+		as_attachment=True,
+		download_name=f"{text}.txt"
+	)
 
 # Redirect all forms
 # /texts/DHARMA_INSPallava00196.xml
