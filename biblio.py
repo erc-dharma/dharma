@@ -1,11 +1,6 @@
 """
 Routines for displaying and updating the bibliography.
 """
-# BUG We sometimes miss updates, why? I am sure we are sometimes missing
-# deletions, but I haven't checked whether we are also missing new entries. Due
-# to one-off error with versions no.? Or the isloation level in sqlite? Or just
-# zotero itself? Other option: We should force a full bibliography update from
-# time to time just in case, as we are doing for the catalog.
 
 # For the conversion zotero->tei, this code is used:
 # https://github.com/zotero/translators/blob/master/TEI.js
