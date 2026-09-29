@@ -128,8 +128,6 @@ def _extract_edition_languages(root: tree.Tag | None):
 			scripts.setdefault(script, set()).add(lang)
 	return langs, scripts, lang_names, script_names
 
-# XXX should extract languages from full, not logical, because logical might be
-# empty while full is not, due to deletion of stuff in logical
 def _add_edition_languages(t: tree.Tree, logical: tree.Tag | None):
 	"""Add language and script use info to the tree.
 
@@ -1449,7 +1447,8 @@ def _finish_processing(t: tree.Tree):
 
 def fetch_file_data(ident):
 	# XXX should do this from the File() object, not from the db, because
-	# we should not depend on the file being already inserted in the db.
+	# we should not depend on the file being already inserted in the db to
+	# retrieve its data.
 	"""The return value is meant to be used by add_file_info()."""
 	db = common.db("texts")
 	return db.execute("""
