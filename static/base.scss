@@ -280,7 +280,8 @@ form ul {
 .search-wrapper {
 	display: flex; /* Changed from inline-flex to enable horizontal centering with margin auto */
 	margin: 1em auto; /* Centers the bar horizontally within its parent form container */
-	max-width: max-content; /* Restricts width on desktop to remain compact based on the input size */
+	width: 100%; /* Permet au conteneur de prendre toute la largeur disponible... */
+        max-width: 35em;
 	align-items: stretch;
 	border: 1px solid var(--card-border);
 	border-radius: $border-radius;
@@ -292,7 +293,6 @@ form ul {
 	outline: none;
 	padding: 0.4em 0.6em;
 	background: transparent;
-	width: 15em; /* Ensures the input has a reasonable default width */
 	flex-grow: 1; /* Allows the text input field to expand fluidly on mobile viewports */
 }
 .search-wrapper button {
