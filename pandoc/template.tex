@@ -35,10 +35,26 @@ $endif$
 $fonts.latex()$
 $font-settings.latex()$
 \RequirePackage{fontspec}
+
+% Load luacode to define the fallback mechanism.
+\usepackage{luacode}
+
+% Define NotoSerif, Noto Sans Symbols, and local NotoEmoji as fallback fonts using luaotfload.
+% The engine will check these fonts sequentially when a glyph is missing in the main font.
+% We use the 'file:' prefix with the absolute path for NotoEmoji so LuaLaTeX can locate the specific file in the local directory.
+\directlua{
+  luaotfload.add_fallback("notofallback", {
+    "[/home/michael/dharma/pandoc/fonts/NotoSerif.ttf]:mode=node;",
+    "[/home/michael/dharma/pandoc/fonts/NotoSansSymbols.ttf]:mode=node;",
+    "[/home/michael/dharma/pandoc/fonts/NotoEmoji.ttf]:mode=node;"
+  })
+}
+
 \setmainfont{Gentium}[
 	Path           = /home/michael/dharma/pandoc/fonts/,
 	Ligatures      = TeX,
 	Scale          = 1,
+	RawFeature     = {fallback=notofallback},
 	UprightFont    = *-Regular,
 	ItalicFont     = *-Italic,
 	ItalicFeatures = { SmallCapsFont = *-Italic },

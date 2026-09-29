@@ -5,16 +5,17 @@ format.
 The relevant Pandoc documentation is at:
 https://hackage-content.haskell.org/package/pandoc-types-1.23.1.1/docs/Text-Pandoc-Definition.html
 
+Possibly interesting output formats:
 
-pdf
-plain
-docx
-odt
-markdown
-html
+        pdf plain docx odt
+
+For generating a docx file: python pandoc.py texts/DHARMA_INSVengiCalukya00034.xml | pandoc -fjson
+--lua-filter=pandoc/color.lua --reference-doc=pandoc/reference.docx -o tmp.docx
+
+For generating a pdf file: python pandoc.py texts/DHARMA_INSVengiCalukya00034.xml | pandoc -fjson -otmp.pdf --lua-filter=pandoc/color.lua --template=pandoc/template2.tex --pdf-engine=lualatex
 """
 
-import sys, collections, re
+import sys, collections, re, datetime, html
 from dharma import tree, common, unicode
 
 _HANDLERS = []
@@ -76,6 +77,8 @@ def _handle_span(self, node):
 			self.append({"t": "Emph", "c": self.pop()})
 		case "fw-contents":
 			_with_color(self, node, "black")
+		case "lb":
+			_with_color(self, node, "gray")
 		case _:
 			self.dispatch_children(node)
 
@@ -103,6 +106,12 @@ def _increase_depth(self, node):
 @_handler("search")
 @_handler("physical")
 @_handler("logical")
+@_handler("languages")
+@_handler("scripts")
+@_handler("title")
+@_handler("title")
+@_handler("creator")
+@_handler("citations")
 def _just_ignore(self, node):
 	pass
 
@@ -179,7 +188,7 @@ class _Renderer:
 	def __init__(self, input):
 		self.handlers = _HANDLERS
 		self.input = input
-		self.heading_level = 1
+		self.heading_level = 0
 		self.visited = set()
 		self.document = {
 			"pandoc-api-version": [1, 23, 1],
@@ -189,9 +198,57 @@ class _Renderer:
 		self.stack = [self.document["blocks"]]
 		self.set_title()
 		self.set_author()
+		self.push([])
+		self.append_string("Metadata")
+		self.append({"t": "Header", "c": [self.heading_level + 1, ["", [], []], self.pop()]})
+		self.set_identifier()
+		self.set_repository()
+		self.set_modified()
 		self.set_summary()
 		self.set_hand()
 		self.append({"t": "HorizontalRule"})
+
+	def set_identifier(self):
+		ident = self.input.first("/document/identifier")
+		if not ident:
+			return
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		self.append_string(f"Identifier: {ident.text()}")
+		self.pop()
+		self.append(para)
+
+	def set_repository(self):
+		repo = self.input.first("/document/repository")
+		if not repo:
+			return
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		name = repo.first("name").text()
+		ident = repo.first("identifier").text()
+		self.append_string(f"Repository: {name} ({ident})")
+		self.pop()
+		self.append(para)
+
+	def set_modified(self):
+		commit = self.input.first("/document/commit")
+		if not commit:
+			return
+		last_modified_commit = self.input.first("/document/last-modified-commit")
+		assert last_modified_commit
+		when = int(commit.first("date").text())
+		when_obj = datetime.datetime.fromtimestamp(when).astimezone()
+		when_readable = html.escape(when_obj.strftime("%F %R"))
+		hash = commit.first("hash").text()[:7]
+		when_modified = int(last_modified_commit.first("date").text())
+		when_modified = datetime.datetime.fromtimestamp(when_modified).astimezone()
+		when_modified = html.escape(when_modified.strftime("%F %R"))
+		hash_modified = last_modified_commit.first("hash").text()[:7]
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		self.append_string(f"Commit: {when_readable} ({hash}), last modified {when_modified} ({hash_modified})")
+		self.pop()
+		self.append(para)
 
 	def set_title(self):
 		elem = self.input.first("/document/title")
@@ -205,7 +262,7 @@ class _Renderer:
 		}
 
 	def set_author(self):
-		editors = self.input.find("/document/editor/name")
+		editors = self.input.find("/document/creator/name")
 		if not editors:
 			return
 		self.push([])
@@ -276,11 +333,11 @@ class _Renderer:
 				self.append({"t": "Space"})
 			else:
 				token = token.replace("'", "’") # HACK
-				token = unicode.hyphenate(token)
-				if token in "([{⟨":
-					token = "\N{soft hyphen}" + token
-				elif token in ")]}⟩":
-					token += "\N{soft hyphen}"
+				# token = unicode.hyphenate(token)
+				# if token in "([{⟨":
+				# 	token = "\N{soft hyphen}" + token
+				# elif token in ")]}⟩":
+				# 	token += "\N{soft hyphen}"
 				self.append({"t": "Str", "c": token})
 
 	def append(self, stuff):
@@ -310,6 +367,8 @@ if __name__ == "__main__":
 			f = texts.File("/", path)
 			doc = ingest.process_file(f)
 			enrich.process(doc)
+			file_data = enrich.fetch_file_data(f.name)
+			enrich.add_file_info(doc, file_data)
 			ret = process(doc)
 			print(common.to_json(ret))
 		except BrokenPipeError:

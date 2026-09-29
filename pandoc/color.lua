@@ -8,14 +8,12 @@ function Span(el)
 			table.insert(el.content, 1, start_cmd[1])
 			table.insert(el.content, end_cmd[1])
 			el.attributes['color'] = nil
-		elseif FORMAT:match('html') then
-			-- Convert to CSS style for HTML
-			el.attributes['style'] = 'color: ' .. color .. ';'
-			el.attributes['color'] = nil
 		elseif FORMAT:match('docx') or FORMAT:match('odt') then
-			-- Use inline CSS-like style which Pandoc writers for docx/odt can interpret
-			el.attributes['style'] = 'color: ' .. color
-			-- We keep the color attribute if specific writers need it as fallback
+			-- Format the color string to construct the style name
+			local formatted_color = color:gsub("^%l", string.upper)
+			-- Apply the custom-style attribute for Word processing
+			el.attributes['custom-style'] = 'Color' .. formatted_color
+			el.attributes['color'] = nil
 		end
 	end
 	return el
