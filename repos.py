@@ -1,3 +1,4 @@
+import logging
 from dharma import common, texts
 
 def iter_repos():
@@ -25,12 +26,24 @@ dependencies = {"DHARMA_repositories.tsv"}
 
 def update():
 	db = common.db("texts")
-	for _, rec in sorted(load_data().items()):
+	new_repos = load_data()
+	# Insert/update new or modified repositories.
+	for _, rec in sorted(new_repos.items()):
 		db.execute("""
 			insert into repos(repo, textual, title)
 				values(:name, :textual, :title)
 			on conflict do update
 			set textual = excluded.textual, title = excluded.title""", rec)
+	# And delete repositories that have been removed from the repos list.
+	old_repos = db.execute("select repo from repos").fetchall()
+	for (repo,) in old_repos:
+		if repo in new_repos:
+			continue
+		logging.info(f"deleting repo {repo!r}")
+		db.execute("delete from repos where repo = ?", (repo,))
+		# Leave the repo directory where it is, don't try to remove it.
+		# We should do it, but doing it properly requires to ensure that
+		# the sqlite transaction succeeded first.
 
 if __name__ == "__main__":
 	@common.transaction("texts")

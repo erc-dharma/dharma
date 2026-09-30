@@ -51,7 +51,7 @@ This will clone all DHARMA repositories and create the main database
 To add a new repository, you need to add an entry to the file
 `repos/project-documentation/DHARMA_repositories.tsv`. The update process will
 pick it up and pull the repository. If you want to delete a repository from the
-database, just delete it from the repositories table.
+database, delete the corresponding row from the file `DHARMA_repositories.tsv`.
 
 There is also a separate, secondary database for searching parallel verses. It
 is stored at `dbs/parallels.sqlite`. To build it, run:
