@@ -24,8 +24,9 @@ not just `libicu`. You also need to install Python's headers (`python-devel` or
 
 You also need to install a Golang environment on each machine you intend to run the application on. See [here](https://go.dev/doc/install) for installation details.
 
-Also needed are [`pandoc`](https://pandoc.org) (we use it at runtime
-for rendering Markdown files) and the `sqlite3` command-line tool.
+Also needed are [`pandoc`](https://pandoc.org) (we use it at runtime for
+rendering Markdown files and generating DOCX, etc. files), the `sqlite3`
+command-line tool, and `lualatex` (for generating PDF files).
 
 The code's documentation can be browsed with the `pdoc` tool:
 
