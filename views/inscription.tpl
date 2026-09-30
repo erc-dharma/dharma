@@ -17,7 +17,8 @@
 <div class="toc-heading">Downloads</div>
 <nav>
 <ul>
-<li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.docx">DOCX format</a></li>
+<li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.pdf">PDF file</a></li>
+<li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.docx">MS Word file (.docx)</a></li>
 <li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.txt">Plain text</a></li>
 <li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.xml">XML source</a></li>
 </ul>

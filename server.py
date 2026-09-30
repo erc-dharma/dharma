@@ -357,6 +357,32 @@ def display_list():
 		where name glob 'DHARMA_INS*'""")]
 	return flask.render_template("display.tpl", texts=texts)
 
+@app.get("/texts/<dont_care>/<text>.pdf")
+@common.transaction("texts")
+def serve_text_pdf(dont_care, text):
+	db = common.db("texts")
+	(doc,) = db.execute("select source from documents_search where ident = ?", (text,)).fetchone() or (None,)
+	if not doc:
+		return flask.abort(404)
+	json_data = pandoc.process(tree.parse_string(doc))
+	command = [
+		"pandoc",
+		"-f", "json",
+		"--lua-filter", common.path_of("pandoc/filter.lua"),
+		"--template", common.path_of("pandoc/template.tex"),
+		"--pdf-engine", "lualatex",
+		"-t", "pdf",
+		"-o", "-"
+	]
+	result = subprocess.run(command, input=common.to_json(json_data).encode(), capture_output=True, check=True)
+	buffer = io.BytesIO(result.stdout)
+	return flask.send_file(
+		buffer,
+		mimetype="application/pdf",
+		as_attachment=True,
+		download_name=f"{text}.pdf"
+	)
+
 @app.get("/texts/<dont_care>/<text>.docx")
 @common.transaction("texts")
 def serve_text_docx(dont_care, text):
