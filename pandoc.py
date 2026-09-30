@@ -126,6 +126,11 @@ def _increase_depth(self, node):
 @_handler("citations")
 @_handler("summary")
 @_handler("hand")
+@_handler("identifier")
+@_handler("repository")
+@_handler("path")
+@_handler("commit")
+@_handler("last-modified-commit")
 def _just_ignore(self, node):
 	pass
 

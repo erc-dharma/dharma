@@ -19,14 +19,31 @@ function Span(el)
 	return el
 end
 
+function Header(el)
+	-- Reformat headings to look like Markdown when the output is plain text
+	if FORMAT:match('plain') then
+		-- Generate a string of hashes matching the heading level + 1 followed by a space
+		local prefix = string.rep("#", el.level + 1) .. " "
+		table.insert(el.content, 1, pandoc.Str(prefix))
+		-- Return as a regular paragraph so the plain writer does not alter our text formatting
+		return pandoc.Para(el.content)
+	end
+	return el
+end
+
 function Pandoc(doc)
 	-- Check if the output format matches plain text
 	if FORMAT:match('plain') then
 		local blocks = doc.blocks
-		-- Insert title and author paragraphs at the beginning if present
+		-- Construct the title paragraph with a single hash prefix to ensure it remains level 1
 		if doc.meta.title then
-			table.insert(blocks, 1, pandoc.Header(1, doc.meta.title))
+			local title_content = { pandoc.Str("# ") }
+			for _, inline in ipairs(doc.meta.title) do
+				table.insert(title_content, inline)
+			end
+			table.insert(blocks, 1, pandoc.Para(title_content))
 		end
+		-- Insert the author metadata as the second paragraph
 		if doc.meta.author then
 			table.insert(blocks, 2, pandoc.Para(doc.meta.author))
 		end
