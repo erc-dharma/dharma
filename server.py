@@ -406,6 +406,21 @@ def serve_text_plain(dont_care, text):
 		download_name=f"{text}.txt"
 	)
 
+@app.get("/texts/<dont_care>/<text>.xml")
+@common.transaction("texts")
+def serve_text_xml(dont_care, text):
+	db = common.db("texts")
+	(doc,) = db.execute("select data from files where name = ?", (text,)).fetchone() or (None,)
+	if not doc:
+		return flask.abort(404)
+	buffer = io.BytesIO(doc)
+	return flask.send_file(
+		buffer,
+		mimetype="application/xml",
+		as_attachment=True,
+		download_name=f"{text}.xml"
+	)
+
 # Redirect all forms
 # /texts/DHARMA_INSPallava00196.xml
 # /texts/INSPallava00196.xml

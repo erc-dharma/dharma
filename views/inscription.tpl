@@ -19,6 +19,7 @@
 <ul>
 <li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.docx">DOCX format</a></li>
 <li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.txt">Plain text</a></li>
+<li><a href="/texts/{{doc.identifier.text()}}/{{doc.identifier.text()}}.xml">XML source</a></li>
 </ul>
 </nav>
 % endblock
