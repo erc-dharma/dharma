@@ -131,6 +131,7 @@ def _increase_depth(self, node):
 @_handler("path")
 @_handler("commit")
 @_handler("last-modified-commit")
+@_handler("contributor")
 def _just_ignore(self, node):
 	pass
 
@@ -251,8 +252,13 @@ class _Renderer:
 		self.stack = [self.document["blocks"]]
 		self.set_title()
 		self.set_author()
+		self.set_other_titles()
+		self.set_creator()
+		self.set_contributor()
 		self.set_identifier()
 		self.set_repository()
+		self.set_path()
+		self.set_language()
 		self.set_modified()
 		self.set_summary()
 		self.set_hand()
@@ -277,6 +283,89 @@ class _Renderer:
 		name = repo.first("name").text()
 		ident = repo.first("identifier").text()
 		self.append_string(f"Repository: {name} ({ident})")
+		self.pop()
+		self.append(para)
+
+	def set_path(self):
+		path = self.input.first("/document/path")
+		if not path:
+			return
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		self.append_string(f"File path: {path.text()}")
+		self.pop()
+		self.append(para)
+
+	def set_other_titles(self):
+		titles = self.input.find("/document/title")
+		if len(titles) <= 1:
+			return
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		self.append_string("Alternative ")
+		self.append_string(common.numberize("title", len(titles) - 1))
+		self.append_string(": ")
+		for i, title in enumerate(titles[1:]):
+			if i > 0:
+				self.append_string(" − ")
+			self.dispatch_children(title)
+		self.pop()
+		self.append(para)
+
+	def set_creator(self):
+		creators = self.input.find("/document/creator")
+		if not creators:
+			return
+		buf = ""
+		for i, c in enumerate(creators):
+			if i > 0:
+				buf += ", "
+			buf += c.first("name").text()
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		self.append_string(common.numberize('Author', len(creators)))
+		self.append_string(" of digital edition: ")
+		self.append_string(buf)
+		self.pop()
+		self.append(para)
+
+	def set_contributor(self):
+		contributors = self.input.find("/document/contributor")
+		if not contributors:
+			return
+		buf = ""
+		for i, c in enumerate(contributors):
+			if i > 0:
+				buf += ", "
+			buf += c.first("name").text()
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		self.append_string(common.numberize('Contributor', len(contributors)))
+		self.append_string(": ")
+		self.append_string(buf)
+		self.pop()
+		self.append(para)
+
+	def set_language(self):
+		langs = self.input.first("/document/languages")
+		if not langs:
+			return
+		buf = ""
+		languages = langs.find("language")
+		for i, lang in enumerate(languages):
+			if i > 0:
+				buf += ", "
+			buf += lang.first("name").text()
+			buf += " ["
+			for j, script in enumerate(lang.find("script")):
+				if j > 0:
+					buf += ", "
+				buf += script.first("name").text()
+			buf += "]"
+		para = {"t": "Para", "c": []}
+		self.push(para["c"])
+		self.append_string(common.numberize('Language', len(languages)))
+		self.append_string(f": {buf}")
 		self.pop()
 		self.append(para)
 
